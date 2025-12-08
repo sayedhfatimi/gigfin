@@ -8,6 +8,7 @@
     "format": "biome format --write"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^7.1.0",
     "@libsql/client": "^0.15.15",
     "better-auth": "^1.4.5",
     "dotenv": "^17.2.3",

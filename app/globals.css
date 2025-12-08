@@ -1,6 +1,9 @@
-@import "tailwindcss";
+@import '@fortawesome/fontawesome-free/css/all.min.css';
+@import 'tailwindcss';
 @plugin "daisyui" {
-    themes: nord --default, dim --prefersdark
+  themes:
+    nord --default,
+    dim --prefersdark;
 }
 
 @custom-variant dark (&:where([data-theme=dim], [data-theme=dim] *));
