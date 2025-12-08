@@ -8,11 +8,11 @@ import { income } from '@/db/schema';
 
 const SESSION_PATH = '/api/auth/get-session';
 const INCOME_PATH = '/api/incomes';
+const INTERNAL_API_BASE =
+  process.env.INTERNAL_API_BASE ?? 'http://127.0.0.1:3000';
 
 const getSessionFromRequest = async (request: NextRequest) => {
-  const url = new URL(request.url);
-  url.pathname = SESSION_PATH;
-  url.search = '';
+  const url = new URL(SESSION_PATH, INTERNAL_API_BASE);
 
   const headers = new Headers(request.headers);
   headers.delete('host');
