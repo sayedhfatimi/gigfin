@@ -1,12 +1,23 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { twoFactor as twoFactorPlugin } from 'better-auth/plugins/two-factor';
 import { db } from '@/db';
+import {
+  account,
+  income,
+  session,
+  twoFactor,
+  user,
+  verification,
+} from '@/db/schema';
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: 'sqlite',
+    schema: { account, income, session, user, verification, twoFactor },
   }),
   emailAndPassword: {
     enabled: true,
   },
+  plugins: [twoFactorPlugin({ issuer: 'GigFin' })],
 });

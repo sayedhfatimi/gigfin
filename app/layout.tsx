@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import ThemeProvider from '@/components/theme/ThemeProvider';
-import ThemeToggle from '@/components/theme/ThemeToggle';
 import './globals.css';
 
 const geistSans = Geist({
@@ -30,12 +29,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
-          <div className='relative min-h-screen'>
-            <div className='absolute right-4 top-4 z-50'>
-              <ThemeToggle />
-            </div>
-            {children}
-          </div>
+          <div className='min-h-screen'>{children}</div>
         </ThemeProvider>
       </body>
     </html>

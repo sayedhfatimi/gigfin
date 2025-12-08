@@ -1,6 +1,7 @@
 @import '@fortawesome/fontawesome-free/css/all.min.css';
 @import 'tailwindcss';
 @plugin "daisyui" {
+  /* biome-ignore lint/correctness/noUnknownProperty: DaisyUI theme list */
   themes:
     nord --default,
     dim --prefersdark;

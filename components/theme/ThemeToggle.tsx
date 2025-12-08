@@ -28,7 +28,7 @@ export default function ThemeToggle() {
   return (
     <button
       type='button'
-      className='btn btn-ghost btn-square'
+      className='btn btn-square btn-sm'
       onClick={() => setTheme(nextTheme)}
       aria-label={`Switch to ${themeLabel[nextTheme]} theme`}
       aria-pressed={isDark}
