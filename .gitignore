@@ -42,3 +42,4 @@ next-env.d.ts
 
 # sqlite
 db.sqlite
+data/db.sqlite

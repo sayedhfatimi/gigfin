@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useState } from 'react';
@@ -33,9 +34,9 @@ const signupInitial: SignupForm = {
 };
 
 const featureHighlights = [
-  'Track every payout, tip, and invoice with structured gig income logs',
-  'Capture deductions quickly with receipt snapshots and notes',
-  'Adaptive light/dark palette keeps focus on your numbers',
+  'Log payouts, tips, and invoices per platform with the quick add form',
+  'Filter history by month and platform while aggregated summaries update instantly',
+  'Dashboard charts surface totals, daily averages, and platform mix for the year',
 ];
 
 const describeError = (value: unknown) => {
@@ -233,16 +234,27 @@ function HomeContent() {
           <div className='relative z-10 grid gap-10 lg:grid-cols-[1.2fr_0.9fr]'>
             <section className='space-y-6'>
               <div className='flex flex-col gap-3'>
-                <p className='text-xs font-semibold uppercase tracking-[0.4em] text-primary'>
-                  GigFin invite
-                </p>
+                <div className='flex items-center gap-3'>
+                  <div className='relative h-14 w-14 rounded-2xl border border-base-content/10 bg-base-100/80 p-2 shadow-sm dark:border-base-300/40 dark:bg-base-200/60'>
+                    <Image
+                      src='/logo.png'
+                      alt='GigFin logo'
+                      fill
+                      className='object-contain'
+                      priority
+                    />
+                  </div>
+                  <p className='text-xs font-semibold uppercase tracking-[0.4em] text-primary'>
+                    GigFin invite
+                  </p>
+                </div>
                 <h1 className='text-4xl font-semibold leading-tight text-slate-900 dark:text-white lg:text-5xl'>
-                  Income-first tools built for gig workers
+                  A secure ledger for every gig payout
                 </h1>
                 <p className='text-lg text-base-content/80'>
-                  Seed your accounting with secure login and keep every payout,
-                  tip, and invoice in one place. Fast onboarding means you can
-                  sign in or create an account right from this hero screen.
+                  Log earnings across delivery and rideshare platforms, then let
+                  the dashboard break totals, averages, and platform mixes back
+                  down—sign in or create an account right from this hero screen.
                 </p>
               </div>
               <ul className='grid gap-3'>
@@ -257,10 +269,10 @@ function HomeContent() {
               </ul>
               <div className='grid gap-4 sm:grid-cols-2'>
                 <div className='rounded-2xl bg-primary/10 px-4 py-3 text-sm font-semibold text-primary'>
-                  Earnings, bonuses, and tips grouped side-by-side
+                  Two-factor verification keeps sessions locked down
                 </div>
                 <div className='rounded-2xl bg-base-100 px-4 py-3 text-sm font-semibold text-base-content/70'>
-                  Sessions stored locally so you keep control of your data
+                  Filters for months and platforms make it easy to compare runs
                 </div>
               </div>
             </section>
