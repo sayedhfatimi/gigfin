@@ -220,21 +220,20 @@ const IncomeEntryModal = ({
           <div className='grid gap-2'>
             <label
               htmlFor={dateInputId}
-              className='text-xs font-semibold uppercase tracking-[0.3em] text-base-content/50'
+              className='text-xs font-semibold uppercase text-base-content/50'
             >
               Date
             </label>
             <p className='text-sm text-base-content/70'>{selectedDateLabel}</p>
             <div className='flex flex-wrap items-end gap-2'>
               <div className='flex-1 min-w-0'>
-                <div className='relative'>
+                <label className='input w-full'>
                   <input
                     type='text'
                     id={dateInputId}
                     aria-describedby={dateHintId}
                     required
                     placeholder='YYYY-MM-DD'
-                    className='input input-bordered w-full pr-12'
                     value={formState.date}
                     onChange={(event) =>
                       setFormState((prev) => ({
@@ -243,26 +242,24 @@ const IncomeEntryModal = ({
                       }))
                     }
                   />
-                  <div className='absolute inset-y-0 right-1 flex items-center'>
-                    <button
-                      type='button'
-                      className='btn btn-ghost btn-square size-8'
-                      onClick={() => setIsCalendarOpen((prev) => !prev)}
-                      aria-haspopup='dialog'
-                      aria-expanded={isCalendarOpen}
-                      aria-controls={calendarPopoverId}
-                      ref={calendarTriggerRef}
-                    >
-                      <span
-                        className='fa-solid fa-calendar-days text-xs text-base-content'
-                        aria-hidden='true'
-                      />
-                      <span className='sr-only'>
-                        {isCalendarOpen ? 'Close calendar' : 'Open calendar'}
-                      </span>
-                    </button>
-                  </div>
-                </div>
+                  <button
+                    type='button'
+                    className='btn btn-ghost btn-square btn-xs'
+                    onClick={() => setIsCalendarOpen((prev) => !prev)}
+                    aria-haspopup='dialog'
+                    aria-expanded={isCalendarOpen}
+                    aria-controls={calendarPopoverId}
+                    ref={calendarTriggerRef}
+                  >
+                    <span
+                      className='fa-solid fa-calendar-days text-xs text-base-content'
+                      aria-hidden='true'
+                    />
+                    <span className='sr-only'>
+                      {isCalendarOpen ? 'Close calendar' : 'Open calendar'}
+                    </span>
+                  </button>
+                </label>
                 <p id={dateHintId} className='text-xs text-base-content/60'>
                   Format: YYYY-MM-DD (press calendar icon for a picker)
                 </p>
@@ -290,7 +287,7 @@ const IncomeEntryModal = ({
           <div className='grid gap-2'>
             <label
               htmlFor={platformSelectId}
-              className='text-xs font-semibold uppercase tracking-[0.3em] text-base-content/50'
+              className='text-xs font-semibold uppercase text-base-content/50'
             >
               Income source
             </label>
@@ -313,11 +310,11 @@ const IncomeEntryModal = ({
           <div className='grid gap-2'>
             <label
               htmlFor={amountInputId}
-              className='text-xs font-semibold uppercase tracking-[0.3em] text-base-content/50'
+              className='text-xs font-semibold uppercase text-base-content/50'
             >
               Amount earned
             </label>
-            <label className='input validator'>
+            <label className='input validator w-full'>
               <span
                 className='fa-solid fa-sterling-sign text-base-content/60'
                 aria-hidden='true'
@@ -328,7 +325,6 @@ const IncomeEntryModal = ({
                 min='0'
                 required
                 placeholder='e.g. 45.50'
-                className='input input-bordered w-full'
                 id={amountInputId}
                 value={formState.amount}
                 onChange={(event) =>
