@@ -180,9 +180,6 @@ export default function LogsPage() {
     );
     return platforms.sort();
   }, [incomes]);
-  const monthHelpText = isLoading
-    ? 'Loading months…'
-    : `Showing ${selectedMonthLabel}`;
   const emptyMonthMessage = hasAnyIncome
     ? `No income was logged during ${selectedMonthLabel}. Add an entry to seed this month or pick another timeframe.`
     : 'No logs yet. Add your first income entry to begin tracking.';
@@ -271,7 +268,7 @@ export default function LogsPage() {
       <header className='flex flex-col gap-2'>
         <div className='flex items-center justify-between gap-3'>
           <div>
-            <p className='text-xs uppercase  text-base-content/60'>Logs</p>
+            <p className='text-xs uppercase text-base-content/60'>Logs</p>
             <h1 className='text-3xl font-semibold text-base-content'>
               Income Logs
             </h1>
@@ -291,89 +288,84 @@ export default function LogsPage() {
       </header>
 
       <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm'>
-        <div className='mb-4 space-y-3'>
-          <div className='flex items-center justify-between'>
-            <p className='text-xs uppercase  text-base-content/60'>
-              Table options
-            </p>
+        <div className='flex flex-col gap-2 bg-base-200 p-4'>
+          <div className='flex flex-row items-center justify-between'>
+            <h1>Filtering Options</h1>
             <button
               type='button'
-              className='btn btn-ghost btn-sm'
+              className='btn btn-sm btn-warning'
               onClick={handleResetTableControls}
             >
               Reset filters & sorting
             </button>
           </div>
-          <div className='flex flex-wrap items-center gap-3'>
-            <label
-              htmlFor='monthly-filter'
-              className='text-xs uppercase  text-base-content/60'
-            >
-              Month
-            </label>
-            <select
-              id='monthly-filter'
-              className='select select-sm select-bordered'
-              value={selectedMonth}
-              onChange={(event) => setSelectedMonth(event.target.value)}
-              disabled={isLoading}
-              aria-busy={isLoading}
-            >
-              {monthOptions.map((option) => (
-                <option key={option.key} value={option.key}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <span className='text-xs uppercase  text-base-content/60'>
-              {monthHelpText}
-            </span>
-          </div>
-          <div className='flex flex-wrap items-center gap-3'>
-            <span className='text-xs uppercase  text-base-content/60'>
-              Platforms
-            </span>
-            <form
-              onReset={handlePlatformFilterReset}
-              className='flex flex-wrap items-center gap-2'
-            >
+          <div className='flex flex-col md:flex-row items-center gap-3'>
+            <div className='flex flex-col gap-1'>
+              <label className='select'>
+                <span className='label'>Month</span>
+                <select
+                  id='monthly-filter'
+                  value={selectedMonth}
+                  onChange={(event) => setSelectedMonth(event.target.value)}
+                  disabled={isLoading}
+                  aria-busy={isLoading}
+                >
+                  {monthOptions.map((option) => (
+                    <option key={option.key} value={option.key}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className='flex flex-wrap items-center gap-3'>
               {platformOptions.length ? (
-                platformOptions.map((platform) => {
-                  const isChecked = platformFilter.includes(platform);
-                  return (
-                    <label
-                      key={platform}
-                      className={`btn btn-sm normal-case ${
-                        isChecked
-                          ? 'btn-primary btn-active text-white'
-                          : 'btn-outline'
-                      }`}
+                <form
+                  onReset={handlePlatformFilterReset}
+                  className='flex flex-wrap items-center gap-2'
+                >
+                  <label className='input w-full'>
+                    <span className='label'>Filter by platform</span>
+
+                    {platformOptions.map((platform) => {
+                      const isChecked = platformFilter.includes(platform);
+                      return (
+                        <label
+                          key={platform}
+                          className={`btn btn-xs normal-case ${
+                            isChecked
+                              ? 'btn-primary btn-active text-white'
+                              : 'btn-outline'
+                          }`}
+                        >
+                          <input
+                            type='checkbox'
+                            name='platforms'
+                            value={platform}
+                            aria-label={platform}
+                            checked={isChecked}
+                            onChange={() => togglePlatformSelection(platform)}
+                            className='sr-only'
+                          />
+                          {platform}
+                        </label>
+                      );
+                    })}
+                    <button
+                      type='reset'
+                      className='btn btn-xs btn-square btn-error text-xs'
+                      aria-label='Clear platform filters'
                     >
-                      <input
-                        type='checkbox'
-                        name='platforms'
-                        value={platform}
-                        aria-label={platform}
-                        checked={isChecked}
-                        onChange={() => togglePlatformSelection(platform)}
-                        className='sr-only'
-                      />
-                      {platform}
-                    </label>
-                  );
-                })
+                      <span className='fa-solid fa-xmark' aria-hidden='true' />
+                    </button>
+                  </label>
+                </form>
               ) : (
-                <span className='text-xs uppercase  text-base-content/60'>
+                <span className='text-xs uppercase text-base-content/60'>
                   No platforms yet
                 </span>
               )}
-              <input
-                type='reset'
-                className='btn btn-sm btn-square btn-outline'
-                value='×'
-                aria-label='Clear platform filters'
-              />
-            </form>
+            </div>
           </div>
         </div>
         {isLoading ? (

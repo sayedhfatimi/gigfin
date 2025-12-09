@@ -87,7 +87,7 @@ export default function DashboardPage() {
   return (
     <div className='space-y-6'>
       <header className='space-y-1'>
-        <p className='text-sm uppercase  text-base-content/60'>Dashboard</p>
+        <p className='text-xs uppercase text-base-content/60'>Dashboard</p>
         <h1 className='text-3xl font-semibold text-base-content'>
           Welcome back,{' '}
           {sessionUser?.name ?? sessionUser?.email ?? 'gig worker'}
