@@ -1,6 +1,6 @@
 'use client';
 
-import { DailyIncomeSummary, formatCurrency } from '@/lib/income';
+import { type DailyIncomeSummary, formatCurrency } from '@/lib/income';
 
 type RecentDaysPanelProps = {
   dailySummaries: DailyIncomeSummary[];
@@ -13,17 +13,12 @@ export function RecentDaysPanel({ dailySummaries }: RecentDaysPanelProps) {
     <section className='space-y-4  border border-base-content/10 bg-base-100 p-6 shadow-sm'>
       <div className='flex items-center justify-between'>
         <h2 className='text-lg font-semibold text-base-content'>Recent days</h2>
-        <p className='text-xs uppercase tracking-[0.4em] text-base-content/50'>
-          totals
-        </p>
+        <p className='text-xs uppercase  text-base-content/50'>totals</p>
       </div>
       {recentDays.length ? (
         <div className='space-y-4'>
           {recentDays.map((day) => (
-            <div
-              key={day.date}
-              className='flex items-center justify-between'
-            >
+            <div key={day.date} className='flex items-center justify-between'>
               <div>
                 <p className='font-semibold'>{day.date}</p>
                 <p className='text-xs text-base-content/50'>

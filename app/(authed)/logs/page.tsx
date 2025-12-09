@@ -31,7 +31,7 @@ const renderSortableHeader = (
 ) => (
   <button
     type='button'
-    className='flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em]'
+    className='flex items-center gap-2 text-xs font-semibold uppercase '
     onClick={() => column.toggleSorting()}
   >
     <span className='text-base-content'>{label}</span>
@@ -71,7 +71,7 @@ const columns = [
   columnHelper.accessor('breakdown', {
     header: 'Platforms',
     cell: (info) => (
-      <div className='text-xs font-semibold uppercase tracking-[0.3em] text-base-content/60'>
+      <div className='text-xs font-semibold uppercase  text-base-content/60'>
         {info
           .getValue()
           .map((row) => row.platform)
@@ -271,9 +271,7 @@ export default function LogsPage() {
       <header className='flex flex-col gap-2'>
         <div className='flex items-center justify-between gap-3'>
           <div>
-            <p className='text-xs uppercase tracking-[0.4em] text-base-content/60'>
-              Logs
-            </p>
+            <p className='text-xs uppercase  text-base-content/60'>Logs</p>
             <h1 className='text-3xl font-semibold text-base-content'>
               Income Logs
             </h1>
@@ -295,7 +293,7 @@ export default function LogsPage() {
       <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm'>
         <div className='mb-4 space-y-3'>
           <div className='flex items-center justify-between'>
-            <p className='text-xs uppercase tracking-[0.3em] text-base-content/60'>
+            <p className='text-xs uppercase  text-base-content/60'>
               Table options
             </p>
             <button
@@ -309,7 +307,7 @@ export default function LogsPage() {
           <div className='flex flex-wrap items-center gap-3'>
             <label
               htmlFor='monthly-filter'
-              className='text-xs uppercase tracking-[0.3em] text-base-content/60'
+              className='text-xs uppercase  text-base-content/60'
             >
               Month
             </label>
@@ -327,12 +325,12 @@ export default function LogsPage() {
                 </option>
               ))}
             </select>
-            <span className='text-xs uppercase tracking-[0.3em] text-base-content/60'>
+            <span className='text-xs uppercase  text-base-content/60'>
               {monthHelpText}
             </span>
           </div>
           <div className='flex flex-wrap items-center gap-3'>
-            <span className='text-xs uppercase tracking-[0.3em] text-base-content/60'>
+            <span className='text-xs uppercase  text-base-content/60'>
               Platforms
             </span>
             <form
@@ -365,7 +363,7 @@ export default function LogsPage() {
                   );
                 })
               ) : (
-                <span className='text-xs uppercase tracking-[0.3em] text-base-content/60'>
+                <span className='text-xs uppercase  text-base-content/60'>
                   No platforms yet
                 </span>
               )}
@@ -449,7 +447,7 @@ export default function LogsPage() {
                       <div className='rounded-b-3xl border-t border-base-content/10 bg-base-100 p-4'>
                         <div className='flex items-center justify-between text-sm font-semibold text-base-content/60'>
                           <span>Entries</span>
-                          <span className='text-xs uppercase tracking-[0.4em]'>
+                          <span className='text-xs uppercase '>
                             {row.original.entries.length}{' '}
                             {row.original.entries.length === 1
                               ? 'entry'

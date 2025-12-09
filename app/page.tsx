@@ -353,7 +353,7 @@ function HomeContent() {
                       priority
                     />
                   </div>
-                  <p className='text-xs font-semibold uppercase tracking-[0.4em] text-primary'>
+                  <p className='text-xs font-semibold uppercase text-primary'>
                     GigFin invite
                   </p>
                 </div>
@@ -539,7 +539,7 @@ function HomeContent() {
                 {twoFactorPrompt && (
                   <div className='space-y-3 rounded-2xl border border-base-content/20 bg-base-100/70 p-4 text-sm text-base-content/80'>
                     <div className='flex items-center justify-between gap-4'>
-                      <p className='text-xs uppercase tracking-[0.4em] text-warning'>
+                      <p className='text-xs uppercase text-warning'>
                         Step 2 of 2
                       </p>
                       <span className='text-xs font-semibold text-base-content/60'>

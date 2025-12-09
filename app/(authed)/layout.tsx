@@ -58,7 +58,7 @@ export default function AuthedLayout({
       <div className='flex min-h-screen bg-base-200 text-base-content'>
         <aside className='hidden w-72 flex-col gap-6 border-r border-base-content/10 bg-base-100 p-6 py-10 shadow-sm lg:flex lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto bottom-0'>
           <div>
-            <p className='text-xs font-semibold uppercase tracking-[0.4em] text-base-content/60'>
+            <p className='text-xs font-semibold uppercase text-base-content/60'>
               GigFin
             </p>
             <p className='text-2xl font-semibold text-base-content'>

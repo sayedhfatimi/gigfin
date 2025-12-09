@@ -34,13 +34,11 @@ export function YearlyTrendChart({
           <h2 className='text-lg font-semibold text-base-content'>
             Yearly income trend
           </h2>
-          <p className='text-xs uppercase tracking-[0.4em] text-base-content/60'>
+          <p className='text-xs uppercase  text-base-content/60'>
             Month over month
           </p>
         </div>
-        <p className='text-xs uppercase tracking-[0.4em] text-base-content/50'>
-          {currentYear}
-        </p>
+        <p className='text-xs uppercase  text-base-content/50'>{currentYear}</p>
       </div>
       <div className='mt-6'>
         <div className='h-60 w-full'>

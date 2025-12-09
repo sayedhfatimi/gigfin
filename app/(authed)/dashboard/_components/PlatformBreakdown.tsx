@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-} from 'recharts';
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { formatCurrency } from '@/lib/income';
 
 type PlatformDistributionItem = {
@@ -43,9 +37,7 @@ export function PlatformBreakdown({
         <h2 className='text-lg font-semibold text-base-content'>
           Platform breakdown
         </h2>
-        <p className='text-xs uppercase tracking-[0.4em] text-base-content/50'>
-          Pie
-        </p>
+        <p className='text-xs uppercase  text-base-content/50'>Pie</p>
       </div>
       <div className='mt-6 grid gap-6 lg:grid-cols-[1fr_1.2fr] lg:items-center'>
         <div className='h-44 w-full'>

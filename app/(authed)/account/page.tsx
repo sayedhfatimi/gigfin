@@ -63,12 +63,12 @@ export default function AccountPage() {
   const renderStatusAlerts = () => (
     <>
       {twoFactorStatusMessage && (
-        <p className='text-sm font-semibold uppercase tracking-[0.3em] text-success'>
+        <p className='text-sm font-semibold uppercase  text-success'>
           {twoFactorStatusMessage}
         </p>
       )}
       {twoFactorStatusError && (
-        <p className='text-sm font-semibold uppercase tracking-[0.3em] text-error'>
+        <p className='text-sm font-semibold uppercase  text-error'>
           {twoFactorStatusError}
         </p>
       )}
@@ -213,9 +213,7 @@ export default function AccountPage() {
   return (
     <div className='space-y-6'>
       <header className='space-y-1'>
-        <p className='text-xs uppercase tracking-[0.4em] text-base-content/60'>
-          Account
-        </p>
+        <p className='text-xs uppercase  text-base-content/60'>Account</p>
         <h1 className='text-3xl font-semibold text-base-content'>Settings</h1>
         <p className='text-sm text-base-content/60'>
           Keep your login details and preferences tidy.
@@ -225,9 +223,7 @@ export default function AccountPage() {
       <section className='grid gap-6 lg:grid-cols-2'>
         <div className=' border border-base-content/10 bg-base-100 p-6 shadow-sm'>
           <div className='flex items-center justify-between'>
-            <p className='text-xs uppercase tracking-[0.4em] text-base-content/50'>
-              Session
-            </p>
+            <p className='text-xs uppercase  text-base-content/50'>Session</p>
             <span className='text-xs font-semibold text-base-content/60'>
               Active
             </span>
@@ -250,7 +246,7 @@ export default function AccountPage() {
         <div className=' border border-base-content/10 bg-base-100 p-6 shadow-sm'>
           <div className='flex items-center justify-between'>
             <div>
-              <p className='text-xs uppercase tracking-[0.4em] text-base-content/50'>
+              <p className='text-xs uppercase  text-base-content/50'>
                 Security
               </p>
               <p className='text-sm text-base-content/60'>
@@ -266,7 +262,7 @@ export default function AccountPage() {
           <div className='mt-6 space-y-4'>
             <div className='flex flex-col gap-3 rounded border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
               <div className='space-y-1'>
-                <p className='text-xs uppercase tracking-[0.4em] text-base-content/50'>
+                <p className='text-xs uppercase  text-base-content/50'>
                   Sign out
                 </p>
                 <p className='text-sm text-base-content/60'>
@@ -285,7 +281,7 @@ export default function AccountPage() {
             </div>
             <div className='flex flex-col gap-3 rounded border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
               <div className='space-y-1'>
-                <p className='text-xs uppercase tracking-[0.4em] text-base-content/50'>
+                <p className='text-xs uppercase  text-base-content/50'>
                   Two-factor authentication
                 </p>
                 <p className='text-sm text-base-content/60'>
@@ -303,7 +299,7 @@ export default function AccountPage() {
             </div>
             <div className='flex flex-col gap-3 rounded border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
               <div className='space-y-1'>
-                <p className='text-xs uppercase tracking-[0.4em] text-base-content/50'>
+                <p className='text-xs uppercase  text-base-content/50'>
                   Password
                 </p>
                 <p className='text-sm text-base-content/60'>
@@ -337,7 +333,7 @@ export default function AccountPage() {
             <section className='mt-6 rounded border border-base-content/10 p-4 bg-base-300'>
               <div className='flex items-start justify-between gap-3'>
                 <div>
-                  <p className='text-xs uppercase tracking-[0.4em] text-base-content/50'>
+                  <p className='text-xs uppercase  text-base-content/50'>
                     Setup status
                   </p>
                   <p className='text-sm text-base-content/60'>
@@ -346,7 +342,7 @@ export default function AccountPage() {
                       : 'Two-factor authentication is currently off.'}
                   </p>
                 </div>
-                <span className='text-xs font-semibold uppercase tracking-[0.3em] text-base-content/50'>
+                <span className='text-xs font-semibold uppercase  text-base-content/50'>
                   {isTwoFactorEnabled ? 'Protected' : 'Off'}
                 </span>
               </div>
@@ -357,7 +353,7 @@ export default function AccountPage() {
                     <div className='grid gap-2'>
                       <label
                         htmlFor='twoFactorPassword'
-                        className='text-xs uppercase tracking-[0.4em] text-base-content/50'
+                        className='text-xs uppercase  text-base-content/50'
                       >
                         Confirm password
                       </label>
@@ -388,7 +384,7 @@ export default function AccountPage() {
                     <div className='grid gap-2'>
                       <label
                         htmlFor='disableTwoFactorPassword'
-                        className='text-xs uppercase tracking-[0.4em] text-base-content/50'
+                        className='text-xs uppercase  text-base-content/50'
                       >
                         Confirm password
                       </label>
@@ -417,7 +413,7 @@ export default function AccountPage() {
                 )}
                 {twoFactorSetup && (
                   <div className='space-y-4 rounded border border-base-content/10 p-4'>
-                    <p className='text-xs uppercase tracking-[0.4em] text-base-content/50'>
+                    <p className='text-xs uppercase  text-base-content/50'>
                       Complete setup
                     </p>
                     <div className='flex flex-col items-center gap-3'>
@@ -430,7 +426,7 @@ export default function AccountPage() {
                           className='h-40 w-40'
                         />
                       </div>
-                      <div className='flex w-full items-center justify-between gap-2 rounded bg-base-200 px-3 py-2 text-[11px] uppercase tracking-[0.3em] text-base-content/60'>
+                      <div className='flex w-full items-center justify-between gap-2 rounded bg-base-200 px-3 py-2 text-[11px] uppercase  text-base-content/60'>
                         <span className='truncate'>
                           {twoFactorSetup.totpURI}
                         </span>
@@ -452,7 +448,7 @@ export default function AccountPage() {
                       <div className='grid gap-2'>
                         <label
                           htmlFor='twoFactorOtp'
-                          className='text-xs uppercase tracking-[0.4em] text-base-content/50'
+                          className='text-xs uppercase  text-base-content/50'
                         >
                           Authentication code
                         </label>
@@ -484,7 +480,7 @@ export default function AccountPage() {
                   </div>
                 )}
                 {pendingBackupCodes.length > 0 && (
-                  <div className='space-y-2 rounded border border-base-content/10 p-3 text-xs uppercase tracking-[0.3em] text-base-content/60'>
+                  <div className='space-y-2 rounded border border-base-content/10 p-3 text-xs uppercase  text-base-content/60'>
                     <div className='flex items-center justify-between'>
                       <span>Backup codes</span>
                       <button
@@ -537,7 +533,7 @@ export default function AccountPage() {
             </div>
             <section className='mt-6 rounded border border-base-content/10 p-4 bg-base-300'>
               <div className='space-y-2'>
-                <p className='text-xs uppercase tracking-[0.4em] text-base-content/50'>
+                <p className='text-xs uppercase  text-base-content/50'>
                   Update credentials
                 </p>
                 <h4 className='text-sm font-semibold text-base-content'>
@@ -548,7 +544,7 @@ export default function AccountPage() {
                 <div className='grid gap-2'>
                   <label
                     htmlFor='currentPassword'
-                    className='text-xs uppercase tracking-[0.4em] text-base-content/50'
+                    className='text-xs uppercase  text-base-content/50'
                   >
                     Current password
                   </label>
@@ -565,7 +561,7 @@ export default function AccountPage() {
                 <div className='grid gap-2'>
                   <label
                     htmlFor='newPassword'
-                    className='text-xs uppercase tracking-[0.4em] text-base-content/50'
+                    className='text-xs uppercase  text-base-content/50'
                   >
                     New password
                   </label>
@@ -583,7 +579,7 @@ export default function AccountPage() {
                 <div className='grid gap-2'>
                   <label
                     htmlFor='confirmPassword'
-                    className='text-xs uppercase tracking-[0.4em] text-base-content/50'
+                    className='text-xs uppercase  text-base-content/50'
                   >
                     Confirm new password
                   </label>
@@ -599,12 +595,12 @@ export default function AccountPage() {
                   />
                 </div>
                 {passwordChangeMessage && (
-                  <p className='text-sm font-semibold uppercase tracking-[0.3em] text-success'>
+                  <p className='text-sm font-semibold uppercase  text-success'>
                     {passwordChangeMessage}
                   </p>
                 )}
                 {passwordChangeError && (
-                  <p className='text-sm font-semibold uppercase tracking-[0.3em] text-error'>
+                  <p className='text-sm font-semibold uppercase  text-error'>
                     {passwordChangeError}
                   </p>
                 )}

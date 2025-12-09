@@ -57,7 +57,7 @@ export function DashboardStats({
           key={stat.title}
           className='stat flex-1 min-w-0 border border-base-content/10 bg-base-100 shadow-sm'
         >
-          <div className='stat-title text-xs uppercase tracking-[0.4em] text-base-content/50'>
+          <div className='stat-title text-xs uppercase  text-base-content/50'>
             {stat.title}
           </div>
           <div

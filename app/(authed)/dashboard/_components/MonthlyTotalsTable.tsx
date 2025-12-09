@@ -1,6 +1,6 @@
 'use client';
 
-import { MonthlyIncomeSummary, formatCurrency } from '@/lib/income';
+import { formatCurrency, type MonthlyIncomeSummary } from '@/lib/income';
 
 type MonthlyTotalsTableProps = {
   monthlyTotals: MonthlyIncomeSummary[];
@@ -14,7 +14,7 @@ export function MonthlyTotalsTable({ monthlyTotals }: MonthlyTotalsTableProps) {
           <h2 className='text-lg font-semibold text-base-content'>
             Monthly totals
           </h2>
-          <p className='text-xs uppercase tracking-[0.4em] text-base-content/60'>
+          <p className='text-xs uppercase  text-base-content/60'>
             Last 6 months
           </p>
         </div>
@@ -23,10 +23,10 @@ export function MonthlyTotalsTable({ monthlyTotals }: MonthlyTotalsTableProps) {
         <table className='table w-full table-zebra'>
           <thead>
             <tr>
-              <th className='text-left text-xs uppercase tracking-[0.4em] text-base-content/50'>
+              <th className='text-left text-xs uppercase  text-base-content/50'>
                 Month
               </th>
-              <th className='text-left text-xs uppercase tracking-[0.4em] text-base-content/50'>
+              <th className='text-left text-xs uppercase  text-base-content/50'>
                 Total
               </th>
             </tr>
