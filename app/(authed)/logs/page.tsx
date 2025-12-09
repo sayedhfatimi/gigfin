@@ -19,12 +19,9 @@ import {
   type IncomeEntry,
   type MonthOption,
 } from '@/lib/income';
-import {
-  useAddIncome,
-  useDeleteIncome,
-  useIncomeLogs,
-  useUpdateIncome,
-} from '@/lib/queries/income';
+import { useDeleteIncome, useIncomeLogs } from '@/lib/queries/income';
+
+import IncomeEntryModal from './_components/IncomeEntryModal';
 
 const columnHelper = createColumnHelper<DailyIncomeSummary>();
 
@@ -84,16 +81,6 @@ const columns = [
   }),
 ];
 
-const incomeSources = [
-  'Uber Eats',
-  'Deliveroo',
-  'Just Eat',
-  'Amazon Flex',
-  'Lyft',
-  'DoorDash',
-  'Other',
-];
-
 const buildEntryMonthOptions = (entries: IncomeEntry[]): MonthOption[] => {
   const map = new Map<string, MonthOption>();
   entries.forEach((entry) => {
@@ -120,15 +107,8 @@ const buildEntryMonthOptions = (entries: IncomeEntry[]): MonthOption[] => {
   });
 };
 
-const getDefaultFormState = () => ({
-  date: new Date().toISOString().split('T')[0],
-  platform: incomeSources[0],
-  amount: '',
-});
-
 const GRID_TEMPLATE_CLASS =
   'grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-center';
-
 export default function LogsPage() {
   const { data: incomes = [], isLoading } = useIncomeLogs();
 
@@ -207,50 +187,28 @@ export default function LogsPage() {
     ? `No income was logged during ${selectedMonthLabel}. Add an entry to seed this month or pick another timeframe.`
     : 'No logs yet. Add your first income entry to begin tracking.';
 
-  const dateInputId = 'gigfin-income-date';
-  const platformSelectId = 'gigfin-income-platform';
-  const amountInputId = 'gigfin-income-amount';
   const hasEntriesForSelectedMonth = dailySummaries.length > 0;
-
-  const addIncomeMutation = useAddIncome();
-  const updateIncomeMutation = useUpdateIncome();
   const deleteIncomeMutation = useDeleteIncome();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<IncomeEntry | null>(null);
   const [entryToDelete, setEntryToDelete] = useState<IncomeEntry | null>(null);
-  const [formState, setFormState] = useState(() => getDefaultFormState());
-  const [formError, setFormError] = useState('');
-
-  const resetForm = () => {
-    setFormState(getDefaultFormState());
-    setFormError('');
-    setEditingEntry(null);
-  };
 
   const openAddModal = () => {
-    resetForm();
+    setEditingEntry(null);
     setModalOpen(true);
   };
 
   const openEditModal = (entry: IncomeEntry) => {
     setEditingEntry(entry);
-    setFormState({
-      date: entry.date,
-      platform: entry.platform,
-      amount: entry.amount.toString(),
-    });
-    setFormError('');
     setModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setModalOpen(false);
-    resetForm();
+    setEditingEntry(null);
   };
 
-  const isSubmitting =
-    addIncomeMutation.isPending || updateIncomeMutation.isPending;
   const isDeleting = deleteIncomeMutation.isPending;
 
   const handleResetTableControls = () => {
@@ -281,43 +239,6 @@ export default function LogsPage() {
     getSortedRowModel: getSortedRowModel(),
     getRowCanExpand: () => true,
   });
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const amount = Number.parseFloat(formState.amount);
-    if (Number.isNaN(amount) || amount <= 0) {
-      setFormError('Enter a valid amount greater than zero.');
-      return;
-    }
-    setFormError('');
-
-    const payload = {
-      date: formState.date,
-      platform: formState.platform,
-      amount,
-    };
-
-    if (editingEntry) {
-      updateIncomeMutation.mutate(
-        {
-          ...payload,
-          id: editingEntry.id,
-        },
-        {
-          onSuccess: () => {
-            handleCloseModal();
-          },
-        },
-      );
-      return;
-    }
-
-    addIncomeMutation.mutate(payload, {
-      onSuccess: () => {
-        handleCloseModal();
-      },
-    });
-  };
 
   const handleDeleteEntry = (entry: IncomeEntry) => {
     if (isDeleting) {
@@ -472,7 +393,7 @@ export default function LogsPage() {
             <button
               type='button'
               className='btn btn-sm btn-outline'
-              onClick={() => setModalOpen(true)}
+              onClick={openAddModal}
             >
               Create entry
             </button>
@@ -555,7 +476,6 @@ export default function LogsPage() {
                                     type='button'
                                     className='btn btn-xs btn-outline btn-ghost'
                                     onClick={() => openEditModal(entry)}
-                                    disabled={isSubmitting}
                                   >
                                     Edit
                                   </button>
@@ -586,102 +506,11 @@ export default function LogsPage() {
         )}
       </section>
 
-      {modalOpen && (
-        <div className='modal modal-open'>
-          <div className='modal-box'>
-            <h3 className='text-lg font-semibold text-base-content'>
-              {editingEntry ? 'Update income entry' : 'Log new income'}
-            </h3>
-            <form className='mt-4 space-y-4' onSubmit={handleSubmit}>
-              <div className='grid gap-2'>
-                <label
-                  htmlFor={dateInputId}
-                  className='text-xs font-semibold uppercase tracking-[0.3em] text-base-content/50'
-                >
-                  Date
-                </label>
-                <input
-                  type='date'
-                  required
-                  className='input input-bordered w-full'
-                  id={dateInputId}
-                  value={formState.date}
-                  onChange={(event) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      date: event.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className='grid gap-2'>
-                <label
-                  htmlFor={platformSelectId}
-                  className='text-xs font-semibold uppercase tracking-[0.3em] text-base-content/50'
-                >
-                  Income source
-                </label>
-                <select
-                  className='select select-bordered w-full'
-                  id={platformSelectId}
-                  value={formState.platform}
-                  onChange={(event) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      platform: event.target.value,
-                    }))
-                  }
-                >
-                  {incomeSources.map((source) => (
-                    <option key={source}>{source}</option>
-                  ))}
-                </select>
-              </div>
-              <div className='grid gap-2'>
-                <label
-                  htmlFor={amountInputId}
-                  className='text-xs font-semibold uppercase tracking-[0.3em] text-base-content/50'
-                >
-                  Amount earned
-                </label>
-                <input
-                  type='number'
-                  step='0.01'
-                  min='0'
-                  required
-                  placeholder='e.g. 45.50'
-                  className='input input-bordered w-full'
-                  id={amountInputId}
-                  value={formState.amount}
-                  onChange={(event) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      amount: event.target.value,
-                    }))
-                  }
-                />
-              </div>
-              {formError && <p className='text-sm text-error'>{formError}</p>}
-              <div className='modal-action'>
-                <button
-                  type='button'
-                  className='btn btn-ghost'
-                  onClick={handleCloseModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type='submit'
-                  className={`btn btn-primary ${isSubmitting ? 'loading' : ''}`}
-                  disabled={isSubmitting}
-                >
-                  {editingEntry ? 'Save changes' : 'Add income'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <IncomeEntryModal
+        isOpen={modalOpen}
+        editingEntry={editingEntry}
+        onClose={handleCloseModal}
+      />
       {entryToDelete && (
         <div className='modal modal-open'>
           <div className='modal-box'>
