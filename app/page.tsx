@@ -3,11 +3,12 @@
 import { useMutation } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import type { ChangeEvent, FormEvent } from 'react';
-import { useState } from 'react';
+import type { ChangeEvent, ClipboardEvent, FormEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import ReactQueryProvider from '@/components/providers/ReactQueryProvider';
-import { authClient, signIn, signUp } from '@/lib/auth-client';
+import { authClient, signIn, signUp, useSession } from '@/lib/auth-client';
+import { getSessionUser } from '@/lib/session';
 
 type LoginForm = {
   email: string;
@@ -34,10 +35,41 @@ const signupInitial: SignupForm = {
 };
 
 const featureHighlights = [
-  'Log payouts, tips, and invoices per platform with the quick add form',
-  'Filter history by month and platform while aggregated summaries update instantly',
-  'Dashboard charts surface totals, daily averages, and platform mix for the year',
+  {
+    icon: '🧾',
+    title: 'Ledger that knows your platforms',
+    description:
+      'Log Uber Eats, Deliveroo, Just Eat, Amazon Flex, and other gigs without juggling spreadsheets.',
+  },
+  {
+    icon: '📊',
+    title: 'Instant summaries',
+    description:
+      'Filter by month or platform and let charts aggregate tips, bonuses, and invoices in seconds.',
+  },
+  {
+    icon: '🔒',
+    title: 'Secure sessions everywhere',
+    description:
+      'Two-factor verification, secure cookies, and session locking keep your records private.',
+  },
 ];
+
+const passwordRequirements = [
+  'At least 8 characters long',
+  'Include at least one number or symbol',
+  'Avoid passwords you reuse elsewhere',
+];
+
+const twoFactorGuidance =
+  'Codes refresh every 30 seconds—paste or type the 6-digit value from your authenticator app.';
+const githubUrl = 'https://github.com/sayedhfatimi/gigfin';
+const githubIssuesUrl = `${githubUrl}/issues`;
+const loginErrorId = 'login-error';
+const signupErrorId = 'signup-error';
+const signupSuccessId = 'signup-success';
+const twoFactorErrorId = 'twofactor-error';
+const twoFactorGuidanceId = 'twofactor-guidance';
 
 const describeError = (value: unknown) => {
   if (!value) {
@@ -70,11 +102,62 @@ function HomeContent() {
   const [signupForm, setSignupForm] = useState<SignupForm>(signupInitial);
   const [signupValidationError, setSignupValidationError] = useState('');
   const [signupSuccessMessage, setSignupSuccessMessage] = useState('');
-  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
+  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('signup');
   const [twoFactorPrompt, setTwoFactorPrompt] = useState(false);
   const [twoFactorCode, setTwoFactorCode] = useState('');
   const [trustDevice, setTrustDevice] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showSignupConfirm, setShowSignupConfirm] = useState(false);
   const router = useRouter();
+  const { data: sessionData, isPending: sessionPending } = useSession();
+  const sessionUser = getSessionUser(sessionData);
+  const twoFactorInputRef = useRef<HTMLInputElement>(null);
+  const signupRedirectTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const lastTab = window.localStorage.getItem('gigfin-returning-tab');
+    if (lastTab === 'login') {
+      setActiveTab('login');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!sessionPending && sessionUser) {
+      router.replace('/dashboard');
+    }
+  }, [router, sessionPending, sessionUser]);
+
+  useEffect(() => {
+    if (twoFactorPrompt) {
+      twoFactorInputRef.current?.focus();
+    }
+  }, [twoFactorPrompt]);
+
+  useEffect(() => {
+    return () => {
+      if (signupRedirectTimeout.current) {
+        clearTimeout(signupRedirectTimeout.current);
+      }
+    };
+  }, []);
+
+  const rememberReturningUser = () => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    window.localStorage.setItem('gigfin-returning-tab', 'login');
+  };
+
+  const clearSignupRedirect = () => {
+    if (signupRedirectTimeout.current) {
+      clearTimeout(signupRedirectTimeout.current);
+      signupRedirectTimeout.current = null;
+    }
+  };
 
   const verifyTwoFactorMutation = useMutation({
     mutationFn: async (payload: { code: string; trustDevice: boolean }) => {
@@ -88,20 +171,10 @@ function HomeContent() {
       return response.data;
     },
     onSuccess: () => {
+      rememberReturningUser();
       router.push('/dashboard');
     },
   });
-
-  const clearTwoFactorInputs = () => {
-    setTwoFactorCode('');
-    setTrustDevice(false);
-    verifyTwoFactorMutation.reset();
-  };
-
-  const resetTwoFactorPrompt = () => {
-    setTwoFactorPrompt(false);
-    clearTwoFactorInputs();
-  };
 
   const loginMutation = useMutation({
     mutationFn: async (form: LoginForm) => {
@@ -117,16 +190,17 @@ function HomeContent() {
     onSuccess: (data) => {
       const loginData = data as Record<string, unknown> | undefined;
       if (loginData?.twoFactorRedirect) {
-        clearTwoFactorInputs();
         setTwoFactorPrompt(true);
+        setTwoFactorCode('');
         return;
       }
-      resetTwoFactorPrompt();
+      rememberReturningUser();
       setLoginForm(loginInitial);
+      setTwoFactorPrompt(false);
       router.push('/dashboard');
     },
     onError: () => {
-      resetTwoFactorPrompt();
+      setTwoFactorPrompt(false);
     },
   });
 
@@ -147,25 +221,34 @@ function HomeContent() {
       const user = signupData?.user as
         | { name?: string; email?: string }
         | undefined;
-      const displayName = user?.name ?? user?.email ?? 'new user';
+      const displayName = user?.name ?? user?.email ?? 'friend';
       setSignupSuccessMessage(
-        `Welcome aboard, ${displayName}! Please verify your email if prompted.`,
+        `Welcome aboard, ${displayName}! Redirecting you to the dashboard.`,
       );
       setSignupValidationError('');
       setSignupForm(signupInitial);
+      rememberReturningUser();
+      clearSignupRedirect();
+      signupRedirectTimeout.current = setTimeout(() => {
+        router.push('/dashboard');
+      }, 600);
     },
     onError: () => {
       setSignupSuccessMessage('');
+      clearSignupRedirect();
     },
   });
 
   const handleTabChange = (tab: 'login' | 'signup') => {
     setActiveTab(tab);
-    resetTwoFactorPrompt();
+    setTwoFactorPrompt(false);
+    setTwoFactorCode('');
+    setTrustDevice(false);
     loginMutation.reset();
     signupMutation.reset();
     setSignupValidationError('');
     setSignupSuccessMessage('');
+    clearSignupRedirect();
   };
 
   const handleLoginChange =
@@ -180,7 +263,7 @@ function HomeContent() {
 
   const handleLogin = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    resetTwoFactorPrompt();
+    setTwoFactorPrompt(false);
     loginMutation.reset();
     loginMutation.mutate(loginForm);
   };
@@ -194,6 +277,7 @@ function HomeContent() {
     setSignupValidationError('');
     setSignupSuccessMessage('');
     signupMutation.reset();
+    clearSignupRedirect();
     signupMutation.mutate(signupForm);
   };
 
@@ -207,7 +291,20 @@ function HomeContent() {
 
   const handleTwoFactorCancel = () => {
     loginMutation.reset();
-    resetTwoFactorPrompt();
+    setTwoFactorPrompt(false);
+    setTwoFactorCode('');
+    setTrustDevice(false);
+    verifyTwoFactorMutation.reset();
+  };
+
+  const handleTwoFactorPaste = (event: ClipboardEvent<HTMLInputElement>) => {
+    const pasted = event.clipboardData
+      .getData('text')
+      .replace(/\D/g, '')
+      .slice(0, 6);
+    if (pasted) {
+      setTwoFactorCode(pasted);
+    }
   };
 
   const loginErrorMessage = loginMutation.error
@@ -222,17 +319,29 @@ function HomeContent() {
   const isLoginPending = loginMutation.isPending;
   const isVerifyPending = verifyTwoFactorMutation.isPending;
   const isSignupPending = signupMutation.isPending;
+  const loginDescribedBy = loginErrorMessage ? loginErrorId : undefined;
+  const signupDescribedBy = signupErrorMessage ? signupErrorId : undefined;
+  const twoFactorDescribedBy = [
+    twoFactorErrorMessage ? twoFactorErrorId : undefined,
+    twoFactorGuidanceId,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const loginPaneClass = `space-y-4 pt-4 transition-opacity duration-200 ${
+    twoFactorPrompt ? 'opacity-40 pointer-events-none' : ''
+  }`;
 
   return (
     <main className='min-h-screen bg-base-200'>
-      <div className='mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-16 lg:px-8'>
-        <div className='relative overflow-hidden  border border-base-content/10 bg-white/70 p-8 shadow-xl shadow-primary/10 backdrop-blur dark:bg-base-300/80 dark:border-base-300/50 dark:shadow-black/20'>
+      <div className='mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-12 sm:py-16 lg:px-8'>
+        <div className='relative overflow-hidden border border-base-content/10 bg-white/70 p-6 shadow-xl shadow-primary/10 backdrop-blur dark:bg-base-300/80 dark:border-base-300/50 dark:shadow-black/20 sm:p-8'>
           <div
             aria-hidden='true'
             className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-accent/10 opacity-30 dark:opacity-40'
           />
           <div className='relative z-10 grid gap-10 lg:grid-cols-[1.2fr_0.9fr]'>
-            <section className='space-y-6'>
+            <section className='order-2 space-y-6 lg:order-1'>
               <div className='flex flex-col gap-3'>
                 <div className='flex items-center gap-3'>
                   <div className='relative h-14 w-14 rounded-2xl border border-base-content/10 bg-base-100/80 p-2 shadow-sm dark:border-base-300/40 dark:bg-base-200/60'>
@@ -252,59 +361,106 @@ function HomeContent() {
                   A secure ledger for every gig payout
                 </h1>
                 <p className='text-lg text-base-content/80'>
-                  Log earnings across delivery and rideshare platforms, then let
-                  the dashboard break totals, averages, and platform mixes back
-                  down—sign in or create an account right from this hero screen.
+                  Uber Eats, Deliveroo, Just Eat, Amazon Flex, and every other
+                  gig platform—track tips, bonuses, and invoices without the
+                  spreadsheet clutter.
+                </p>
+                <p className='text-sm text-base-content/70'>
+                  Free and open source. Secure by default.
                 </p>
               </div>
               <ul className='grid gap-3'>
                 {featureHighlights.map((highlight) => (
                   <li
-                    key={highlight}
+                    key={highlight.title}
                     className='rounded-2xl border border-base-content/10 bg-base-100/70 px-4 py-3 text-sm text-base-content/80 shadow-sm dark:border-base-300/50 dark:bg-base-200/60'
                   >
-                    {highlight}
+                    <div className='flex items-start gap-3'>
+                      <span className='text-xl leading-none'>
+                        {highlight.icon}
+                      </span>
+                      <div>
+                        <p className='text-sm font-semibold text-base-content'>
+                          {highlight.title}
+                        </p>
+                        <p className='text-sm text-base-content/70'>
+                          {highlight.description}
+                        </p>
+                      </div>
+                    </div>
                   </li>
                 ))}
               </ul>
-              <div className='grid gap-4 sm:grid-cols-2'>
-                <div className='rounded-2xl bg-primary/10 px-4 py-3 text-sm font-semibold text-primary'>
-                  Two-factor verification keeps sessions locked down
-                </div>
-                <div className='rounded-2xl bg-base-100 px-4 py-3 text-sm font-semibold text-base-content/70'>
-                  Filters for months and platforms make it easy to compare runs
-                </div>
+              <div className='rounded-2xl bg-base-100/80 px-4 py-3 text-sm font-semibold text-base-content/80 shadow-sm dark:bg-base-200/60 dark:border-base-300/40'>
+                Two-factor verification + secure sessions by default.
+              </div>
+              <div className='flex flex-wrap gap-2 text-xs text-base-content/60'>
+                <a
+                  href={githubUrl}
+                  target='_blank'
+                  rel='noreferrer'
+                  className='font-semibold text-primary transition hover:text-primary-focus'
+                >
+                  View source on GitHub
+                </a>
+                <span className='text-base-content/40'>·</span>
+                <a
+                  href={githubIssuesUrl}
+                  target='_blank'
+                  rel='noreferrer'
+                  className='text-base-content/70 transition hover:text-base-content'
+                >
+                  Browse issues
+                </a>
               </div>
             </section>
-            <section className='space-y-4  border border-base-content/10 bg-base-100/70 p-6 shadow-sm shadow-base-content/5 backdrop-blur dark:border-base-300/60 dark:bg-base-200/60'>
+            <section className='order-1 space-y-4 rounded-2xl border border-base-content/10 bg-base-100/70 p-6 shadow-sm shadow-base-content/5 backdrop-blur dark:border-base-300/60 dark:bg-base-200/60 lg:order-2'>
+              <p className='text-xs text-base-content/70'>
+                Sign in or create an account to start logging earnings without
+                spreadsheets.
+              </p>
               <div className='tabs tabs-box w-full gap-2'>
                 <button
                   type='button'
-                  className={`tab tab-lg flex-1 text-sm font-semibold ${
+                  className={`tab tab-lg flex-1 text-sm font-semibold transition ${
                     activeTab === 'login' ? 'tab-active' : 'bg-transparent'
                   }`}
                   onClick={() => handleTabChange('login')}
                 >
-                  Login
+                  <div className='flex flex-col gap-1 text-center'>
+                    <span className='text-base-content'>Login</span>
+                    <span className='hidden md:block text-[9px] font-normal uppercase text-base-content/70 leading-tight'>
+                      I already have an account
+                    </span>
+                  </div>
                 </button>
                 <button
                   type='button'
-                  className={`tab tab-lg flex-1 text-sm font-semibold ${
+                  className={`tab tab-lg flex-1 text-sm font-semibold transition ${
                     activeTab === 'signup' ? 'tab-active' : 'bg-transparent'
                   }`}
                   onClick={() => handleTabChange('signup')}
                 >
-                  Sign up
+                  <div className='flex flex-col gap-1 text-center'>
+                    <span className='text-base-content'>Sign up</span>
+                    <span className='hidden md:block text-[9px] font-normal uppercase text-base-content/70 leading-tight'>
+                      I’m new to GigFin
+                    </span>
+                  </div>
                 </button>
               </div>
               <div
-                className={activeTab === 'login' ? 'space-y-4 pt-4' : 'hidden'}
+                className={activeTab === 'login' ? loginPaneClass : 'hidden'}
               >
                 <div className='flex items-center justify-between text-xs text-base-content/60'>
                   <span>Existing account</span>
                   <span className='text-primary'>Credential login</span>
                 </div>
-                <form onSubmit={handleLogin} className='grid gap-4'>
+                <form
+                  onSubmit={handleLogin}
+                  className='grid gap-4'
+                  aria-busy={isLoginPending}
+                >
                   <div className='form-control w-full'>
                     <label htmlFor='login-email' className='label'>
                       <span className='label-text text-sm'>Email</span>
@@ -317,6 +473,7 @@ function HomeContent() {
                       onChange={handleLoginChange('email')}
                       placeholder='you@example.com'
                       aria-invalid={Boolean(loginErrorMessage)}
+                      aria-describedby={loginDescribedBy}
                       className={`input input-bordered input-sm w-full bg-transparent ${
                         loginErrorMessage ? 'validator' : ''
                       }`}
@@ -326,21 +483,43 @@ function HomeContent() {
                     <label htmlFor='login-password' className='label'>
                       <span className='label-text text-sm'>Password</span>
                     </label>
-                    <input
-                      id='login-password'
-                      type='password'
-                      required
-                      value={loginForm.password}
-                      onChange={handleLoginChange('password')}
-                      placeholder='••••••••'
-                      aria-invalid={Boolean(loginErrorMessage)}
-                      className={`input input-bordered input-sm w-full bg-transparent ${
-                        loginErrorMessage ? 'validator' : ''
-                      }`}
-                    />
+                    <div className='relative'>
+                      <input
+                        id='login-password'
+                        type={showLoginPassword ? 'text' : 'password'}
+                        required
+                        value={loginForm.password}
+                        onChange={handleLoginChange('password')}
+                        placeholder='••••••••'
+                        aria-invalid={Boolean(loginErrorMessage)}
+                        aria-describedby={loginDescribedBy}
+                        className={`input input-bordered input-sm w-full bg-transparent ${
+                          loginErrorMessage ? 'validator' : ''
+                        }`}
+                      />
+                      <button
+                        type='button'
+                        aria-pressed={showLoginPassword}
+                        onClick={() => setShowLoginPassword((prev) => !prev)}
+                        className={`absolute right-0 inset-y-0 size-9 flex items-center justify-center btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
+                          showLoginPassword ? 'swap-active' : ''
+                        }`}
+                      >
+                        <span className='swap-on absolute inset-0 flex items-center justify-center text-base-content'>
+                          <i
+                            className='fa-solid fa-eye-slash'
+                            aria-hidden='true'
+                          />
+                        </span>
+                        <span className='swap-off absolute inset-0 flex items-center justify-center text-base-content'>
+                          <i className='fa-solid fa-eye' aria-hidden='true' />
+                        </span>
+                      </button>
+                    </div>
                   </div>
                   {loginErrorMessage && (
                     <output
+                      id={loginErrorId}
                       aria-live='polite'
                       className='validator-hint text-sm text-error'
                     >
@@ -349,7 +528,7 @@ function HomeContent() {
                   )}
                   <button
                     type='submit'
-                    className='btn btn-primary w-full'
+                    className='btn btn-primary w-full py-3 text-sm font-semibold transition hover:-translate-y-0.5'
                     disabled={isLoginPending}
                   >
                     {isLoginPending ? 'Signing in…' : 'Sign in'}
@@ -358,26 +537,21 @@ function HomeContent() {
                 {twoFactorPrompt && (
                   <div className='space-y-3 rounded-2xl border border-base-content/20 bg-base-100/70 p-4 text-sm text-base-content/80'>
                     <div className='flex items-center justify-between gap-4'>
-                      <div>
-                        <p className='text-xs uppercase tracking-[0.4em] text-warning'>
-                          Two-factor verification
-                        </p>
-                        <p className='text-sm text-base-content/70'>
-                          Enter the code from your authenticator app to continue
-                          signing in.
-                        </p>
-                      </div>
-                      <button
-                        type='button'
-                        className='text-xs font-semibold text-base-content/70 underline-offset-4 hover:underline'
-                        onClick={handleTwoFactorCancel}
-                      >
-                        Use a different account
-                      </button>
+                      <p className='text-xs uppercase tracking-[0.4em] text-warning'>
+                        Step 2 of 2
+                      </p>
+                      <span className='text-xs font-semibold text-base-content/60'>
+                        Two-factor verification
+                      </span>
                     </div>
+                    <p className='text-sm text-base-content/70'>
+                      Enter the 6-digit code from your authenticator app to
+                      finish signing in.
+                    </p>
                     <form
                       className='grid gap-3'
                       onSubmit={handleVerifyTwoFactor}
+                      aria-busy={isVerifyPending}
                     >
                       <div className='form-control w-full'>
                         <label htmlFor='twofactor-code' className='label'>
@@ -391,19 +565,23 @@ function HomeContent() {
                           inputMode='numeric'
                           pattern='[0-9]*'
                           minLength={6}
-                          maxLength={10}
+                          maxLength={6}
                           autoComplete='one-time-code'
                           required
                           value={twoFactorCode}
                           onChange={(event) =>
                             setTwoFactorCode(event.target.value)
                           }
+                          onPaste={handleTwoFactorPaste}
+                          aria-invalid={Boolean(twoFactorErrorMessage)}
+                          aria-describedby={twoFactorDescribedBy}
+                          ref={twoFactorInputRef}
                           className='input input-bordered input-sm w-full bg-transparent'
                         />
                       </div>
                       <label
                         htmlFor='twofactor-trust'
-                        className='flex items-center gap-2 text-xs text-base-content/60'
+                        className='flex items-center gap-2 text-sm text-base-content/60'
                       >
                         <input
                           id='twofactor-trust'
@@ -412,26 +590,46 @@ function HomeContent() {
                           onChange={(event) =>
                             setTrustDevice(event.target.checked)
                           }
-                          className='checkbox checkbox-xs'
+                          className='checkbox'
                         />
                         Trust this device for 30 days
                       </label>
                       {twoFactorErrorMessage && (
-                        <output
-                          aria-live='polite'
-                          className='validator-hint text-sm text-error'
-                        >
-                          {twoFactorErrorMessage}
-                        </output>
+                        <>
+                          <output
+                            id={twoFactorErrorId}
+                            aria-live='assertive'
+                            className='validator-hint text-sm text-error'
+                          >
+                            {twoFactorErrorMessage}
+                          </output>
+                          <p className='text-xs text-base-content/70'>
+                            Double-check the code, sync your authenticator
+                            clock, or request a new one if it keeps failing.
+                          </p>
+                        </>
                       )}
+                      <p
+                        id={twoFactorGuidanceId}
+                        className='text-xs text-base-content/60'
+                      >
+                        {twoFactorGuidance}
+                      </p>
                       <button
                         type='submit'
-                        className='btn btn-secondary w-full text-sm font-semibold'
+                        className='btn btn-secondary w-full py-3 text-sm font-semibold transition hover:-translate-y-0.5'
                         disabled={isVerifyPending}
                       >
                         {isVerifyPending ? 'Verifying…' : 'Verify code'}
                       </button>
                     </form>
+                    <button
+                      type='button'
+                      className='text-xs font-semibold text-base-content/70 underline-offset-4 hover:underline'
+                      onClick={handleTwoFactorCancel}
+                    >
+                      Use a different account
+                    </button>
                   </div>
                 )}
               </div>
@@ -442,7 +640,11 @@ function HomeContent() {
                   <span>New to GigFin?</span>
                   <span className='text-success'>Password + email</span>
                 </div>
-                <form onSubmit={handleSignup} className='grid gap-4'>
+                <form
+                  onSubmit={handleSignup}
+                  className='grid gap-4'
+                  aria-busy={isSignupPending}
+                >
                   <div className='form-control w-full'>
                     <label htmlFor='signup-name' className='label'>
                       <span className='label-text text-sm'>Full name</span>
@@ -455,6 +657,7 @@ function HomeContent() {
                       value={signupForm.name}
                       onChange={handleSignupChange('name')}
                       aria-invalid={Boolean(signupErrorMessage)}
+                      aria-describedby={signupDescribedBy}
                       className={`input input-bordered input-sm w-full bg-transparent ${
                         signupErrorMessage ? 'validator' : ''
                       }`}
@@ -472,6 +675,7 @@ function HomeContent() {
                       value={signupForm.email}
                       onChange={handleSignupChange('email')}
                       aria-invalid={Boolean(signupErrorMessage)}
+                      aria-describedby={signupDescribedBy}
                       className={`input input-bordered input-sm w-full bg-transparent ${
                         signupErrorMessage ? 'validator' : ''
                       }`}
@@ -481,18 +685,39 @@ function HomeContent() {
                     <label htmlFor='signup-password' className='label'>
                       <span className='label-text text-sm'>Password</span>
                     </label>
-                    <input
-                      id='signup-password'
-                      type='password'
-                      required
-                      placeholder='Create a password'
-                      value={signupForm.password}
-                      onChange={handleSignupChange('password')}
-                      aria-invalid={Boolean(signupErrorMessage)}
-                      className={`input input-bordered input-sm w-full bg-transparent ${
-                        signupErrorMessage ? 'validator' : ''
-                      }`}
-                    />
+                    <div className='relative'>
+                      <input
+                        id='signup-password'
+                        type={showSignupPassword ? 'text' : 'password'}
+                        required
+                        placeholder='Create a password'
+                        value={signupForm.password}
+                        onChange={handleSignupChange('password')}
+                        aria-invalid={Boolean(signupErrorMessage)}
+                        aria-describedby={signupDescribedBy}
+                        className={`input input-bordered input-sm w-full bg-transparent ${
+                          signupErrorMessage ? 'validator' : ''
+                        }`}
+                      />
+                      <button
+                        type='button'
+                        aria-pressed={showSignupPassword}
+                        onClick={() => setShowSignupPassword((prev) => !prev)}
+                        className={`absolute right-0 inset-y-0 size-9 flex items-center justify-center btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
+                          showSignupPassword ? 'swap-active' : ''
+                        }`}
+                      >
+                        <span className='swap-on absolute inset-0 flex items-center justify-center text-base-content'>
+                          <i
+                            className='fa-solid fa-eye-slash'
+                            aria-hidden='true'
+                          />
+                        </span>
+                        <span className='swap-off absolute inset-0 flex items-center justify-center text-base-content'>
+                          <i className='fa-solid fa-eye' aria-hidden='true' />
+                        </span>
+                      </button>
+                    </div>
                   </div>
                   <div className='form-control w-full'>
                     <label htmlFor='signup-confirm' className='label'>
@@ -500,21 +725,51 @@ function HomeContent() {
                         Confirm password
                       </span>
                     </label>
-                    <input
-                      id='signup-confirm'
-                      type='password'
-                      required
-                      placeholder='Repeat password'
-                      value={signupForm.confirmPassword}
-                      onChange={handleSignupChange('confirmPassword')}
-                      aria-invalid={Boolean(signupErrorMessage)}
-                      className={`input input-bordered input-sm w-full bg-transparent ${
-                        signupErrorMessage ? 'validator' : ''
-                      }`}
-                    />
+                    <div className='relative'>
+                      <input
+                        id='signup-confirm'
+                        type={showSignupConfirm ? 'text' : 'password'}
+                        required
+                        placeholder='Repeat password'
+                        value={signupForm.confirmPassword}
+                        onChange={handleSignupChange('confirmPassword')}
+                        aria-invalid={Boolean(signupErrorMessage)}
+                        aria-describedby={signupDescribedBy}
+                        className={`input input-bordered input-sm w-full bg-transparent ${
+                          signupErrorMessage ? 'validator' : ''
+                        }`}
+                      />
+                      <button
+                        type='button'
+                        aria-pressed={showSignupConfirm}
+                        onClick={() => setShowSignupConfirm((prev) => !prev)}
+                        className={`absolute right-0 inset-y-0 size-9 flex items-center justify-center btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
+                          showSignupConfirm ? 'swap-active' : ''
+                        }`}
+                      >
+                        <span className='swap-on absolute inset-0 flex items-center justify-center text-base-content'>
+                          <i
+                            className='fa-solid fa-eye-slash'
+                            aria-hidden='true'
+                          />
+                        </span>
+                        <span className='swap-off absolute inset-0 flex items-center justify-center text-base-content'>
+                          <i className='fa-solid fa-eye' aria-hidden='true' />
+                        </span>
+                      </button>
+                    </div>
                   </div>
+                  <ul className='text-xs text-base-content/70'>
+                    {passwordRequirements.map((requirement) => (
+                      <li key={requirement} className='flex items-center gap-2'>
+                        <span className='text-primary'>•</span>
+                        <span>{requirement}</span>
+                      </li>
+                    ))}
+                  </ul>
                   {signupErrorMessage && (
                     <output
+                      id={signupErrorId}
                       aria-live='polite'
                       className='validator-hint text-sm text-error'
                     >
@@ -522,17 +777,25 @@ function HomeContent() {
                     </output>
                   )}
                   {signupSuccessMessage && (
-                    <output aria-live='polite' className='text-sm text-success'>
+                    <output
+                      id={signupSuccessId}
+                      aria-live='polite'
+                      className='text-sm text-success'
+                    >
                       {signupSuccessMessage}
                     </output>
                   )}
                   <button
                     type='submit'
-                    className='btn btn-ghost w-full'
+                    className='btn btn-primary w-full py-3 text-sm font-semibold transition hover:-translate-y-0.5'
                     disabled={isSignupPending}
                   >
                     {isSignupPending ? 'Creating account…' : 'Create account'}
                   </button>
+                  <p className='text-xs text-base-content/60'>
+                    Free and open source. Your income data stays in your
+                    account.
+                  </p>
                 </form>
               </div>
             </section>
