@@ -217,82 +217,78 @@ const IncomeEntryModal = ({
           {editingEntry ? 'Update income entry' : 'Log new income'}
         </h3>
         <form className='mt-4 space-y-4' onSubmit={handleSubmit}>
-          <div className='grid gap-2'>
-            <label
-              htmlFor={dateInputId}
-              className='text-xs font-semibold uppercase text-base-content/50'
-            >
-              Date
-            </label>
-            <p className='text-sm text-base-content/70'>{selectedDateLabel}</p>
-            <div className='flex flex-wrap items-end gap-2'>
-              <div className='flex-1 min-w-0'>
-                <label className='input w-full'>
-                  <input
-                    type='text'
-                    id={dateInputId}
-                    aria-describedby={dateHintId}
-                    required
-                    placeholder='YYYY-MM-DD'
-                    value={formState.date}
-                    onChange={(event) =>
-                      setFormState((prev) => ({
-                        ...prev,
-                        date: event.target.value,
-                      }))
-                    }
-                  />
-                  <button
-                    type='button'
-                    className='btn btn-ghost btn-square btn-xs'
-                    onClick={() => setIsCalendarOpen((prev) => !prev)}
-                    aria-haspopup='dialog'
-                    aria-expanded={isCalendarOpen}
-                    aria-controls={calendarPopoverId}
-                    ref={calendarTriggerRef}
-                  >
-                    <span
-                      className='fa-solid fa-calendar-days text-xs text-base-content'
-                      aria-hidden='true'
-                    />
-                    <span className='sr-only'>
-                      {isCalendarOpen ? 'Close calendar' : 'Open calendar'}
-                    </span>
-                  </button>
-                </label>
-                <p id={dateHintId} className='text-xs text-base-content/60'>
-                  Format: YYYY-MM-DD (press calendar icon for a picker)
-                </p>
-                <div
-                  ref={calendarPopoverRef}
-                  id={calendarPopoverId}
-                  role='dialog'
-                  aria-label='Calendar date picker'
-                  className={`absolute right-0 z-40 w-[218px] max-w-[90vw] border border-base-content/15 bg-base-100 p-2 shadow-2xl transition-all duration-150 ${
-                    isCalendarOpen ? 'block' : 'hidden'
-                  }`}
+          <div className='flex flex-col gap-2'>
+            <div className='flex flex-row items-center justify-between'>
+              <label
+                htmlFor={dateInputId}
+                className='text-xs font-semibold uppercase text-base-content/50'
+              >
+                Date
+              </label>
+              <p className='text-sm text-base-content/70'>
+                {selectedDateLabel}
+              </p>
+            </div>
+            <div className='flex-1 min-w-0'>
+              <label className='input w-full'>
+                <input
+                  type='text'
+                  id={dateInputId}
+                  aria-describedby={dateHintId}
+                  required
+                  placeholder='YYYY-MM-DD'
+                  value={formState.date}
+                  onChange={(event) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      date: event.target.value,
+                    }))
+                  }
+                />
+                <button
+                  type='button'
+                  className='btn btn-ghost btn-square btn-xs'
+                  onClick={() => setIsCalendarOpen((prev) => !prev)}
+                  aria-haspopup='dialog'
+                  aria-expanded={isCalendarOpen}
+                  aria-controls={calendarPopoverId}
+                  ref={calendarTriggerRef}
                 >
-                  <div className='border border-base-content/10 bg-base-200 p-2'>
-                    <DayPicker
-                      mode='single'
-                      selected={selectedDay}
-                      onSelect={handleDaySelect}
-                      className='gigfin-daypicker'
-                    />
-                  </div>
+                  <span
+                    className='fa-solid fa-calendar-days text-xs text-base-content'
+                    aria-hidden='true'
+                  />
+                  <span className='sr-only'>
+                    {isCalendarOpen ? 'Close calendar' : 'Open calendar'}
+                  </span>
+                </button>
+              </label>
+              <p id={dateHintId} className='text-xs text-base-content/60 mt-1'>
+                Format: YYYY-MM-DD (press calendar icon for a picker)
+              </p>
+              <div
+                ref={calendarPopoverRef}
+                id={calendarPopoverId}
+                role='dialog'
+                aria-label='Calendar date picker'
+                className={`absolute right-3 z-40 w-[218px] max-w-[90vw] border border-base-content/15 bg-base-100 p-2 shadow-2xl transition-all duration-150 ${
+                  isCalendarOpen ? 'block' : 'hidden'
+                }`}
+              >
+                <div className='border border-base-content/10 bg-base-200 p-2'>
+                  <DayPicker
+                    mode='single'
+                    selected={selectedDay}
+                    onSelect={handleDaySelect}
+                    className='gigfin-daypicker'
+                  />
                 </div>
               </div>
             </div>
           </div>
-          <div className='grid gap-2'>
-            <label
-              htmlFor={platformSelectId}
-              className='text-xs font-semibold uppercase text-base-content/50'
-            >
-              Income source
-            </label>
+          <label className='select w-full'>
+            <span className='label'>Platform</span>
             <select
-              className='select select-bordered w-full'
               id={platformSelectId}
               value={formState.platform}
               onChange={(event) =>
@@ -306,8 +302,8 @@ const IncomeEntryModal = ({
                 <option key={source}>{source}</option>
               ))}
             </select>
-          </div>
-          <div className='grid gap-2'>
+          </label>
+          <div className='flex flex-col gap-2'>
             <label
               htmlFor={amountInputId}
               className='text-xs font-semibold uppercase text-base-content/50'
