@@ -461,29 +461,32 @@ function HomeContent() {
                   className='grid gap-4'
                   aria-busy={isLoginPending}
                 >
-                  <div className='form-control w-full'>
+                  <div className='form-control w-full flex flex-col'>
                     <label htmlFor='login-email' className='label'>
                       <span className='label-text text-sm'>Email</span>
                     </label>
-                    <input
-                      id='login-email'
-                      type='email'
-                      required
-                      value={loginForm.email}
-                      onChange={handleLoginChange('email')}
-                      placeholder='you@example.com'
-                      aria-invalid={Boolean(loginErrorMessage)}
-                      aria-describedby={loginDescribedBy}
-                      className={`input input-bordered input-sm w-full bg-transparent ${
-                        loginErrorMessage ? 'validator' : ''
-                      }`}
-                    />
+                    <label className='input w-full'>
+                      <input
+                        id='login-email'
+                        type='email'
+                        required
+                        value={loginForm.email}
+                        onChange={handleLoginChange('email')}
+                        placeholder='you@example.com'
+                        aria-invalid={Boolean(loginErrorMessage)}
+                        aria-describedby={loginDescribedBy}
+                        className={`w-full bg-transparent grow ${
+                          loginErrorMessage ? 'validator' : ''
+                        }`}
+                      />
+                      <i className='fa-solid fa-at'></i>
+                    </label>
                   </div>
-                  <div className='form-control w-full'>
+                  <div className='form-control w-full flex flex-col'>
                     <label htmlFor='login-password' className='label'>
                       <span className='label-text text-sm'>Password</span>
                     </label>
-                    <div className='relative'>
+                    <label className='input w-full'>
                       <input
                         id='login-password'
                         type={showLoginPassword ? 'text' : 'password'}
@@ -493,7 +496,7 @@ function HomeContent() {
                         placeholder='••••••••'
                         aria-invalid={Boolean(loginErrorMessage)}
                         aria-describedby={loginDescribedBy}
-                        className={`input input-bordered input-sm w-full bg-transparent ${
+                        className={`w-full bg-transparent ${
                           loginErrorMessage ? 'validator' : ''
                         }`}
                       />
@@ -501,21 +504,20 @@ function HomeContent() {
                         type='button'
                         aria-pressed={showLoginPassword}
                         onClick={() => setShowLoginPassword((prev) => !prev)}
-                        className={`absolute right-0 inset-y-0 size-9 flex items-center justify-center btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
+                        className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
                           showLoginPassword ? 'swap-active' : ''
                         }`}
                       >
-                        <span className='swap-on absolute inset-0 flex items-center justify-center text-base-content'>
-                          <i
-                            className='fa-solid fa-eye-slash'
-                            aria-hidden='true'
-                          />
-                        </span>
-                        <span className='swap-off absolute inset-0 flex items-center justify-center text-base-content'>
-                          <i className='fa-solid fa-eye' aria-hidden='true' />
-                        </span>
+                        <i
+                          className='fa-solid fa-eye-slash swap-on'
+                          aria-hidden='true'
+                        />
+                        <i
+                          className='fa-solid fa-eye swap-off'
+                          aria-hidden='true'
+                        />
                       </button>
-                    </div>
+                    </label>
                   </div>
                   {loginErrorMessage && (
                     <output
@@ -645,47 +647,51 @@ function HomeContent() {
                   className='grid gap-4'
                   aria-busy={isSignupPending}
                 >
-                  <div className='form-control w-full'>
+                  <div className='form-control w-full flex flex-col'>
                     <label htmlFor='signup-name' className='label'>
                       <span className='label-text text-sm'>Full name</span>
                     </label>
-                    <input
-                      id='signup-name'
-                      type='text'
-                      required
-                      placeholder='Ava Rider'
-                      value={signupForm.name}
-                      onChange={handleSignupChange('name')}
-                      aria-invalid={Boolean(signupErrorMessage)}
-                      aria-describedby={signupDescribedBy}
-                      className={`input input-bordered input-sm w-full bg-transparent ${
-                        signupErrorMessage ? 'validator' : ''
-                      }`}
-                    />
+                    <label className='input w-full'>
+                      <input
+                        id='signup-name'
+                        type='text'
+                        required
+                        placeholder='Ava Rider'
+                        value={signupForm.name}
+                        onChange={handleSignupChange('name')}
+                        aria-invalid={Boolean(signupErrorMessage)}
+                        aria-describedby={signupDescribedBy}
+                        className={`bg-transparent ${
+                          signupErrorMessage ? 'validator' : ''
+                        }`}
+                      />
+                    </label>
                   </div>
-                  <div className='form-control w-full'>
+                  <div className='form-control w-full flex flex-col'>
                     <label htmlFor='signup-email' className='label'>
                       <span className='label-text text-sm'>Email</span>
                     </label>
-                    <input
-                      id='signup-email'
-                      type='email'
-                      required
-                      placeholder='you@example.com'
-                      value={signupForm.email}
-                      onChange={handleSignupChange('email')}
-                      aria-invalid={Boolean(signupErrorMessage)}
-                      aria-describedby={signupDescribedBy}
-                      className={`input input-bordered input-sm w-full bg-transparent ${
-                        signupErrorMessage ? 'validator' : ''
-                      }`}
-                    />
+                    <label className='input w-full'>
+                      <input
+                        id='signup-email'
+                        type='email'
+                        required
+                        placeholder='you@example.com'
+                        value={signupForm.email}
+                        onChange={handleSignupChange('email')}
+                        aria-invalid={Boolean(signupErrorMessage)}
+                        aria-describedby={signupDescribedBy}
+                        className={`bg-transparent ${
+                          signupErrorMessage ? 'validator' : ''
+                        }`}
+                      />
+                    </label>
                   </div>
-                  <div className='form-control w-full'>
+                  <div className='form-control w-full flex flex-col'>
                     <label htmlFor='signup-password' className='label'>
                       <span className='label-text text-sm'>Password</span>
                     </label>
-                    <div className='relative'>
+                    <label className='input w-full'>
                       <input
                         id='signup-password'
                         type={showSignupPassword ? 'text' : 'password'}
@@ -695,7 +701,7 @@ function HomeContent() {
                         onChange={handleSignupChange('password')}
                         aria-invalid={Boolean(signupErrorMessage)}
                         aria-describedby={signupDescribedBy}
-                        className={`input input-bordered input-sm w-full bg-transparent ${
+                        className={`bg-transparent ${
                           signupErrorMessage ? 'validator' : ''
                         }`}
                       />
@@ -703,29 +709,28 @@ function HomeContent() {
                         type='button'
                         aria-pressed={showSignupPassword}
                         onClick={() => setShowSignupPassword((prev) => !prev)}
-                        className={`absolute right-0 inset-y-0 size-9 flex items-center justify-center btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
+                        className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
                           showSignupPassword ? 'swap-active' : ''
                         }`}
                       >
-                        <span className='swap-on absolute inset-0 flex items-center justify-center text-base-content'>
-                          <i
-                            className='fa-solid fa-eye-slash'
-                            aria-hidden='true'
-                          />
-                        </span>
-                        <span className='swap-off absolute inset-0 flex items-center justify-center text-base-content'>
-                          <i className='fa-solid fa-eye' aria-hidden='true' />
-                        </span>
+                        <i
+                          className='fa-solid fa-eye-slash swap-on'
+                          aria-hidden='true'
+                        />
+                        <i
+                          className='fa-solid fa-eye swap-off'
+                          aria-hidden='true'
+                        />
                       </button>
-                    </div>
+                    </label>
                   </div>
-                  <div className='form-control w-full'>
+                  <div className='form-control w-full flex flex-col'>
                     <label htmlFor='signup-confirm' className='label'>
                       <span className='label-text text-sm'>
                         Confirm password
                       </span>
                     </label>
-                    <div className='relative'>
+                    <label className='input w-full'>
                       <input
                         id='signup-confirm'
                         type={showSignupConfirm ? 'text' : 'password'}
@@ -735,7 +740,7 @@ function HomeContent() {
                         onChange={handleSignupChange('confirmPassword')}
                         aria-invalid={Boolean(signupErrorMessage)}
                         aria-describedby={signupDescribedBy}
-                        className={`input input-bordered input-sm w-full bg-transparent ${
+                        className={`bg-transparent ${
                           signupErrorMessage ? 'validator' : ''
                         }`}
                       />
@@ -743,21 +748,20 @@ function HomeContent() {
                         type='button'
                         aria-pressed={showSignupConfirm}
                         onClick={() => setShowSignupConfirm((prev) => !prev)}
-                        className={`absolute right-0 inset-y-0 size-9 flex items-center justify-center btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
+                        className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
                           showSignupConfirm ? 'swap-active' : ''
                         }`}
                       >
-                        <span className='swap-on absolute inset-0 flex items-center justify-center text-base-content'>
-                          <i
-                            className='fa-solid fa-eye-slash'
-                            aria-hidden='true'
-                          />
-                        </span>
-                        <span className='swap-off absolute inset-0 flex items-center justify-center text-base-content'>
-                          <i className='fa-solid fa-eye' aria-hidden='true' />
-                        </span>
+                        <i
+                          className='fa-solid fa-eye-slash swap-on'
+                          aria-hidden='true'
+                        />
+                        <i
+                          className='fa-solid fa-eye swap-off'
+                          aria-hidden='true'
+                        />
                       </button>
-                    </div>
+                    </label>
                   </div>
                   <ul className='text-xs text-base-content/70'>
                     {passwordRequirements.map((requirement) => (
