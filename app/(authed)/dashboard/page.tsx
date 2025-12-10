@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useSession } from '@/lib/auth-client';
 import {
   aggregateDailyIncomes,
+  formatCurrency,
   getCurrentMonthEntries,
   getMonthlyTotals,
   getPlatformDistribution,
@@ -12,9 +13,9 @@ import { useIncomeLogs } from '@/lib/queries/income';
 import { getSessionUser } from '@/lib/session';
 import { DashboardStats } from './_components/DashboardStats';
 import { LineChart } from './_components/LineChart';
-import { MonthlyTotalsTable } from './_components/MonthlyTotalsTable';
 import { PieChart } from './_components/PieChart';
 import { RecentDaysPanel } from './_components/RecentDaysPanel';
+import { TotalsTable } from './_components/TotalsTable';
 
 export default function DashboardPage() {
   const { data: sessionData, isPending } = useSession();
@@ -42,10 +43,49 @@ export default function DashboardPage() {
     [currentMonthEntries],
   );
   const monthlyTotals = useMemo(() => getMonthlyTotals(incomes, 6), [incomes]);
-  const averagePerDay = dailySummaries.length
-    ? totalIncome / dailySummaries.length
-    : 0;
+  const trackedDaysCount = dailySummaries.length;
+  const averagePerDay = trackedDaysCount ? totalIncome / trackedDaysCount : 0;
   const currentMonthLabel = monthlyTotals[0]?.label ?? 'Current month';
+  const currentMonthEntriesCount = currentMonthEntries.length;
+  const stats = useMemo(() => {
+    const trackedDaysLabel = `Across ${trackedDaysCount} ${
+      trackedDaysCount === 1 ? 'day' : 'days'
+    } tracked`;
+
+    return [
+      {
+        title: 'Total income',
+        value: formatCurrency(totalIncome),
+        desc: trackedDaysLabel,
+        valueClass: 'text-primary',
+      },
+      {
+        title: 'Average / day',
+        value: formatCurrency(averagePerDay),
+        desc: 'Consistent hustle',
+        valueClass: 'text-secondary',
+      },
+      {
+        title: 'Platforms this month',
+        value: String(platformDistribution.length),
+        desc: currentMonthLabel,
+      },
+      {
+        title: 'Current month',
+        value: formatCurrency(currentMonthTotal),
+        desc: `${currentMonthEntriesCount} entries logged`,
+        valueClass: 'text-accent',
+      },
+    ];
+  }, [
+    totalIncome,
+    averagePerDay,
+    platformDistribution.length,
+    currentMonthLabel,
+    currentMonthTotal,
+    currentMonthEntriesCount,
+    trackedDaysCount,
+  ]);
 
   if (isPending) {
     return (
@@ -68,15 +108,7 @@ export default function DashboardPage() {
         </p>
       </header>
 
-      <DashboardStats
-        totalIncome={totalIncome}
-        averagePerDay={averagePerDay}
-        platformCount={platformDistribution.length}
-        currentMonthLabel={currentMonthLabel}
-        currentMonthTotal={currentMonthTotal}
-        currentMonthEntriesCount={currentMonthEntries.length}
-        trackedDaysCount={dailySummaries.length}
-      />
+      <DashboardStats stats={stats} />
 
       <div className='grid gap-6 lg:grid-cols-[1.4fr_1fr]'>
         <RecentDaysPanel dailySummaries={dailySummaries} />
@@ -85,7 +117,7 @@ export default function DashboardPage() {
 
       <LineChart incomes={incomes} />
 
-      <MonthlyTotalsTable monthlyTotals={monthlyTotals} />
+      <TotalsTable incomes={incomes} />
     </div>
   );
 }
