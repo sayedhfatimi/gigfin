@@ -99,9 +99,9 @@ export default function DashboardPage() {
     <div className='space-y-6'>
       <header className='space-y-1'>
         <p className='text-xs uppercase text-base-content/60'>Dashboard</p>
-        <h1 className='text-3xl font-semibold text-base-content'>
-          Welcome back,{' '}
-          {sessionUser?.name ?? sessionUser?.email ?? 'gig worker'}
+        <h1 className='text-3xl font-semibold text-base-content flex flex-col gap-1 md:flex-row md:items-center'>
+          <span>Welcome back,</span>
+          <span>{sessionUser?.name ?? sessionUser?.email ?? 'gig worker'}</span>
         </h1>
         <p className='text-sm text-base-content/60'>
           Track income, spot trends, and level up your earnings.
