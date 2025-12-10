@@ -14,7 +14,7 @@ import { useIncomeLogs } from '@/lib/queries/income';
 import { getSessionUser } from '@/lib/session';
 import { DashboardStats } from './_components/DashboardStats';
 import { MonthlyTotalsTable } from './_components/MonthlyTotalsTable';
-import { PlatformBreakdown } from './_components/PlatformBreakdown';
+import { PieChart } from './_components/PieChart';
 import { RecentDaysPanel } from './_components/RecentDaysPanel';
 import { YearlyTrendChart } from './_components/YearlyTrendChart';
 
@@ -47,14 +47,6 @@ export default function DashboardPage() {
   const averagePerDay = dailySummaries.length
     ? totalIncome / dailySummaries.length
     : 0;
-  const pieChartData = useMemo(
-    () =>
-      platformDistribution.map((item) => ({
-        name: item.platform,
-        value: item.amount,
-      })),
-    [platformDistribution],
-  );
   const currentMonthLabel = monthlyTotals[0]?.label ?? 'Current month';
   const yearlyTotals = useMemo(
     () => getYearlyMonthlyTotals(incomes),
@@ -109,10 +101,7 @@ export default function DashboardPage() {
 
       <div className='grid gap-6 lg:grid-cols-[1.4fr_1fr]'>
         <RecentDaysPanel dailySummaries={dailySummaries} />
-        <PlatformBreakdown
-          platformDistribution={platformDistribution}
-          pieChartData={pieChartData}
-        />
+        <PieChart incomes={incomes} />
       </div>
 
       <YearlyTrendChart
