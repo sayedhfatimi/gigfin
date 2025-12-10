@@ -4,19 +4,17 @@ import { useMemo } from 'react';
 import { useSession } from '@/lib/auth-client';
 import {
   aggregateDailyIncomes,
-  formatMonthShortLabel,
   getCurrentMonthEntries,
   getMonthlyTotals,
   getPlatformDistribution,
-  getYearlyMonthlyTotals,
 } from '@/lib/income';
 import { useIncomeLogs } from '@/lib/queries/income';
 import { getSessionUser } from '@/lib/session';
 import { DashboardStats } from './_components/DashboardStats';
+import { LineChart } from './_components/LineChart';
 import { MonthlyTotalsTable } from './_components/MonthlyTotalsTable';
 import { PieChart } from './_components/PieChart';
 import { RecentDaysPanel } from './_components/RecentDaysPanel';
-import { YearlyTrendChart } from './_components/YearlyTrendChart';
 
 export default function DashboardPage() {
   const { data: sessionData, isPending } = useSession();
@@ -48,25 +46,6 @@ export default function DashboardPage() {
     ? totalIncome / dailySummaries.length
     : 0;
   const currentMonthLabel = monthlyTotals[0]?.label ?? 'Current month';
-  const yearlyTotals = useMemo(
-    () => getYearlyMonthlyTotals(incomes),
-    [incomes],
-  );
-  const yearlyChartData = useMemo(
-    () =>
-      yearlyTotals.map((row) => ({
-        label: formatMonthShortLabel(row.year, row.month),
-        total: row.total,
-      })),
-    [yearlyTotals],
-  );
-  const yearlyChartMax = useMemo(() => {
-    if (!yearlyTotals.length) {
-      return 0;
-    }
-    return Math.max(...yearlyTotals.map((row) => row.total));
-  }, [yearlyTotals]);
-  const currentYear = yearlyTotals[0]?.year ?? new Date().getFullYear();
 
   if (isPending) {
     return (
@@ -104,11 +83,7 @@ export default function DashboardPage() {
         <PieChart incomes={incomes} />
       </div>
 
-      <YearlyTrendChart
-        yearlyChartData={yearlyChartData}
-        currentYear={currentYear}
-        yearlyChartMax={yearlyChartMax}
-      />
+      <LineChart incomes={incomes} />
 
       <MonthlyTotalsTable monthlyTotals={monthlyTotals} />
     </div>
