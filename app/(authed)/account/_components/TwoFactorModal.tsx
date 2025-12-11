@@ -32,6 +32,9 @@ export function TwoFactorModal({
   const [isVerifyingTwoFactor, setIsVerifyingTwoFactor] = useState(false);
   const [disableTwoFactorPassword, setDisableTwoFactorPassword] = useState('');
   const [isDisablingTwoFactor, setIsDisablingTwoFactor] = useState(false);
+  const [showTwoFactorPassword, setShowTwoFactorPassword] = useState(false);
+  const [showDisableTwoFactorPassword, setShowDisableTwoFactorPassword] =
+    useState(false);
 
   const copyToClipboard = async (value: string) => {
     if (typeof navigator === 'undefined' || !navigator.clipboard) {
@@ -139,7 +142,7 @@ export function TwoFactorModal({
 
   return (
     <div className='modal modal-open'>
-      <div className='modal-box max-w-3xl'>
+      <div className='modal-box max-w-3xl relative'>
         <div>
           <h3 className='text-lg font-semibold text-base-content'>
             Two-factor authentication
@@ -148,6 +151,14 @@ export function TwoFactorModal({
             Protect your account with an extra verification step.
           </p>
         </div>
+        <button
+          type='button'
+          aria-label='Close modal'
+          className='btn btn-ghost btn-square absolute top-3 right-3 text-base-content/70'
+          onClick={onClose}
+        >
+          <i className='fa-solid fa-xmark' aria-hidden='true' />
+        </button>
         <section className='mt-6 rounded border border-base-content/10 p-4 bg-base-300'>
           <div className='flex items-start justify-between gap-3'>
             <div>
@@ -169,40 +180,66 @@ export function TwoFactorModal({
               <StatusAlerts message={statusMessage} error={statusError} />
             </div>
             {!isTwoFactorEnabled ? (
-              <form className='space-y-3' onSubmit={handleStartTwoFactor}>
-                <div className='grid gap-2'>
-                  <label className='input w-full'>
-                    <span className='label'>Confirm Password</span>
-                    <input
-                      id='twoFactorPassword'
-                      type='password'
-                      autoComplete='current-password'
-                      required
-                      value={twoFactorPassword}
-                      onChange={(event) =>
-                        setTwoFactorPassword(event.target.value)
-                      }
-                    />
-                  </label>
-                </div>
-                <button
-                  type='submit'
-                  className={`btn btn-primary w-full text-sm font-semibold ${
-                    isRequestingTwoFactor ? 'loading' : ''
-                  }`}
-                  disabled={isRequestingTwoFactor}
-                >
-                  Enable two-factor
-                </button>
-              </form>
+              <>
+                {!twoFactorSetup && (
+                  <form
+                    className='space-y-3'
+                    onSubmit={handleStartTwoFactor}
+                  >
+                    <div className='grid gap-2'>
+                      <label className='input w-full validator'>
+                        <input
+                          id='twoFactorPassword'
+                          type={showTwoFactorPassword ? 'text' : 'password'}
+                          placeholder='Confirm password'
+                          autoComplete='current-password'
+                          required
+                          value={twoFactorPassword}
+                          onChange={(event) =>
+                            setTwoFactorPassword(event.target.value)
+                          }
+                        />
+                        <button
+                          type='button'
+                          aria-pressed={showTwoFactorPassword}
+                          onClick={() =>
+                            setShowTwoFactorPassword((prev) => !prev)
+                          }
+                          className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
+                            showTwoFactorPassword ? 'swap-active' : ''
+                          }`}
+                        >
+                          <i
+                            className='fa-solid fa-eye-slash swap-on'
+                            aria-hidden='true'
+                          />
+                          <i
+                            className='fa-solid fa-eye swap-off'
+                            aria-hidden='true'
+                          />
+                        </button>
+                      </label>
+                    </div>
+                    <button
+                      type='submit'
+                      className={`btn btn-primary w-full text-sm font-semibold ${
+                        isRequestingTwoFactor ? 'loading' : ''
+                      }`}
+                      disabled={isRequestingTwoFactor}
+                    >
+                      Enable two-factor
+                    </button>
+                  </form>
+                )}
+              </>
             ) : (
               <form className='space-y-3' onSubmit={handleDisableTwoFactor}>
                 <div className='grid gap-2'>
-                  <label className='input w-full'>
-                    <span className='label'>Confirm Password</span>
+                  <label className='input w-full validator'>
                     <input
                       id='disableTwoFactorPassword'
-                      type='password'
+                      type={showDisableTwoFactorPassword ? 'text' : 'password'}
+                      placeholder='Confirm password'
                       autoComplete='current-password'
                       required
                       value={disableTwoFactorPassword}
@@ -210,6 +247,25 @@ export function TwoFactorModal({
                         setDisableTwoFactorPassword(event.target.value)
                       }
                     />
+                    <button
+                      type='button'
+                      aria-pressed={showDisableTwoFactorPassword}
+                      onClick={() =>
+                        setShowDisableTwoFactorPassword((prev) => !prev)
+                      }
+                      className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
+                        showDisableTwoFactorPassword ? 'swap-active' : ''
+                      }`}
+                    >
+                      <i
+                        className='fa-solid fa-eye-slash swap-on'
+                        aria-hidden='true'
+                      />
+                      <i
+                        className='fa-solid fa-eye swap-off'
+                        aria-hidden='true'
+                      />
+                    </button>
                   </label>
                 </div>
                 <button
@@ -305,11 +361,6 @@ export function TwoFactorModal({
             )}
           </div>
         </section>
-        <div className='modal-action justify-end'>
-          <button type='button' className='btn btn-ghost' onClick={onClose}>
-            Close
-          </button>
-        </div>
       </div>
     </div>
   );

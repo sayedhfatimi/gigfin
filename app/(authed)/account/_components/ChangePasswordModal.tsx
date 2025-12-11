@@ -14,6 +14,9 @@ export function ChangePasswordModal({ onClose }: ChangePasswordModalProps) {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordChangeMessage, setPasswordChangeMessage] = useState('');
   const [passwordChangeError, setPasswordChangeError] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChangePassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -47,7 +50,7 @@ export function ChangePasswordModal({ onClose }: ChangePasswordModalProps) {
 
   return (
     <div className='modal modal-open'>
-      <div className='modal-box max-w-3xl'>
+      <div className='modal-box max-w-3xl relative'>
         <div>
           <h3 className='text-lg font-semibold text-base-content'>
             Change password
@@ -56,6 +59,14 @@ export function ChangePasswordModal({ onClose }: ChangePasswordModalProps) {
             Strengthen access by rotating your password regularly.
           </p>
         </div>
+        <button
+          type='button'
+          aria-label='Close modal'
+          className='btn btn-ghost btn-square absolute top-3 right-3 text-base-content/70'
+          onClick={onClose}
+        >
+          <i className='fa-solid fa-xmark' aria-hidden='true' />
+        </button>
         <section className='mt-6 rounded border border-base-content/10 p-4 bg-base-300'>
           <div className='space-y-2'>
             <p className='text-xs uppercase text-base-content/50'>
@@ -68,43 +79,85 @@ export function ChangePasswordModal({ onClose }: ChangePasswordModalProps) {
           <form className='mt-3 space-y-4' onSubmit={handleChangePassword}>
             <div className='grid gap-2'>
               <label className='input w-full'>
-                <span className='label'>Current password</span>
                 <input
                   id='currentPassword'
-                  type='password'
+                  type={showCurrentPassword ? 'text' : 'password'}
+                  placeholder='Current password'
                   autoComplete='current-password'
                   required
                   value={currentPassword}
                   onChange={(event) => setCurrentPassword(event.target.value)}
                 />
+                <button
+                  type='button'
+                  aria-pressed={showCurrentPassword}
+                  onClick={() => setShowCurrentPassword((prev) => !prev)}
+                  className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
+                    showCurrentPassword ? 'swap-active' : ''
+                  }`}
+                >
+                  <i
+                    className='fa-solid fa-eye-slash swap-on'
+                    aria-hidden='true'
+                  />
+                  <i className='fa-solid fa-eye swap-off' aria-hidden='true' />
+                </button>
               </label>
             </div>
             <div className='grid gap-2'>
               <label className='input w-full'>
-                <span className='label'>New password</span>
                 <input
                   id='newPassword'
-                  type='password'
+                  type={showNewPassword ? 'text' : 'password'}
+                  placeholder='New password'
                   autoComplete='new-password'
                   minLength={8}
                   required
                   value={newPassword}
                   onChange={(event) => setNewPassword(event.target.value)}
                 />
+                <button
+                  type='button'
+                  aria-pressed={showNewPassword}
+                  onClick={() => setShowNewPassword((prev) => !prev)}
+                  className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
+                    showNewPassword ? 'swap-active' : ''
+                  }`}
+                >
+                  <i
+                    className='fa-solid fa-eye-slash swap-on'
+                    aria-hidden='true'
+                  />
+                  <i className='fa-solid fa-eye swap-off' aria-hidden='true' />
+                </button>
               </label>
             </div>
             <div className='grid gap-2'>
               <label className='input w-full'>
-                <span className='label'>Confirm new password</span>
                 <input
                   id='confirmPassword'
-                  type='password'
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder='Confirm new password'
                   autoComplete='new-password'
                   minLength={8}
                   required
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
                 />
+                <button
+                  type='button'
+                  aria-pressed={showConfirmPassword}
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
+                    showConfirmPassword ? 'swap-active' : ''
+                  }`}
+                >
+                  <i
+                    className='fa-solid fa-eye-slash swap-on'
+                    aria-hidden='true'
+                  />
+                  <i className='fa-solid fa-eye swap-off' aria-hidden='true' />
+                </button>
               </label>
             </div>
             <StatusAlerts
@@ -124,11 +177,6 @@ export function ChangePasswordModal({ onClose }: ChangePasswordModalProps) {
             </div>
           </form>
         </section>
-        <div className='modal-action justify-end'>
-          <button type='button' className='btn btn-ghost' onClick={onClose}>
-            Close
-          </button>
-        </div>
       </div>
     </div>
   );
