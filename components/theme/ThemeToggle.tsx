@@ -9,7 +9,15 @@ const themeLabel = {
   [darkTheme]: 'Dim',
 } as const;
 
-export default function ThemeToggle() {
+type ThemeToggleProps = {
+  className?: string;
+  variant?: 'button' | 'toggle';
+};
+
+export default function ThemeToggle({
+  className = '',
+  variant = 'button',
+}: ThemeToggleProps) {
   const { resolvedTheme, theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -25,10 +33,27 @@ export default function ThemeToggle() {
   const isDark = activeTheme === darkTheme;
   const nextTheme = isDark ? lightTheme : darkTheme;
 
+  const buttonClasses = ['btn', 'btn-sm', className].filter(Boolean).join(' ');
+  const toggleClasses = ['toggle', 'toggle-sm', className]
+    .filter(Boolean)
+    .join(' ');
+
+  if (variant === 'toggle') {
+    return (
+      <input
+        type='checkbox'
+        className={toggleClasses}
+        checked={isDark}
+        onChange={() => setTheme(nextTheme)}
+        aria-label={`Switch to ${themeLabel[nextTheme]} theme`}
+      />
+    );
+  }
+
   return (
     <button
       type='button'
-      className='btn btn-square btn-sm'
+      className={buttonClasses}
       onClick={() => setTheme(nextTheme)}
       aria-label={`Switch to ${themeLabel[nextTheme]} theme`}
       aria-pressed={isDark}
