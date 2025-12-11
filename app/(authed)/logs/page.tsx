@@ -108,7 +108,7 @@ const buildEntryMonthOptions = (entries: IncomeEntry[]): MonthOption[] => {
 };
 
 const GRID_TEMPLATE_CLASS =
-  'grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_auto] items-center';
+  'md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center';
 export default function LogsPage() {
   const { data: incomes = [], isLoading } = useIncomeLogs();
 
@@ -275,11 +275,11 @@ export default function LogsPage() {
           </div>
           <button
             type='button'
-            className='btn btn-primary'
+            className='btn btn-primary btn-sm md:btn-md'
             onClick={openAddModal}
           >
             <span className='fa-solid fa-plus mr-2' aria-hidden='true' />
-            Add income
+            Add <span className='hidden md:inline-block'>income</span>
           </button>
         </div>
         <p className='text-sm text-base-content/60'>
@@ -287,7 +287,7 @@ export default function LogsPage() {
         </p>
       </header>
 
-      <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+      <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm space-y-4'>
         <div className='flex flex-col gap-2 bg-base-200 p-4'>
           <div className='flex flex-row items-center justify-between'>
             <h1>Filtering Options</h1>
@@ -296,13 +296,20 @@ export default function LogsPage() {
               className='btn btn-sm btn-warning'
               onClick={handleResetTableControls}
             >
-              Reset filters & sorting
+              <span className='fa-solid fa-rotate-left' aria-hidden='true' />
+              <span>
+                Reset{' '}
+                <span className='hidden md:inline-block'>
+                  {' '}
+                  filters & sorting
+                </span>
+              </span>
             </button>
           </div>
-          <div className='flex flex-col md:flex-row items-center gap-3'>
-            <div className='flex flex-col gap-1'>
-              <label className='select'>
-                <span className='label'>Month</span>
+          <div className='flex flex-col gap-3'>
+            <div className='flex flex-col bg-base-300 px-2 py-1 md:flex-row md:items-center md:justify-between gap-1'>
+              <span className='text-xs'>Month</span>
+              <label className='select select-sm'>
                 <select
                   id='monthly-filter'
                   value={selectedMonth}
@@ -318,54 +325,51 @@ export default function LogsPage() {
                 </select>
               </label>
             </div>
-            <div className='flex flex-wrap items-center gap-3'>
-              {platformOptions.length ? (
-                <form
-                  onReset={handlePlatformFilterReset}
-                  className='flex flex-wrap items-center gap-2'
-                >
-                  <label className='input w-full'>
-                    <span className='label'>Filter by platform</span>
-
-                    {platformOptions.map((platform) => {
-                      const isChecked = platformFilter.includes(platform);
-                      return (
-                        <label
-                          key={platform}
-                          className={`btn btn-xs normal-case ${
-                            isChecked
-                              ? 'btn-primary btn-active text-white'
-                              : 'btn-outline'
-                          }`}
-                        >
-                          <input
-                            type='checkbox'
-                            name='platforms'
-                            value={platform}
-                            aria-label={platform}
-                            checked={isChecked}
-                            onChange={() => togglePlatformSelection(platform)}
-                            className='sr-only'
-                          />
-                          {platform}
-                        </label>
-                      );
-                    })}
-                    <button
-                      type='reset'
-                      className='btn btn-xs btn-square btn-error text-xs'
-                      aria-label='Clear platform filters'
-                    >
-                      <span className='fa-solid fa-xmark' aria-hidden='true' />
-                    </button>
-                  </label>
-                </form>
-              ) : (
-                <span className='text-xs uppercase text-base-content/60'>
-                  No platforms yet
-                </span>
-              )}
-            </div>
+            {platformOptions.length ? (
+              <form
+                onReset={handlePlatformFilterReset}
+                className='flex flex-col  bg-base-300 px-2 py-1 md:flex-row md:items-center md:justify-between gap-2'
+              >
+                <span className='text-xs'>Platforms</span>
+                <div className='flex flex-wrap gap-2 px-1 md:flex-nowrap md:overflow-x-auto'>
+                  {platformOptions.map((platform) => {
+                    const isChecked = platformFilter.includes(platform);
+                    return (
+                      <label
+                        key={platform}
+                        className={`btn btn-xs normal-case ${
+                          isChecked
+                            ? 'btn-primary btn-active text-white'
+                            : 'btn-outline'
+                        }`}
+                      >
+                        <input
+                          type='checkbox'
+                          name='platforms'
+                          value={platform}
+                          aria-label={platform}
+                          checked={isChecked}
+                          onChange={() => togglePlatformSelection(platform)}
+                          className='sr-only'
+                        />
+                        {platform}
+                      </label>
+                    );
+                  })}
+                  <button
+                    type='reset'
+                    className='btn btn-xs btn-square btn-error text-xs hidden md:inline-flex'
+                    aria-label='Clear platform filters'
+                  >
+                    <span className='fa-solid fa-xmark' aria-hidden='true' />
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <span className='text-xs uppercase text-base-content/60'>
+                No platforms yet
+              </span>
+            )}
           </div>
         </div>
         {isLoading ? (
@@ -416,7 +420,7 @@ export default function LogsPage() {
                   <div className='border border-base-content/10 bg-base-200/80 shadow-sm'>
                     <button
                       type='button'
-                      className={`grid w-full ${GRID_TEMPLATE_CLASS} gap-4 p-4 text-left transition hover:bg-base-100`}
+                      className={`grid w-full grid-cols-1 gap-4 items-start p-4 text-left transition hover:bg-base-100 ${GRID_TEMPLATE_CLASS}`}
                       onClick={() => row.toggleExpanded()}
                     >
                       {row.getVisibleCells().map((cell) => (
