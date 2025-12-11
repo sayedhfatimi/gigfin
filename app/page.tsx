@@ -344,482 +344,489 @@ function HomeContent() {
             />
             <div className='relative z-10 grid gap-10 lg:grid-cols-[1.2fr_0.9fr]'>
               <section className='order-2 space-y-6 lg:order-1'>
-              <div className='flex flex-col gap-3'>
-                <div className='flex items-center gap-3'>
-                  <div className='relative h-14 w-14 rounded-2xl border border-base-content/10 bg-base-100/80 p-2 shadow-sm dark:border-base-300/40 dark:bg-base-200/60'>
-                    <Image
-                      src='/logo.png'
-                      alt='GigFin logo'
-                      fill
-                      className='object-contain'
-                      priority
-                    />
-                  </div>
-                  <p className='text-xs font-semibold uppercase text-primary'>
-                    GigFin invite
-                  </p>
-                </div>
-                <h1 className='text-4xl font-semibold leading-tight text-slate-900 dark:text-white lg:text-5xl'>
-                  A secure ledger for every gig payout
-                </h1>
-                <p className='text-lg text-base-content/80'>
-                  Uber Eats, Deliveroo, Just Eat, Amazon Flex, and every other
-                  gig platform—track tips, bonuses, and invoices without the
-                  spreadsheet clutter.
-                </p>
-                <p className='text-sm text-base-content/70'>
-                  Free and open source. Secure by default.
-                </p>
-              </div>
-              <ul className='grid gap-3'>
-                {featureHighlights.map((highlight) => (
-                  <li
-                    key={highlight.title}
-                    className='rounded-2xl border border-base-content/10 bg-base-100/70 px-4 py-3 text-sm text-base-content/80 shadow-sm dark:border-base-300/50 dark:bg-base-200/60'
-                  >
-                    <div className='flex items-start gap-3'>
-                      <span className='text-xl leading-none'>
-                        {highlight.icon}
-                      </span>
-                      <div>
-                        <p className='text-sm font-semibold text-base-content'>
-                          {highlight.title}
-                        </p>
-                        <p className='text-sm text-base-content/70'>
-                          {highlight.description}
-                        </p>
-                      </div>
+                <div className='flex flex-col gap-3'>
+                  <div className='flex items-center gap-3'>
+                    <div className='relative h-14 w-14 rounded-2xl border border-base-content/10 bg-base-100/80 p-2 shadow-sm dark:border-base-300/40 dark:bg-base-200/60'>
+                      <Image
+                        src='/logo.png'
+                        alt='GigFin logo'
+                        fill
+                        className='object-contain'
+                        priority
+                      />
                     </div>
-                  </li>
-                ))}
-              </ul>
-              <div className='rounded-2xl bg-base-100/80 px-4 py-3 text-sm font-semibold text-base-content/80 shadow-sm dark:bg-base-200/60 dark:border-base-300/40'>
-                Two-factor verification + secure sessions by default.
-              </div>
-              <div className='flex flex-wrap gap-2 text-xs text-base-content/60'>
-                <a
-                  href={githubUrl}
-                  target='_blank'
-                  rel='noreferrer'
-                  className='font-semibold text-primary transition hover:text-primary-focus'
-                >
-                  View source on GitHub
-                </a>
-                <span className='text-base-content/40'>·</span>
-                <a
-                  href={githubIssuesUrl}
-                  target='_blank'
-                  rel='noreferrer'
-                  className='text-base-content/70 transition hover:text-base-content'
-                >
-                  Browse issues
-                </a>
-              </div>
-            </section>
-            <section className='order-1 space-y-4 rounded-2xl border border-base-content/10 bg-base-100/70 p-6 shadow-sm shadow-base-content/5 backdrop-blur dark:border-base-300/60 dark:bg-base-200/60 lg:order-2'>
-              <p className='text-xs text-base-content/70'>
-                Sign in or create an account to start logging earnings without
-                spreadsheets.
-              </p>
-              <div className='tabs tabs-box w-full gap-2'>
-                <button
-                  type='button'
-                  className={`tab tab-lg flex-1 text-sm font-semibold transition ${
-                    activeTab === 'login' ? 'tab-active' : 'bg-transparent'
-                  }`}
-                  onClick={() => handleTabChange('login')}
-                >
-                  <div className='flex flex-col gap-1 text-center'>
-                    <span className='text-base-content'>Login</span>
-                    <span className='hidden md:block text-[9px] font-normal uppercase text-base-content/70 leading-tight'>
-                      I already have an account
-                    </span>
+                    <p className='text-xs font-semibold uppercase text-primary'>
+                      GigFin invite
+                    </p>
                   </div>
-                </button>
-                <button
-                  type='button'
-                  className={`tab tab-lg flex-1 text-sm font-semibold transition ${
-                    activeTab === 'signup' ? 'tab-active' : 'bg-transparent'
-                  }`}
-                  onClick={() => handleTabChange('signup')}
-                >
-                  <div className='flex flex-col gap-1 text-center'>
-                    <span className='text-base-content'>Sign up</span>
-                    <span className='hidden md:block text-[9px] font-normal uppercase text-base-content/70 leading-tight'>
-                      I’m new to GigFin
-                    </span>
-                  </div>
-                </button>
-              </div>
-              <div
-                className={activeTab === 'login' ? loginPaneClass : 'hidden'}
-                aria-hidden={twoFactorPrompt}
-              >
-                <div className='flex items-center justify-between text-xs text-base-content/60'>
-                  <span>Existing account</span>
-                  <span className='text-primary'>Credential login</span>
+                  <h1 className='text-4xl font-semibold leading-tight text-slate-900 dark:text-white lg:text-5xl'>
+                    A secure ledger for every gig payout
+                  </h1>
+                  <p className='text-lg text-base-content/80'>
+                    Uber Eats, Deliveroo, Just Eat, Amazon Flex, and every other
+                    gig platform—track tips, bonuses, and invoices without the
+                    spreadsheet clutter.
+                  </p>
+                  <p className='text-sm text-base-content/70'>
+                    Free and open source. Secure by default.
+                  </p>
                 </div>
-                <form
-                  onSubmit={handleLogin}
-                  className='grid gap-4'
-                  aria-busy={isLoginPending}
-                >
-                  <div className='form-control w-full flex flex-col'>
-                    <label htmlFor='login-email' className='label'>
-                      <span className='label-text text-sm'>Email</span>
-                    </label>
-                    <label className='input w-full'>
-                      <input
-                        id='login-email'
-                        type='email'
-                        required
-                        value={loginForm.email}
-                        onChange={handleLoginChange('email')}
-                        placeholder='you@example.com'
-                        aria-invalid={Boolean(loginErrorMessage)}
-                        aria-describedby={loginDescribedBy}
-                        className={`w-full bg-transparent grow ${
-                          loginErrorMessage ? 'validator' : ''
-                        }`}
-                      />
-                      <i className='fa-solid fa-at'></i>
-                    </label>
-                  </div>
-                  <div className='form-control w-full flex flex-col'>
-                    <label htmlFor='login-password' className='label'>
-                      <span className='label-text text-sm'>Password</span>
-                    </label>
-                    <label className='input w-full'>
-                      <input
-                        id='login-password'
-                        type={showLoginPassword ? 'text' : 'password'}
-                        required
-                        value={loginForm.password}
-                        onChange={handleLoginChange('password')}
-                        placeholder='••••••••'
-                        aria-invalid={Boolean(loginErrorMessage)}
-                        aria-describedby={loginDescribedBy}
-                        className={`w-full bg-transparent ${
-                          loginErrorMessage ? 'validator' : ''
-                        }`}
-                      />
-                      <button
-                        type='button'
-                        aria-pressed={showLoginPassword}
-                        onClick={() => setShowLoginPassword((prev) => !prev)}
-                        className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
-                          showLoginPassword ? 'swap-active' : ''
-                        }`}
-                      >
-                        <i
-                          className='fa-solid fa-eye-slash swap-on'
-                          aria-hidden='true'
-                        />
-                        <i
-                          className='fa-solid fa-eye swap-off'
-                          aria-hidden='true'
-                        />
-                      </button>
-                    </label>
-                  </div>
-                  {loginErrorMessage && (
-                    <output
-                      id={loginErrorId}
-                      aria-live='polite'
-                      className='validator-hint text-sm text-error'
+                <ul className='grid gap-3'>
+                  {featureHighlights.map((highlight) => (
+                    <li
+                      key={highlight.title}
+                      className='rounded-2xl border border-base-content/10 bg-base-100/70 px-4 py-3 text-sm text-base-content/80 shadow-sm dark:border-base-300/50 dark:bg-base-200/60'
                     >
-                      {loginErrorMessage}
-                    </output>
-                  )}
-                  <button
-                    type='submit'
-                    className='btn btn-primary w-full py-3 text-sm font-semibold transition hover:-translate-y-0.5'
-                    disabled={isLoginPending}
-                  >
-                    {isLoginPending ? 'Signing in…' : 'Sign in'}
-                  </button>
-                </form>
-              </div>
-              <div
-                className={activeTab === 'signup' ? 'space-y-4 pt-4' : 'hidden'}
-              >
-                <div className='flex items-center justify-between text-xs text-base-content/60'>
-                  <span>New to GigFin?</span>
-                  <span className='text-success'>Password + email</span>
+                      <div className='flex items-start gap-3'>
+                        <span className='text-xl leading-none'>
+                          {highlight.icon}
+                        </span>
+                        <div>
+                          <p className='text-sm font-semibold text-base-content'>
+                            {highlight.title}
+                          </p>
+                          <p className='text-sm text-base-content/70'>
+                            {highlight.description}
+                          </p>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                <div className='rounded-2xl bg-base-100/80 px-4 py-3 text-sm font-semibold text-base-content/80 shadow-sm dark:bg-base-200/60 dark:border-base-300/40'>
+                  Two-factor verification + secure sessions by default.
                 </div>
-                <form
-                  onSubmit={handleSignup}
-                  className='grid gap-4'
-                  aria-busy={isSignupPending}
-                >
-                  <div className='form-control w-full flex flex-col'>
-                    <label htmlFor='signup-name' className='label'>
-                      <span className='label-text text-sm'>Full name</span>
-                    </label>
-                    <label className='input w-full'>
-                      <input
-                        id='signup-name'
-                        type='text'
-                        required
-                        placeholder='Ava Rider'
-                        value={signupForm.name}
-                        onChange={handleSignupChange('name')}
-                        aria-invalid={Boolean(signupErrorMessage)}
-                        aria-describedby={signupDescribedBy}
-                        className={`bg-transparent ${
-                          signupErrorMessage ? 'validator' : ''
-                        }`}
-                      />
-                    </label>
-                  </div>
-                  <div className='form-control w-full flex flex-col'>
-                    <label htmlFor='signup-email' className='label'>
-                      <span className='label-text text-sm'>Email</span>
-                    </label>
-                    <label className='input w-full'>
-                      <input
-                        id='signup-email'
-                        type='email'
-                        required
-                        placeholder='you@example.com'
-                        value={signupForm.email}
-                        onChange={handleSignupChange('email')}
-                        aria-invalid={Boolean(signupErrorMessage)}
-                        aria-describedby={signupDescribedBy}
-                        className={`bg-transparent ${
-                          signupErrorMessage ? 'validator' : ''
-                        }`}
-                      />
-                    </label>
-                  </div>
-                  <div className='form-control w-full flex flex-col'>
-                    <label htmlFor='signup-password' className='label'>
-                      <span className='label-text text-sm'>Password</span>
-                    </label>
-                    <label className='input w-full'>
-                      <input
-                        id='signup-password'
-                        type={showSignupPassword ? 'text' : 'password'}
-                        required
-                        placeholder='Create a password'
-                        value={signupForm.password}
-                        onChange={handleSignupChange('password')}
-                        aria-invalid={Boolean(signupErrorMessage)}
-                        aria-describedby={signupDescribedBy}
-                        className={`bg-transparent ${
-                          signupErrorMessage ? 'validator' : ''
-                        }`}
-                      />
-                      <button
-                        type='button'
-                        aria-pressed={showSignupPassword}
-                        onClick={() => setShowSignupPassword((prev) => !prev)}
-                        className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
-                          showSignupPassword ? 'swap-active' : ''
-                        }`}
-                      >
-                        <i
-                          className='fa-solid fa-eye-slash swap-on'
-                          aria-hidden='true'
-                        />
-                        <i
-                          className='fa-solid fa-eye swap-off'
-                          aria-hidden='true'
-                        />
-                      </button>
-                    </label>
-                  </div>
-                  <div className='form-control w-full flex flex-col'>
-                    <label htmlFor='signup-confirm' className='label'>
-                      <span className='label-text text-sm'>
-                        Confirm password
+                <div className='flex flex-wrap gap-2 text-xs text-base-content/60'>
+                  <a
+                    href={githubUrl}
+                    target='_blank'
+                    rel='noreferrer'
+                    className='font-semibold text-primary transition hover:text-primary-focus'
+                  >
+                    View source on GitHub
+                  </a>
+                  <span className='text-base-content/40'>·</span>
+                  <a
+                    href={githubIssuesUrl}
+                    target='_blank'
+                    rel='noreferrer'
+                    className='text-base-content/70 transition hover:text-base-content'
+                  >
+                    Browse issues
+                  </a>
+                </div>
+              </section>
+              <section className='order-1 space-y-4 rounded-2xl border border-base-content/10 bg-base-100/70 p-6 shadow-sm shadow-base-content/5 backdrop-blur dark:border-base-300/60 dark:bg-base-200/60 lg:order-2'>
+                <p className='text-xs text-base-content/70'>
+                  Sign in or create an account to start logging earnings without
+                  spreadsheets.
+                </p>
+                <div className='tabs tabs-box w-full gap-2'>
+                  <button
+                    type='button'
+                    className={`tab tab-lg flex-1 text-sm font-semibold transition ${
+                      activeTab === 'login' ? 'tab-active' : 'bg-transparent'
+                    }`}
+                    onClick={() => handleTabChange('login')}
+                  >
+                    <div className='flex flex-col gap-1 text-center'>
+                      <span className='text-base-content'>Login</span>
+                      <span className='hidden md:block text-[9px] font-normal uppercase text-base-content/70 leading-tight'>
+                        I already have an account
                       </span>
-                    </label>
-                    <label className='input w-full'>
-                      <input
-                        id='signup-confirm'
-                        type={showSignupConfirm ? 'text' : 'password'}
-                        required
-                        placeholder='Repeat password'
-                        value={signupForm.confirmPassword}
-                        onChange={handleSignupChange('confirmPassword')}
-                        aria-invalid={Boolean(signupErrorMessage)}
-                        aria-describedby={signupDescribedBy}
-                        className={`bg-transparent ${
-                          signupErrorMessage ? 'validator' : ''
-                        }`}
-                      />
-                      <button
-                        type='button'
-                        aria-pressed={showSignupConfirm}
-                        onClick={() => setShowSignupConfirm((prev) => !prev)}
-                        className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
-                          showSignupConfirm ? 'swap-active' : ''
-                        }`}
-                      >
-                        <i
-                          className='fa-solid fa-eye-slash swap-on'
-                          aria-hidden='true'
-                        />
-                        <i
-                          className='fa-solid fa-eye swap-off'
-                          aria-hidden='true'
-                        />
-                      </button>
-                    </label>
+                    </div>
+                  </button>
+                  <button
+                    type='button'
+                    className={`tab tab-lg flex-1 text-sm font-semibold transition ${
+                      activeTab === 'signup' ? 'tab-active' : 'bg-transparent'
+                    }`}
+                    onClick={() => handleTabChange('signup')}
+                  >
+                    <div className='flex flex-col gap-1 text-center'>
+                      <span className='text-base-content'>Sign up</span>
+                      <span className='hidden md:block text-[9px] font-normal uppercase text-base-content/70 leading-tight'>
+                        I’m new to GigFin
+                      </span>
+                    </div>
+                  </button>
+                </div>
+                <div
+                  className={activeTab === 'login' ? loginPaneClass : 'hidden'}
+                  aria-hidden={twoFactorPrompt}
+                >
+                  <div className='flex items-center justify-between text-xs text-base-content/60'>
+                    <span>Existing account</span>
+                    <span className='text-primary'>Credential login</span>
                   </div>
-                  <ul className='text-xs text-base-content/70'>
-                    {passwordRequirements.map((requirement) => (
-                      <li key={requirement} className='flex items-center gap-2'>
-                        <span className='text-primary'>•</span>
-                        <span>{requirement}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  {signupErrorMessage && (
+                  <form
+                    onSubmit={handleLogin}
+                    className='grid gap-4'
+                    aria-busy={isLoginPending}
+                  >
+                    <div className='form-control w-full flex flex-col'>
+                      <label htmlFor='login-email' className='label'>
+                        <span className='label-text text-sm'>Email</span>
+                      </label>
+                      <label className='input w-full'>
+                        <input
+                          id='login-email'
+                          type='email'
+                          required
+                          value={loginForm.email}
+                          onChange={handleLoginChange('email')}
+                          placeholder='you@example.com'
+                          aria-invalid={Boolean(loginErrorMessage)}
+                          aria-describedby={loginDescribedBy}
+                          className={`w-full bg-transparent grow ${
+                            loginErrorMessage ? 'validator' : ''
+                          }`}
+                        />
+                        <i className='fa-solid fa-at'></i>
+                      </label>
+                    </div>
+                    <div className='form-control w-full flex flex-col'>
+                      <label htmlFor='login-password' className='label'>
+                        <span className='label-text text-sm'>Password</span>
+                      </label>
+                      <label className='input w-full'>
+                        <input
+                          id='login-password'
+                          type={showLoginPassword ? 'text' : 'password'}
+                          required
+                          value={loginForm.password}
+                          onChange={handleLoginChange('password')}
+                          placeholder='••••••••'
+                          aria-invalid={Boolean(loginErrorMessage)}
+                          aria-describedby={loginDescribedBy}
+                          className={`w-full bg-transparent ${
+                            loginErrorMessage ? 'validator' : ''
+                          }`}
+                        />
+                        <button
+                          type='button'
+                          aria-pressed={showLoginPassword}
+                          onClick={() => setShowLoginPassword((prev) => !prev)}
+                          className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
+                            showLoginPassword ? 'swap-active' : ''
+                          }`}
+                        >
+                          <i
+                            className='fa-solid fa-eye-slash swap-on'
+                            aria-hidden='true'
+                          />
+                          <i
+                            className='fa-solid fa-eye swap-off'
+                            aria-hidden='true'
+                          />
+                        </button>
+                      </label>
+                    </div>
+                    {loginErrorMessage && (
+                      <output
+                        id={loginErrorId}
+                        aria-live='polite'
+                        className='validator-hint text-sm text-error'
+                      >
+                        {loginErrorMessage}
+                      </output>
+                    )}
+                    <button
+                      type='submit'
+                      className='btn btn-primary w-full py-3 text-sm font-semibold transition hover:-translate-y-0.5'
+                      disabled={isLoginPending}
+                    >
+                      {isLoginPending ? 'Signing in…' : 'Sign in'}
+                    </button>
+                  </form>
+                </div>
+                <div
+                  className={
+                    activeTab === 'signup' ? 'space-y-4 pt-4' : 'hidden'
+                  }
+                >
+                  <div className='flex items-center justify-between text-xs text-base-content/60'>
+                    <span>New to GigFin?</span>
+                    <span className='text-success'>Password + email</span>
+                  </div>
+                  <form
+                    onSubmit={handleSignup}
+                    className='grid gap-4'
+                    aria-busy={isSignupPending}
+                  >
+                    <div className='form-control w-full flex flex-col'>
+                      <label htmlFor='signup-name' className='label'>
+                        <span className='label-text text-sm'>Full name</span>
+                      </label>
+                      <label className='input w-full'>
+                        <input
+                          id='signup-name'
+                          type='text'
+                          required
+                          placeholder='Ava Rider'
+                          value={signupForm.name}
+                          onChange={handleSignupChange('name')}
+                          aria-invalid={Boolean(signupErrorMessage)}
+                          aria-describedby={signupDescribedBy}
+                          className={`bg-transparent ${
+                            signupErrorMessage ? 'validator' : ''
+                          }`}
+                        />
+                      </label>
+                    </div>
+                    <div className='form-control w-full flex flex-col'>
+                      <label htmlFor='signup-email' className='label'>
+                        <span className='label-text text-sm'>Email</span>
+                      </label>
+                      <label className='input w-full'>
+                        <input
+                          id='signup-email'
+                          type='email'
+                          required
+                          placeholder='you@example.com'
+                          value={signupForm.email}
+                          onChange={handleSignupChange('email')}
+                          aria-invalid={Boolean(signupErrorMessage)}
+                          aria-describedby={signupDescribedBy}
+                          className={`bg-transparent ${
+                            signupErrorMessage ? 'validator' : ''
+                          }`}
+                        />
+                      </label>
+                    </div>
+                    <div className='form-control w-full flex flex-col'>
+                      <label htmlFor='signup-password' className='label'>
+                        <span className='label-text text-sm'>Password</span>
+                      </label>
+                      <label className='input w-full'>
+                        <input
+                          id='signup-password'
+                          type={showSignupPassword ? 'text' : 'password'}
+                          required
+                          placeholder='Create a password'
+                          value={signupForm.password}
+                          onChange={handleSignupChange('password')}
+                          aria-invalid={Boolean(signupErrorMessage)}
+                          aria-describedby={signupDescribedBy}
+                          className={`bg-transparent ${
+                            signupErrorMessage ? 'validator' : ''
+                          }`}
+                        />
+                        <button
+                          type='button'
+                          aria-pressed={showSignupPassword}
+                          onClick={() => setShowSignupPassword((prev) => !prev)}
+                          className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
+                            showSignupPassword ? 'swap-active' : ''
+                          }`}
+                        >
+                          <i
+                            className='fa-solid fa-eye-slash swap-on'
+                            aria-hidden='true'
+                          />
+                          <i
+                            className='fa-solid fa-eye swap-off'
+                            aria-hidden='true'
+                          />
+                        </button>
+                      </label>
+                    </div>
+                    <div className='form-control w-full flex flex-col'>
+                      <label htmlFor='signup-confirm' className='label'>
+                        <span className='label-text text-sm'>
+                          Confirm password
+                        </span>
+                      </label>
+                      <label className='input w-full'>
+                        <input
+                          id='signup-confirm'
+                          type={showSignupConfirm ? 'text' : 'password'}
+                          required
+                          placeholder='Repeat password'
+                          value={signupForm.confirmPassword}
+                          onChange={handleSignupChange('confirmPassword')}
+                          aria-invalid={Boolean(signupErrorMessage)}
+                          aria-describedby={signupDescribedBy}
+                          className={`bg-transparent ${
+                            signupErrorMessage ? 'validator' : ''
+                          }`}
+                        />
+                        <button
+                          type='button'
+                          aria-pressed={showSignupConfirm}
+                          onClick={() => setShowSignupConfirm((prev) => !prev)}
+                          className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
+                            showSignupConfirm ? 'swap-active' : ''
+                          }`}
+                        >
+                          <i
+                            className='fa-solid fa-eye-slash swap-on'
+                            aria-hidden='true'
+                          />
+                          <i
+                            className='fa-solid fa-eye swap-off'
+                            aria-hidden='true'
+                          />
+                        </button>
+                      </label>
+                    </div>
+                    <ul className='text-xs text-base-content/70'>
+                      {passwordRequirements.map((requirement) => (
+                        <li
+                          key={requirement}
+                          className='flex items-center gap-2'
+                        >
+                          <span className='text-primary'>•</span>
+                          <span>{requirement}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    {signupErrorMessage && (
+                      <output
+                        id={signupErrorId}
+                        aria-live='polite'
+                        className='validator-hint text-sm text-error'
+                      >
+                        {signupErrorMessage}
+                      </output>
+                    )}
+                    {signupSuccessMessage && (
+                      <output
+                        id={signupSuccessId}
+                        aria-live='polite'
+                        className='text-sm text-success'
+                      >
+                        {signupSuccessMessage}
+                      </output>
+                    )}
+                    <button
+                      type='submit'
+                      className='btn btn-primary w-full py-3 text-sm font-semibold transition hover:-translate-y-0.5'
+                      disabled={isSignupPending}
+                    >
+                      {isSignupPending ? 'Creating account…' : 'Create account'}
+                    </button>
+                    <p className='text-xs text-base-content/60'>
+                      Free and open source. Your income data stays in your
+                      account.
+                    </p>
+                  </form>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </main>
+      {twoFactorPrompt && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center px-4 py-8'>
+          <div
+            className='absolute inset-0 bg-base-content/70 backdrop-blur-sm'
+            aria-hidden='true'
+          />
+          <div
+            role='dialog'
+            aria-modal='true'
+            aria-labelledby={twoFactorModalTitle}
+            className='relative w-full max-w-sm rounded-3xl border border-base-content/20 bg-base-100/90 p-6 shadow-2xl shadow-base-content/30 dark:border-base-300/70 dark:bg-base-200/90'
+          >
+            <div className='space-y-3 text-sm text-base-content/80'>
+              <div className='flex items-center justify-between gap-3'>
+                <p
+                  id={twoFactorModalTitle}
+                  className='text-sm font-semibold text-base-content'
+                >
+                  Two-factor verification
+                </p>
+                <span className='text-xs uppercase text-warning'>
+                  Step 2 of 2
+                </span>
+              </div>
+              <p className='text-sm text-base-content/70'>
+                Enter the 6-digit code from your authenticator app to finish
+                signing in.
+              </p>
+              <form
+                className='grid gap-3'
+                onSubmit={handleVerifyTwoFactor}
+                aria-busy={isVerifyPending}
+              >
+                <div className='form-control w-full'>
+                  <label htmlFor='twofactor-code' className='label'>
+                    <span className='label-text text-sm'>
+                      Authenticator code
+                    </span>
+                  </label>
+                  <input
+                    id='twofactor-code'
+                    type='text'
+                    inputMode='numeric'
+                    pattern='[0-9]*'
+                    minLength={6}
+                    maxLength={6}
+                    autoComplete='one-time-code'
+                    required
+                    value={twoFactorCode}
+                    onChange={(event) => setTwoFactorCode(event.target.value)}
+                    onPaste={handleTwoFactorPaste}
+                    aria-invalid={Boolean(twoFactorErrorMessage)}
+                    aria-describedby={twoFactorDescribedBy}
+                    ref={twoFactorInputRef}
+                    className='input input-bordered input-sm w-full bg-transparent'
+                  />
+                </div>
+                <label
+                  htmlFor='twofactor-trust'
+                  className='flex items-center gap-2 text-sm text-base-content/60'
+                >
+                  <input
+                    id='twofactor-trust'
+                    type='checkbox'
+                    checked={trustDevice}
+                    onChange={(event) => setTrustDevice(event.target.checked)}
+                    className='checkbox'
+                  />
+                  Trust this device for 30 days
+                </label>
+                {twoFactorErrorMessage && (
+                  <>
                     <output
-                      id={signupErrorId}
-                      aria-live='polite'
+                      id={twoFactorErrorId}
+                      aria-live='assertive'
                       className='validator-hint text-sm text-error'
                     >
-                      {signupErrorMessage}
+                      {twoFactorErrorMessage}
                     </output>
-                  )}
-                  {signupSuccessMessage && (
-                    <output
-                      id={signupSuccessId}
-                      aria-live='polite'
-                      className='text-sm text-success'
-                    >
-                      {signupSuccessMessage}
-                    </output>
-                  )}
-                  <button
-                    type='submit'
-                    className='btn btn-primary w-full py-3 text-sm font-semibold transition hover:-translate-y-0.5'
-                    disabled={isSignupPending}
-                  >
-                    {isSignupPending ? 'Creating account…' : 'Create account'}
-                  </button>
-                  <p className='text-xs text-base-content/60'>
-                    Free and open source. Your income data stays in your
-                    account.
-                  </p>
-                </form>
-              </div>
-            </section>
-          </div>
-        </div>
-      </div>
-    </main>
-    {twoFactorPrompt && (
-      <div className='fixed inset-0 z-50 flex items-center justify-center px-4 py-8'>
-        <div
-          className='absolute inset-0 bg-base-content/70 backdrop-blur-sm'
-          aria-hidden='true'
-        />
-        <div
-          role='dialog'
-          aria-modal='true'
-          aria-labelledby={twoFactorModalTitle}
-          className='relative w-full max-w-sm rounded-3xl border border-base-content/20 bg-base-100/90 p-6 shadow-2xl shadow-base-content/30 dark:border-base-300/70 dark:bg-base-200/90'
-        >
-          <div className='space-y-3 text-sm text-base-content/80'>
-            <div className='flex items-center justify-between gap-3'>
-              <p
-                id={twoFactorModalTitle}
-                className='text-sm font-semibold text-base-content'
-              >
-                Two-factor verification
-              </p>
-              <span className='text-xs uppercase text-warning'>
-                Step 2 of 2
-              </span>
-            </div>
-            <p className='text-sm text-base-content/70'>
-              Enter the 6-digit code from your authenticator app to finish
-              signing in.
-            </p>
-            <form
-              className='grid gap-3'
-              onSubmit={handleVerifyTwoFactor}
-              aria-busy={isVerifyPending}
-            >
-              <div className='form-control w-full'>
-                <label htmlFor='twofactor-code' className='label'>
-                  <span className='label-text text-sm'>Authenticator code</span>
-                </label>
-                <input
-                  id='twofactor-code'
-                  type='text'
-                  inputMode='numeric'
-                  pattern='[0-9]*'
-                  minLength={6}
-                  maxLength={6}
-                  autoComplete='one-time-code'
-                  required
-                  value={twoFactorCode}
-                  onChange={(event) => setTwoFactorCode(event.target.value)}
-                  onPaste={handleTwoFactorPaste}
-                  aria-invalid={Boolean(twoFactorErrorMessage)}
-                  aria-describedby={twoFactorDescribedBy}
-                  ref={twoFactorInputRef}
-                  className='input input-bordered input-sm w-full bg-transparent'
-                />
-              </div>
-              <label
-                htmlFor='twofactor-trust'
-                className='flex items-center gap-2 text-sm text-base-content/60'
-              >
-                <input
-                  id='twofactor-trust'
-                  type='checkbox'
-                  checked={trustDevice}
-                  onChange={(event) => setTrustDevice(event.target.checked)}
-                  className='checkbox'
-                />
-                Trust this device for 30 days
-              </label>
-              {twoFactorErrorMessage && (
-                <>
-                  <output
-                    id={twoFactorErrorId}
-                    aria-live='assertive'
-                    className='validator-hint text-sm text-error'
-                  >
-                    {twoFactorErrorMessage}
-                  </output>
-                  <p className='text-xs text-base-content/70'>
-                    Double-check the code, sync your authenticator clock, or
-                    request a new one if it keeps failing.
-                  </p>
-                </>
-              )}
-              <p
-                id={twoFactorGuidanceId}
-                className='text-xs text-base-content/60'
-              >
-                {twoFactorGuidance}
-              </p>
+                    <p className='text-xs text-base-content/70'>
+                      Double-check the code, sync your authenticator clock, or
+                      request a new one if it keeps failing.
+                    </p>
+                  </>
+                )}
+                <p
+                  id={twoFactorGuidanceId}
+                  className='text-xs text-base-content/60'
+                >
+                  {twoFactorGuidance}
+                </p>
+                <button
+                  type='submit'
+                  className='btn btn-secondary w-full py-3 text-sm font-semibold transition hover:-translate-y-0.5'
+                  disabled={isVerifyPending}
+                >
+                  {isVerifyPending ? 'Verifying…' : 'Verify code'}
+                </button>
+              </form>
               <button
-                type='submit'
-                className='btn btn-secondary w-full py-3 text-sm font-semibold transition hover:-translate-y-0.5'
-                disabled={isVerifyPending}
+                type='button'
+                className='text-xs font-semibold text-base-content/70 underline-offset-4 hover:underline'
+                onClick={handleTwoFactorCancel}
               >
-                {isVerifyPending ? 'Verifying…' : 'Verify code'}
+                Use a different account
               </button>
-            </form>
-            <button
-              type='button'
-              className='text-xs font-semibold text-base-content/70 underline-offset-4 hover:underline'
-              onClick={handleTwoFactorCancel}
-            >
-              Use a different account
-            </button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
     </>
   );
 }

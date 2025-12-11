@@ -1,9 +1,6 @@
 'use client';
-
 import { type FormEvent, useState } from 'react';
-
 import { changePassword } from '@/lib/auth-client';
-
 import { StatusAlerts } from './StatusAlerts';
 
 type ChangePasswordModalProps = {

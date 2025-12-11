@@ -1,11 +1,8 @@
 'use client';
-
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 import QRCode from 'react-qr-code';
-
 import { authClient } from '@/lib/auth-client';
-
 import { StatusAlerts } from './StatusAlerts';
 
 type TwoFactorSetup = {
@@ -18,11 +15,16 @@ type TwoFactorModalProps = {
   onClose: () => void;
 };
 
-export function TwoFactorModal({ isTwoFactorEnabled, onClose }: TwoFactorModalProps) {
+export function TwoFactorModal({
+  isTwoFactorEnabled,
+  onClose,
+}: TwoFactorModalProps) {
   const router = useRouter();
   const [twoFactorPassword, setTwoFactorPassword] = useState('');
   const [twoFactorOtp, setTwoFactorOtp] = useState('');
-  const [twoFactorSetup, setTwoFactorSetup] = useState<TwoFactorSetup | null>(null);
+  const [twoFactorSetup, setTwoFactorSetup] = useState<TwoFactorSetup | null>(
+    null,
+  );
   const [pendingBackupCodes, setPendingBackupCodes] = useState<string[]>([]);
   const [statusMessage, setStatusMessage] = useState('');
   const [statusError, setStatusError] = useState('');
@@ -260,7 +262,9 @@ export function TwoFactorModal({ isTwoFactorEnabled, onClose }: TwoFactorModalPr
                         maxLength={10}
                         required
                         value={twoFactorOtp}
-                        onChange={(event) => setTwoFactorOtp(event.target.value)}
+                        onChange={(event) =>
+                          setTwoFactorOtp(event.target.value)
+                        }
                       />
                     </label>
                   </div>
@@ -290,9 +294,9 @@ export function TwoFactorModal({ isTwoFactorEnabled, onClose }: TwoFactorModalPr
                     Copy all
                   </button>
                 </div>
-                <div className='grid gap-2 text-[11px] font-mono'>
+                <div className='grid grid-cols-1 gap-2 text-xs font-mono md:grid-cols-2'>
                   {pendingBackupCodes.map((code) => (
-                    <span key={code} className='rounded bg-base-200 px-2 py-1 text-[11px]'>
+                    <span key={code} className='bg-base-200 px-2 py-1'>
                       {code}
                     </span>
                   ))}

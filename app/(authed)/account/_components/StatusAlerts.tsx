@@ -18,9 +18,7 @@ export function StatusAlerts({ message, error }: StatusAlertsProps) {
         </p>
       )}
       {error && (
-        <p className='text-sm font-semibold uppercase text-error'>
-          {error}
-        </p>
+        <p className='text-sm font-semibold uppercase text-error'>{error}</p>
       )}
     </>
   );
