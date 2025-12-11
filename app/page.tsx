@@ -70,6 +70,7 @@ const signupErrorId = 'signup-error';
 const signupSuccessId = 'signup-success';
 const twoFactorErrorId = 'twofactor-error';
 const twoFactorGuidanceId = 'twofactor-guidance';
+const twoFactorModalTitle = 'twofactor-title';
 
 const describeError = (value: unknown) => {
   if (!value) {
@@ -333,15 +334,16 @@ function HomeContent() {
   }`;
 
   return (
-    <main className='min-h-screen bg-base-200'>
-      <div className='mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-12 sm:py-16 lg:px-8'>
-        <div className='relative overflow-hidden border border-base-content/10 bg-white/70 p-6 shadow-xl shadow-primary/10 backdrop-blur dark:bg-base-300/80 dark:border-base-300/50 dark:shadow-black/20 sm:p-8'>
-          <div
-            aria-hidden='true'
-            className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-accent/10 opacity-30 dark:opacity-40'
-          />
-          <div className='relative z-10 grid gap-10 lg:grid-cols-[1.2fr_0.9fr]'>
-            <section className='order-2 space-y-6 lg:order-1'>
+    <>
+      <main className='min-h-screen bg-base-200'>
+        <div className='mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-12 sm:py-16 lg:px-8'>
+          <div className='relative overflow-hidden border border-base-content/10 bg-white/70 p-6 shadow-xl shadow-primary/10 backdrop-blur dark:bg-base-300/80 dark:border-base-300/50 dark:shadow-black/20 sm:p-8'>
+            <div
+              aria-hidden='true'
+              className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-accent/10 opacity-30 dark:opacity-40'
+            />
+            <div className='relative z-10 grid gap-10 lg:grid-cols-[1.2fr_0.9fr]'>
+              <section className='order-2 space-y-6 lg:order-1'>
               <div className='flex flex-col gap-3'>
                 <div className='flex items-center gap-3'>
                   <div className='relative h-14 w-14 rounded-2xl border border-base-content/10 bg-base-100/80 p-2 shadow-sm dark:border-base-300/40 dark:bg-base-200/60'>
@@ -451,6 +453,7 @@ function HomeContent() {
               </div>
               <div
                 className={activeTab === 'login' ? loginPaneClass : 'hidden'}
+                aria-hidden={twoFactorPrompt}
               >
                 <div className='flex items-center justify-between text-xs text-base-content/60'>
                   <span>Existing account</span>
@@ -536,104 +539,6 @@ function HomeContent() {
                     {isLoginPending ? 'Signing in…' : 'Sign in'}
                   </button>
                 </form>
-                {twoFactorPrompt && (
-                  <div className='space-y-3 rounded-2xl border border-base-content/20 bg-base-100/70 p-4 text-sm text-base-content/80'>
-                    <div className='flex items-center justify-between gap-4'>
-                      <p className='text-xs uppercase text-warning'>
-                        Step 2 of 2
-                      </p>
-                      <span className='text-xs font-semibold text-base-content/60'>
-                        Two-factor verification
-                      </span>
-                    </div>
-                    <p className='text-sm text-base-content/70'>
-                      Enter the 6-digit code from your authenticator app to
-                      finish signing in.
-                    </p>
-                    <form
-                      className='grid gap-3'
-                      onSubmit={handleVerifyTwoFactor}
-                      aria-busy={isVerifyPending}
-                    >
-                      <div className='form-control w-full'>
-                        <label htmlFor='twofactor-code' className='label'>
-                          <span className='label-text text-sm'>
-                            Authenticator code
-                          </span>
-                        </label>
-                        <input
-                          id='twofactor-code'
-                          type='text'
-                          inputMode='numeric'
-                          pattern='[0-9]*'
-                          minLength={6}
-                          maxLength={6}
-                          autoComplete='one-time-code'
-                          required
-                          value={twoFactorCode}
-                          onChange={(event) =>
-                            setTwoFactorCode(event.target.value)
-                          }
-                          onPaste={handleTwoFactorPaste}
-                          aria-invalid={Boolean(twoFactorErrorMessage)}
-                          aria-describedby={twoFactorDescribedBy}
-                          ref={twoFactorInputRef}
-                          className='input input-bordered input-sm w-full bg-transparent'
-                        />
-                      </div>
-                      <label
-                        htmlFor='twofactor-trust'
-                        className='flex items-center gap-2 text-sm text-base-content/60'
-                      >
-                        <input
-                          id='twofactor-trust'
-                          type='checkbox'
-                          checked={trustDevice}
-                          onChange={(event) =>
-                            setTrustDevice(event.target.checked)
-                          }
-                          className='checkbox'
-                        />
-                        Trust this device for 30 days
-                      </label>
-                      {twoFactorErrorMessage && (
-                        <>
-                          <output
-                            id={twoFactorErrorId}
-                            aria-live='assertive'
-                            className='validator-hint text-sm text-error'
-                          >
-                            {twoFactorErrorMessage}
-                          </output>
-                          <p className='text-xs text-base-content/70'>
-                            Double-check the code, sync your authenticator
-                            clock, or request a new one if it keeps failing.
-                          </p>
-                        </>
-                      )}
-                      <p
-                        id={twoFactorGuidanceId}
-                        className='text-xs text-base-content/60'
-                      >
-                        {twoFactorGuidance}
-                      </p>
-                      <button
-                        type='submit'
-                        className='btn btn-secondary w-full py-3 text-sm font-semibold transition hover:-translate-y-0.5'
-                        disabled={isVerifyPending}
-                      >
-                        {isVerifyPending ? 'Verifying…' : 'Verify code'}
-                      </button>
-                    </form>
-                    <button
-                      type='button'
-                      className='text-xs font-semibold text-base-content/70 underline-offset-4 hover:underline'
-                      onClick={handleTwoFactorCancel}
-                    >
-                      Use a different account
-                    </button>
-                  </div>
-                )}
               </div>
               <div
                 className={activeTab === 'signup' ? 'space-y-4 pt-4' : 'hidden'}
@@ -807,6 +712,115 @@ function HomeContent() {
         </div>
       </div>
     </main>
+    {twoFactorPrompt && (
+      <div className='fixed inset-0 z-50 flex items-center justify-center px-4 py-8'>
+        <div
+          className='absolute inset-0 bg-base-content/70 backdrop-blur-sm'
+          aria-hidden='true'
+        />
+        <div
+          role='dialog'
+          aria-modal='true'
+          aria-labelledby={twoFactorModalTitle}
+          className='relative w-full max-w-sm rounded-3xl border border-base-content/20 bg-base-100/90 p-6 shadow-2xl shadow-base-content/30 dark:border-base-300/70 dark:bg-base-200/90'
+        >
+          <div className='space-y-3 text-sm text-base-content/80'>
+            <div className='flex items-center justify-between gap-3'>
+              <p
+                id={twoFactorModalTitle}
+                className='text-sm font-semibold text-base-content'
+              >
+                Two-factor verification
+              </p>
+              <span className='text-xs uppercase text-warning'>
+                Step 2 of 2
+              </span>
+            </div>
+            <p className='text-sm text-base-content/70'>
+              Enter the 6-digit code from your authenticator app to finish
+              signing in.
+            </p>
+            <form
+              className='grid gap-3'
+              onSubmit={handleVerifyTwoFactor}
+              aria-busy={isVerifyPending}
+            >
+              <div className='form-control w-full'>
+                <label htmlFor='twofactor-code' className='label'>
+                  <span className='label-text text-sm'>Authenticator code</span>
+                </label>
+                <input
+                  id='twofactor-code'
+                  type='text'
+                  inputMode='numeric'
+                  pattern='[0-9]*'
+                  minLength={6}
+                  maxLength={6}
+                  autoComplete='one-time-code'
+                  required
+                  value={twoFactorCode}
+                  onChange={(event) => setTwoFactorCode(event.target.value)}
+                  onPaste={handleTwoFactorPaste}
+                  aria-invalid={Boolean(twoFactorErrorMessage)}
+                  aria-describedby={twoFactorDescribedBy}
+                  ref={twoFactorInputRef}
+                  className='input input-bordered input-sm w-full bg-transparent'
+                />
+              </div>
+              <label
+                htmlFor='twofactor-trust'
+                className='flex items-center gap-2 text-sm text-base-content/60'
+              >
+                <input
+                  id='twofactor-trust'
+                  type='checkbox'
+                  checked={trustDevice}
+                  onChange={(event) => setTrustDevice(event.target.checked)}
+                  className='checkbox'
+                />
+                Trust this device for 30 days
+              </label>
+              {twoFactorErrorMessage && (
+                <>
+                  <output
+                    id={twoFactorErrorId}
+                    aria-live='assertive'
+                    className='validator-hint text-sm text-error'
+                  >
+                    {twoFactorErrorMessage}
+                  </output>
+                  <p className='text-xs text-base-content/70'>
+                    Double-check the code, sync your authenticator clock, or
+                    request a new one if it keeps failing.
+                  </p>
+                </>
+              )}
+              <p
+                id={twoFactorGuidanceId}
+                className='text-xs text-base-content/60'
+              >
+                {twoFactorGuidance}
+              </p>
+              <button
+                type='submit'
+                className='btn btn-secondary w-full py-3 text-sm font-semibold transition hover:-translate-y-0.5'
+                disabled={isVerifyPending}
+              >
+                {isVerifyPending ? 'Verifying…' : 'Verify code'}
+              </button>
+            </form>
+            <button
+              type='button'
+              className='text-xs font-semibold text-base-content/70 underline-offset-4 hover:underline'
+              onClick={handleTwoFactorCancel}
+            >
+              Use a different account
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
