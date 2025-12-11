@@ -180,58 +180,53 @@ export function TwoFactorModal({
               <StatusAlerts message={statusMessage} error={statusError} />
             </div>
             {!isTwoFactorEnabled ? (
-              <>
-                {!twoFactorSetup && (
-                  <form
-                    className='space-y-3'
-                    onSubmit={handleStartTwoFactor}
-                  >
-                    <div className='grid gap-2'>
-                      <label className='input w-full validator'>
-                        <input
-                          id='twoFactorPassword'
-                          type={showTwoFactorPassword ? 'text' : 'password'}
-                          placeholder='Confirm password'
-                          autoComplete='current-password'
-                          required
-                          value={twoFactorPassword}
-                          onChange={(event) =>
-                            setTwoFactorPassword(event.target.value)
-                          }
+              !twoFactorSetup && (
+                <form className='space-y-3' onSubmit={handleStartTwoFactor}>
+                  <div className='grid gap-2'>
+                    <label className='input w-full validator'>
+                      <input
+                        id='twoFactorPassword'
+                        type={showTwoFactorPassword ? 'text' : 'password'}
+                        placeholder='Confirm password'
+                        autoComplete='current-password'
+                        required
+                        value={twoFactorPassword}
+                        onChange={(event) =>
+                          setTwoFactorPassword(event.target.value)
+                        }
+                      />
+                      <button
+                        type='button'
+                        aria-pressed={showTwoFactorPassword}
+                        onClick={() =>
+                          setShowTwoFactorPassword((prev) => !prev)
+                        }
+                        className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
+                          showTwoFactorPassword ? 'swap-active' : ''
+                        }`}
+                      >
+                        <i
+                          className='fa-solid fa-eye-slash swap-on'
+                          aria-hidden='true'
                         />
-                        <button
-                          type='button'
-                          aria-pressed={showTwoFactorPassword}
-                          onClick={() =>
-                            setShowTwoFactorPassword((prev) => !prev)
-                          }
-                          className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
-                            showTwoFactorPassword ? 'swap-active' : ''
-                          }`}
-                        >
-                          <i
-                            className='fa-solid fa-eye-slash swap-on'
-                            aria-hidden='true'
-                          />
-                          <i
-                            className='fa-solid fa-eye swap-off'
-                            aria-hidden='true'
-                          />
-                        </button>
-                      </label>
-                    </div>
-                    <button
-                      type='submit'
-                      className={`btn btn-primary w-full text-sm font-semibold ${
-                        isRequestingTwoFactor ? 'loading' : ''
-                      }`}
-                      disabled={isRequestingTwoFactor}
-                    >
-                      Enable two-factor
-                    </button>
-                  </form>
-                )}
-              </>
+                        <i
+                          className='fa-solid fa-eye swap-off'
+                          aria-hidden='true'
+                        />
+                      </button>
+                    </label>
+                  </div>
+                  <button
+                    type='submit'
+                    className={`btn btn-primary w-full text-sm font-semibold ${
+                      isRequestingTwoFactor ? 'loading' : ''
+                    }`}
+                    disabled={isRequestingTwoFactor}
+                  >
+                    Enable two-factor
+                  </button>
+                </form>
+              )
             ) : (
               <form className='space-y-3' onSubmit={handleDisableTwoFactor}>
                 <div className='grid gap-2'>

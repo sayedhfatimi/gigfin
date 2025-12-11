@@ -335,88 +335,96 @@ function HomeContent() {
 
   return (
     <>
-      <main className='min-h-screen bg-base-200'>
-        <div className='mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-12 sm:py-16 lg:px-8'>
-          <div className='relative overflow-hidden border border-base-content/10 bg-white/70 p-6 shadow-xl shadow-primary/10 backdrop-blur dark:bg-base-300/80 dark:border-base-300/50 dark:shadow-black/20 sm:p-8'>
-            <div
-              aria-hidden='true'
-              className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-accent/10 opacity-30 dark:opacity-40'
-            />
-            <div className='relative z-10 grid gap-10 lg:grid-cols-[1.2fr_0.9fr]'>
-              <section className='order-2 space-y-6 lg:order-1'>
-                <div className='flex flex-col gap-3'>
-                  <div className='flex items-center gap-3'>
-                    <div className='relative h-14 w-14 rounded-2xl border border-base-content/10 bg-base-100/80 p-2 shadow-sm dark:border-base-300/40 dark:bg-base-200/60'>
-                      <Image
-                        src='/logo.png'
-                        alt='GigFin logo'
-                        fill
-                        className='object-contain'
-                        priority
-                      />
+      <main className='bg-base-200'>
+        <section className='hero relative min-h-screen bg-base-200'>
+          <div
+            aria-hidden='true'
+            className='hero-overlay pointer-events-none bg-linear-to-br from-primary/20 via-transparent to-accent/20'
+          />
+          <div className='hero-content mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-12 text-base-content sm:py-16 lg:flex-row lg:items-stretch lg:gap-12'>
+            <div className='relative z-10 order-2 w-full lg:order-1 lg:w-[60%]'>
+              <section className='relative overflow-hidden rounded-3xl border border-base-content/10 bg-white/80 p-6 shadow-xl shadow-primary/10 backdrop-blur dark:border-base-300/50 dark:bg-base-300/80 sm:p-8'>
+                <div
+                  aria-hidden='true'
+                  className='pointer-events-none absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-accent/10 opacity-30 dark:opacity-40'
+                />
+                <div className='relative z-10 space-y-6'>
+                  <div className='flex flex-col gap-3'>
+                    <div className='flex items-center gap-3'>
+                      <div className='relative h-14 w-14 rounded-2xl border border-base-content/10 bg-base-100/80 p-2 shadow-sm dark:border-base-300/40 dark:bg-base-200/60'>
+                        <Image
+                          src='/logo.png'
+                          alt='GigFin logo'
+                          fill
+                          className='object-contain'
+                          priority
+                        />
+                      </div>
+                      <p className='text-xs font-semibold uppercase text-primary'>
+                        GigFin
+                      </p>
                     </div>
-                    <p className='text-xs font-semibold uppercase text-primary'>
-                      GigFin invite
+                    <h1 className='text-4xl font-semibold leading-tight text-slate-900 dark:text-white lg:text-5xl'>
+                      A secure ledger for every gig payout
+                    </h1>
+                    <p className='text-lg text-base-content/80'>
+                      Uber Eats, Deliveroo, Just Eat, Amazon Flex, and every
+                      other gig platform—track tips, bonuses, and invoices
+                      without the spreadsheet clutter.
+                    </p>
+                    <p className='text-sm text-base-content/70'>
+                      Free and open source. Secure by default.
                     </p>
                   </div>
-                  <h1 className='text-4xl font-semibold leading-tight text-slate-900 dark:text-white lg:text-5xl'>
-                    A secure ledger for every gig payout
-                  </h1>
-                  <p className='text-lg text-base-content/80'>
-                    Uber Eats, Deliveroo, Just Eat, Amazon Flex, and every other
-                    gig platform—track tips, bonuses, and invoices without the
-                    spreadsheet clutter.
-                  </p>
-                  <p className='text-sm text-base-content/70'>
-                    Free and open source. Secure by default.
-                  </p>
-                </div>
-                <ul className='grid gap-3'>
-                  {featureHighlights.map((highlight) => (
-                    <li
-                      key={highlight.title}
-                      className='rounded-2xl border border-base-content/10 bg-base-100/70 px-4 py-3 text-sm text-base-content/80 shadow-sm dark:border-base-300/50 dark:bg-base-200/60'
-                    >
-                      <div className='flex items-start gap-3'>
-                        <span className='text-xl leading-none'>
-                          {highlight.icon}
-                        </span>
-                        <div>
-                          <p className='text-sm font-semibold text-base-content'>
-                            {highlight.title}
-                          </p>
-                          <p className='text-sm text-base-content/70'>
-                            {highlight.description}
-                          </p>
+                  <ul className='grid gap-3'>
+                    {featureHighlights.map((highlight) => (
+                      <li
+                        key={highlight.title}
+                        className='rounded-2xl border border-base-content/10 bg-base-100/70 px-4 py-3 text-sm text-base-content/80 shadow-sm dark:border-base-300/50 dark:bg-base-200/60'
+                      >
+                        <div className='flex items-start gap-3'>
+                          <span className='text-xl leading-none'>
+                            {highlight.icon}
+                          </span>
+                          <div>
+                            <p className='text-sm font-semibold text-base-content'>
+                              {highlight.title}
+                            </p>
+                            <p className='text-sm text-base-content/70'>
+                              {highlight.description}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-                <div className='rounded-2xl bg-base-100/80 px-4 py-3 text-sm font-semibold text-base-content/80 shadow-sm dark:bg-base-200/60 dark:border-base-300/40'>
-                  Two-factor verification + secure sessions by default.
-                </div>
-                <div className='flex flex-wrap gap-2 text-xs text-base-content/60'>
-                  <a
-                    href={githubUrl}
-                    target='_blank'
-                    rel='noreferrer'
-                    className='font-semibold text-primary transition hover:text-primary-focus'
-                  >
-                    View source on GitHub
-                  </a>
-                  <span className='text-base-content/40'>·</span>
-                  <a
-                    href={githubIssuesUrl}
-                    target='_blank'
-                    rel='noreferrer'
-                    className='text-base-content/70 transition hover:text-base-content'
-                  >
-                    Browse issues
-                  </a>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className='rounded-2xl bg-base-100/80 px-4 py-3 text-sm font-semibold text-base-content/80 shadow-sm dark:bg-base-200/60 dark:border-base-300/40'>
+                    Two-factor verification + secure sessions by default.
+                  </div>
+                  <div className='flex flex-wrap gap-2 text-xs text-base-content/60'>
+                    <a
+                      href={githubUrl}
+                      target='_blank'
+                      rel='noreferrer'
+                      className='font-semibold text-primary transition hover:text-primary-focus'
+                    >
+                      View source on GitHub
+                    </a>
+                    <span className='text-base-content/40'>·</span>
+                    <a
+                      href={githubIssuesUrl}
+                      target='_blank'
+                      rel='noreferrer'
+                      className='text-base-content/70 transition hover:text-base-content'
+                    >
+                      Browse issues
+                    </a>
+                  </div>
                 </div>
               </section>
-              <section className='order-1 space-y-4 rounded-2xl border border-base-content/10 bg-base-100/70 p-6 shadow-sm shadow-base-content/5 backdrop-blur dark:border-base-300/60 dark:bg-base-200/60 lg:order-2'>
+            </div>
+            <section className='relative z-10 order-1 w-full lg:order-2 lg:w-[40%]'>
+              <div className='space-y-4 rounded-3xl border border-base-content/10 bg-base-100/80 p-6 shadow-sm shadow-base-content/5 backdrop-blur dark:border-base-300/60 dark:bg-base-200/60'>
                 <p className='text-xs text-base-content/70'>
                   Sign in or create an account to start logging earnings without
                   spreadsheets.
@@ -712,10 +720,10 @@ function HomeContent() {
                     </p>
                   </form>
                 </div>
-              </section>
-            </div>
+              </div>
+            </section>
           </div>
-        </div>
+        </section>
       </main>
       {twoFactorPrompt && (
         <div className='fixed inset-0 z-50 flex items-center justify-center px-4 py-8'>
