@@ -28,25 +28,30 @@ const columnHelper = createColumnHelper<DailyIncomeSummary>();
 const renderSortableHeader = (
   column: Column<DailyIncomeSummary>,
   label: string,
-) => (
-  <button
-    type='button'
-    className='flex items-center gap-2 text-xs font-semibold uppercase '
-    onClick={() => column.toggleSorting()}
-  >
-    <span className='text-base-content'>{label}</span>
-    <span
-      aria-hidden='true'
-      className={`fa-solid ${
-        column.getIsSorted() === 'asc'
-          ? 'fa-arrow-up'
-          : column.getIsSorted() === 'desc'
-            ? 'fa-arrow-down'
-            : 'fa-arrows-up-down'
-      } text-[0.6rem] text-base-content/60`}
-    />
-  </button>
-);
+  align: 'left' | 'right' = 'left',
+) => {
+  const alignmentClasses =
+    align === 'right' ? 'justify-end text-right' : 'justify-start text-left';
+  return (
+    <button
+      type='button'
+      className={`flex w-full items-center gap-2 text-xs font-semibold uppercase ${alignmentClasses}`}
+      onClick={() => column.toggleSorting()}
+    >
+      <span className='text-base-content'>{label}</span>
+      <span
+        aria-hidden='true'
+        className={`fa-solid ${
+          column.getIsSorted() === 'asc'
+            ? 'fa-arrow-up'
+            : column.getIsSorted() === 'desc'
+              ? 'fa-arrow-down'
+              : 'fa-arrows-up-down'
+        } text-[0.6rem] text-base-content/60`}
+      />
+    </button>
+  );
+};
 
 const columns = [
   columnHelper.accessor('date', {
@@ -58,7 +63,8 @@ const columns = [
     ),
   }),
   columnHelper.accessor('total', {
-    header: ({ column }) => renderSortableHeader(column, 'Total income'),
+    header: ({ column }) =>
+      renderSortableHeader(column, 'Total income', 'right'),
     cell: (info) => (
       <div className='text-sm font-semibold text-base-content'>
         {formatCurrency(info.getValue())}
@@ -108,7 +114,7 @@ const buildEntryMonthOptions = (entries: IncomeEntry[]): MonthOption[] => {
 };
 
 const GRID_TEMPLATE_CLASS =
-  'md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center';
+  'md:grid md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center';
 export default function LogsPage() {
   const { data: incomes = [], isLoading } = useIncomeLogs();
 
@@ -396,7 +402,7 @@ export default function LogsPage() {
           <div className='space-y-3'>
             {table.getHeaderGroups().length ? (
               <div
-                className={`hidden ${GRID_TEMPLATE_CLASS} bg-base-100/50 py-3 gap-4 text-xs uppercase text-base-content/60 md:grid px-4`}
+                className={`hidden ${GRID_TEMPLATE_CLASS} bg-base-100/50 py-3 gap-4 text-xs uppercase text-base-content/60 px-4`}
               >
                 {table.getHeaderGroups()[0].headers.map((header) => (
                   <div key={header.id} className='text-left'>
@@ -420,23 +426,34 @@ export default function LogsPage() {
                   <div className='border border-base-content/10 bg-base-200/80 shadow-sm'>
                     <button
                       type='button'
-                      className={`grid w-full grid-cols-1 gap-4 items-start p-4 text-left transition hover:bg-base-100 ${GRID_TEMPLATE_CLASS}`}
+                      className={`flex w-full flex-wrap items-center gap-4 p-4 text-left transition hover:bg-base-100 ${GRID_TEMPLATE_CLASS}`}
                       onClick={() => row.toggleExpanded()}
                     >
-                      {row.getVisibleCells().map((cell) => (
-                        <div
-                          key={cell.id}
-                          className='truncate text-sm font-semibold text-base-content/80'
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </div>
-                      ))}
+                      {row.getVisibleCells().map((cell) => {
+                        const isPlatformColumn = cell.column.id === 'breakdown';
+                        const isTotalColumn = cell.column.id === 'total';
+                        const classes = [
+                          'truncate',
+                          'text-sm',
+                          'font-semibold',
+                          'text-base-content/80',
+                          isPlatformColumn ? 'hidden md:block' : 'min-w-0 flex-1 md:flex-none',
+                          isTotalColumn ? 'text-right' : 'text-left',
+                        ]
+                          .filter(Boolean)
+                          .join(' ');
+                        return (
+                          <div key={cell.id} className={classes}>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </div>
+                        );
+                      })}
                       <span
                         aria-hidden='true'
-                        className={`fa-solid fa-chevron-${row.getIsExpanded() ? 'up' : 'down'} text-xs text-base-content/60`}
+                        className={`fa-solid fa-chevron-${row.getIsExpanded() ? 'up' : 'down'} ml-auto text-xs text-base-content/60`}
                       />
                     </button>
                     {row.getIsExpanded() && (
