@@ -1,4 +1,10 @@
-![GigFin logo](https://raw.githubusercontent.com/sayedhfatimi/gigfin/main/public/logo.png)
+<p align="center">
+  <img
+    src="https://raw.githubusercontent.com/sayedhfatimi/gigfin/main/public/logo.png"
+    alt="GigFin logo"
+    width="120"
+  />
+</p>
 
 # GigFin
 
