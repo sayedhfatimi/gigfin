@@ -1,8 +1,10 @@
-![GigFin logo](/logo.png)
+![GigFin logo](https://raw.githubusercontent.com/sayedhfatimi/gigfin/main/public/logo.png)
 
 # GigFin
 
-GigFin helps gig workers keep a simple, reliable ledger of their tips, bonuses, and invoices alongside monthly trends and platform breakdowns. It combines a responsive Next.js dashboard with Better Auth–powered credential login, 2FA, and a fast SQLite + Drizzle ORM backend so you can log earnings securely from any device.
+GigFin helps gig workers keep a simple, reliable ledger of their overall income across platforms alongside monthly trends and platform breakdowns. Because the app focuses on platform-level income totals, it currently does not track individual line items per platform. It combines a responsive Next.js dashboard with Better Auth–powered credential login, 2FA, and a fast SQLite + Drizzle ORM backend so you can log earnings securely from any device.
+
+A hosted instance is available at https://gigfin.me, but GigFin is designed for self-hosting, and deploying your own instance is the recommended way to keep your data private and under your control.
 
 ## What’s inside
 
@@ -58,8 +60,10 @@ GigFin helps gig workers keep a simple, reliable ledger of their tips, bonuses, 
 
 GigFin expects:
 
-- `DB_FILE_NAME`: e.g. `file:./data/db.sqlite` (shared with drizzle config and runtime)
-- `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL`: defined per Better Auth requirements
+- `BETTER_AUTH_SECRET`: required; generate one with `npx @better-auth/cli@latest secret`.
+- `BETTER_AUTH_URL`: required; the public URL where your GigFin instance is accessible (e.g., `https://gigfin.me` or your own domain).
+- `DB_FILE_NAME`: optional; falls back to `file:./data/db.sqlite` and is shared with the Drizzle config and runtime.
+- `INTERNAL_API_BASE`: optional; defaults to `http://localhost:3000` and points GigFin at the internal API host.
 
 You can surface them from Coolify or any secrets manager. Locally, load them via `.env` or `dotenv` before running `npm` scripts.
 

@@ -45,7 +45,7 @@ const featureHighlights = [
     icon: '📊',
     title: 'Instant summaries',
     description:
-      'Filter by month or platform and let charts aggregate tips, bonuses, and invoices in seconds.',
+      'Filter by month or platform and let charts summarize total income in seconds.',
   },
   {
     icon: '🔒',
@@ -369,8 +369,8 @@ function HomeContent() {
                     </h1>
                     <p className='text-lg text-base-content/80'>
                       Uber Eats, Deliveroo, Just Eat, Amazon Flex, and every
-                      other gig platform—track tips, bonuses, and invoices
-                      without the spreadsheet clutter.
+                      other gig platform—track your total income without the
+                      spreadsheet clutter.
                     </p>
                     <p className='text-sm text-base-content/70'>
                       Free and open source. Secure by default.
