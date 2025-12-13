@@ -2,6 +2,9 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 ENV DB_FILE_NAME=file:./data/db.sqlite
 
+# Upgrade npm so builds inside this repo always use the latest CLI.
+RUN npm install -g npm@latest
+
 # Install dependencies before copying the rest of the project to leverage layer caching.
 COPY package*.json ./
 RUN npm ci
