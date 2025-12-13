@@ -5,6 +5,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    # Allow direct docker/docker-compose deployments to load env vars from .env
+    env_file:
+      - path: ./.env
+        required: false
     ports:
       - "3000:3000"
     volumes:

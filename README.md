@@ -27,7 +27,41 @@ A hosted instance is available at https://gigfin.me, but GigFin is designed for 
 - **better-auth** for token management, signup/login, and Two-Factor Auth
 - **TanStack Query & Table**, **Recharts**, and **DaisyUI/Tailwind** for the UI surfaces
 
-## Getting started
+## Environment variables
+
+GigFin expects:
+
+- `BETTER_AUTH_SECRET`: required; generate one with `npx @better-auth/cli@latest secret` or run the command `openssl rand -base64 32` in a terminal.
+- `BETTER_AUTH_URL`: required; the public URL where your GigFin instance is accessible (e.g., `https://gigfin.me` or your own domain).
+- `DB_FILE_NAME`: optional; falls back to `file:./data/db.sqlite` and is shared with the Drizzle config and runtime.
+- `INTERNAL_API_BASE`: optional; defaults to `http://localhost:3000` and points GigFin at the internal API host.
+
+You can surface them from Coolify or any secrets manager. Locally, load them via `.env` or `dotenv` before running `npm` scripts.
+
+## Deployment guidance
+
+### Docker & Compose
+
+1. Build and run the containerized stack:
+
+   ```bash
+   docker compose up --build
+   ```
+
+2. The multi-stage `Dockerfile` now seeds `/app/data/db.sqlite` by running `npx drizzle-kit migrate` whenever the file is missing and copies `/app/data` into the runner stage.
+3. `docker-compose.yml` binds the `gigfin-data` volume to `/app/data`, ensuring the SQLite database persists across restarts.
+4. Docker Compose reads runtime environment variables from `.env` (see the `env_file` section in `docker-compose.yml`); keep your secrets there or load them through your orchestration platform.
+
+Bring it down with `docker compose down` when you need to rebuild.
+
+### Coolify
+
+- Fork the repo and add it as a new service in Coolify, picking the **private repository** option if you want automatic builds on updates.
+- In Coolify select the **docker-compose** deployment option, provide the required environment variables, and deploy—no extra build configuration is needed once the stack starts.
+
+## Getting started (local development)
+
+This section explains how to set up a local development environment for hacking on GigFin or contributing changes. If you only need to run a production instance, skip ahead to **Docker & Compose** or **Deployment guidance**.
 
 1. Install dependencies:
 
@@ -61,41 +95,6 @@ A hosted instance is available at https://gigfin.me, but GigFin is designed for 
 
 - Run `npm run build` to compile the app for production; the Docker build stage already runs this.
 - Run `npm run lint` to validate formatting and coding standards via Biome.
-
-## Environment variables
-
-GigFin expects:
-
-- `BETTER_AUTH_SECRET`: required; generate one with `npx @better-auth/cli@latest secret`.
-- `BETTER_AUTH_URL`: required; the public URL where your GigFin instance is accessible (e.g., `https://gigfin.me` or your own domain).
-- `DB_FILE_NAME`: optional; falls back to `file:./data/db.sqlite` and is shared with the Drizzle config and runtime.
-- `INTERNAL_API_BASE`: optional; defaults to `http://localhost:3000` and points GigFin at the internal API host.
-
-You can surface them from Coolify or any secrets manager. Locally, load them via `.env` or `dotenv` before running `npm` scripts.
-
-## Docker & Compose
-
-1. Build and run the containerized stack:
-
-   ```bash
-   docker compose up --build
-   ```
-
-2. The multi-stage `Dockerfile` now seeds `/app/data/db.sqlite` by running `npx drizzle-kit migrate` whenever the file is missing and copies `/app/data` into the runner stage.
-3. `docker-compose.yml` binds the `gigfin-data` volume to `/app/data`, ensuring the SQLite database persists across restarts.
-4. Provide runtime environment variables through Coolify (preferred) or your `.env` file before running the stack.
-
-Bring it down with `docker compose down` when you need to rebuild.
-
-## Deployment guidance
-
-- When deploying with Coolify or another orchestrator, point the server to the build output (`npm run build` + `npm start` or `next start`) and mount a persistent volume to `/app/data`.
-- Set `NODE_ENV=production`, `BETTER_AUTH_*` secrets, and `DB_FILE_NAME` via the hosting provider; the image already defaults to `file:./data/db.sqlite`.
-
-## Migrations & schema updates
-
-- Manage schema changes with `npx drizzle-kit migrate` (adds new SQL migrations into `drizzle/`).
-- Run migrations in CI or during image build so `db.sqlite` always reflects the latest schema before the server boots.
 
 ## License
 
