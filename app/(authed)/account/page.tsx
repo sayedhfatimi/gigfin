@@ -1,23 +1,72 @@
 'use client';
-
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { signOut, useSession } from '@/lib/auth-client';
+import { type ChangeEvent, useEffect, useState } from 'react';
+import { useSession } from '@/lib/auth-client';
+import type { CurrencyCode } from '@/lib/currency';
+import { currencyOptions, resolveCurrency } from '@/lib/currency';
 import { getSessionUser } from '@/lib/session';
 import { ChangePasswordModal } from './_components/ChangePasswordModal';
 import { TwoFactorModal } from './_components/TwoFactorModal';
 
 export default function AccountPage() {
-  const { data: sessionData, isPending } = useSession();
+  const { data: sessionData, isPending, refetch } = useSession();
   const sessionUser = getSessionUser(sessionData);
-  const router = useRouter();
-  const [isSigningOut, setIsSigningOut] = useState(false);
+  const sessionCurrency = resolveCurrency(sessionUser?.currency);
+  const [selectedCurrency, setSelectedCurrency] =
+    useState<CurrencyCode>(sessionCurrency);
+  const [isUpdatingCurrency, setIsUpdatingCurrency] = useState(false);
+  const [currencyMessage, setCurrencyMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
+  useEffect(() => {
+    setSelectedCurrency(sessionCurrency);
+  }, [sessionCurrency]);
   const [isTwoFactorModalOpen, setIsTwoFactorModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const handleSignOut = async () => {
-    setIsSigningOut(true);
-    await signOut();
-    router.replace('/');
+  useEffect(() => {
+    if (!currencyMessage) return;
+    const timer = window.setTimeout(() => {
+      setCurrencyMessage(null);
+      setIsUpdatingCurrency(false);
+    }, 4000);
+    return () => window.clearTimeout(timer);
+  }, [currencyMessage]);
+
+  const handleCurrencyChange = async (
+    event: ChangeEvent<HTMLSelectElement>,
+  ) => {
+    const nextCurrency = event.target.value as CurrencyCode;
+    if (nextCurrency === selectedCurrency) {
+      return;
+    }
+    const previousCurrency = selectedCurrency;
+    setSelectedCurrency(nextCurrency);
+    setCurrencyMessage(null);
+    setIsUpdatingCurrency(true);
+    try {
+      const response = await fetch('/api/auth/update-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ currency: nextCurrency }),
+      });
+      if (!response.ok) {
+        throw new Error('Unable to update currency preference.');
+      }
+      await refetch();
+      setCurrencyMessage({
+        type: 'success',
+        text: 'Currency preference saved.',
+      });
+    } catch (_error) {
+      setSelectedCurrency(previousCurrency);
+      setCurrencyMessage({
+        type: 'error',
+        text: 'Unable to save currency. Try again in a moment.',
+      });
+    } finally {
+      setIsUpdatingCurrency(false);
+    }
   };
 
   const openTwoFactorModal = () => setIsTwoFactorModalOpen(true);
@@ -73,9 +122,7 @@ export default function AccountPage() {
         <div className=' border border-base-content/10 bg-base-100 p-6 shadow-sm'>
           <div className='flex items-center justify-between'>
             <div>
-              <p className='text-xs uppercase  text-base-content/50'>
-                Security
-              </p>
+              <p className='text-xs uppercase text-base-content/50'>Security</p>
               <p className='text-sm text-base-content/60'>
                 Keep your authentication choices up to date.
               </p>
@@ -87,25 +134,6 @@ export default function AccountPage() {
             </span>
           </div>
           <div className='mt-6 space-y-4'>
-            <div className='flex flex-col gap-3 rounded border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
-              <div className='space-y-1'>
-                <p className='text-xs uppercase  text-base-content/50'>
-                  Sign out
-                </p>
-                <p className='text-sm text-base-content/60'>
-                  Signing out clears local income logs for this session.
-                </p>
-              </div>
-              <button
-                type='button'
-                className={`btn btn-error text-sm font-semibold ${
-                  isSigningOut ? 'loading' : ''
-                }`}
-                onClick={handleSignOut}
-              >
-                Sign out
-              </button>
-            </div>
             <div className='flex flex-col gap-3 rounded border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
               <div className='space-y-1'>
                 <p className='text-xs uppercase  text-base-content/50'>
@@ -140,6 +168,64 @@ export default function AccountPage() {
               >
                 Change password
               </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+        <div className='flex items-center justify-between gap-4'>
+          <div>
+            <p className='text-xs uppercase text-base-content/50'>User</p>
+            <h2 className='text-sm text-base-content/60'>
+              Customize settings for your workspace.
+            </h2>
+          </div>
+        </div>
+        <div className='mt-6 space-y-4'>
+          <div className='flex flex-col gap-3 rounded border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
+            <div className='space-y-1'>
+              <p className='text-xs uppercase text-base-content/50'>
+                Default currency
+              </p>
+              <p className='text-sm text-base-content/60'>
+                This currency controls how values appear throughout your
+                workspace.
+              </p>
+            </div>
+            <div className='w-full max-w-xs'>
+              <label className='sr-only' htmlFor='default-currency'>
+                Default currency
+              </label>
+              <select
+                id='default-currency'
+                className='select w-full'
+                value={selectedCurrency}
+                onChange={handleCurrencyChange}
+                disabled={isUpdatingCurrency}
+              >
+                {currencyOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              {isUpdatingCurrency && (
+                <p className='text-xs text-base-content/60'>
+                  Saving preference…
+                </p>
+              )}
+              {currencyMessage && (
+                <p
+                  className={`text-sm ${
+                    currencyMessage.type === 'success'
+                      ? 'text-success'
+                      : 'text-error'
+                  }`}
+                >
+                  {currencyMessage.text}
+                </p>
+              )}
             </div>
           </div>
         </div>

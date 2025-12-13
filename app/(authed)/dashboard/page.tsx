@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { useSession } from '@/lib/auth-client';
+import { resolveCurrency } from '@/lib/currency';
 import {
   aggregateDailyIncomes,
   formatCurrency,
@@ -20,6 +21,7 @@ import { TotalsTable } from './_components/TotalsTable';
 export default function DashboardPage() {
   const { data: sessionData, isPending } = useSession();
   const sessionUser = getSessionUser(sessionData);
+  const currency = resolveCurrency(sessionUser?.currency);
   const { data: incomes = [] } = useIncomeLogs();
 
   const dailySummaries = useMemo(
@@ -55,13 +57,13 @@ export default function DashboardPage() {
     return [
       {
         title: 'Total income',
-        value: formatCurrency(totalIncome),
+        value: formatCurrency(totalIncome, currency),
         desc: trackedDaysLabel,
         valueClass: 'text-primary',
       },
       {
         title: 'Average / day',
-        value: formatCurrency(averagePerDay),
+        value: formatCurrency(averagePerDay, currency),
         desc: 'Consistent hustle',
         valueClass: 'text-secondary',
       },
@@ -72,7 +74,7 @@ export default function DashboardPage() {
       },
       {
         title: 'Current month',
-        value: formatCurrency(currentMonthTotal),
+        value: formatCurrency(currentMonthTotal, currency),
         desc: `${currentMonthEntriesCount} entries logged`,
         valueClass: 'text-accent',
       },
@@ -85,6 +87,7 @@ export default function DashboardPage() {
     currentMonthTotal,
     currentMonthEntriesCount,
     trackedDaysCount,
+    currency,
   ]);
 
   if (isPending) {
@@ -111,13 +114,13 @@ export default function DashboardPage() {
       <DashboardStats stats={stats} />
 
       <div className='grid gap-6 lg:grid-cols-[1.4fr_1fr]'>
-        <RecentDaysPanel dailySummaries={dailySummaries} />
-        <PieChart incomes={incomes} />
+        <RecentDaysPanel dailySummaries={dailySummaries} currency={currency} />
+        <PieChart incomes={incomes} currency={currency} />
       </div>
 
-      <LineChart incomes={incomes} />
+      <LineChart incomes={incomes} currency={currency} />
 
-      <TotalsTable incomes={incomes} />
+      <TotalsTable incomes={incomes} currency={currency} />
     </div>
   );
 }

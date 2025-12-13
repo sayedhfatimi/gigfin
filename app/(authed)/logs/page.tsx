@@ -9,7 +9,9 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
-
+import { useSession } from '@/lib/auth-client';
+import type { CurrencyCode } from '@/lib/currency';
+import { resolveCurrency } from '@/lib/currency';
 import {
   aggregateDailyIncomes,
   type DailyIncomeSummary,
@@ -20,6 +22,7 @@ import {
   type MonthOption,
 } from '@/lib/income';
 import { useDeleteIncome, useIncomeLogs } from '@/lib/queries/income';
+import { getSessionUser } from '@/lib/session';
 
 import IncomeEntryModal from './_components/IncomeEntryModal';
 
@@ -53,7 +56,7 @@ const renderSortableHeader = (
   );
 };
 
-const columns = [
+const buildColumns = (currency: CurrencyCode) => [
   columnHelper.accessor('date', {
     header: ({ column }) => renderSortableHeader(column, 'Date'),
     cell: (info) => (
@@ -67,7 +70,7 @@ const columns = [
       renderSortableHeader(column, 'Total income', 'right'),
     cell: (info) => (
       <div className='text-sm font-semibold text-base-content'>
-        {formatCurrency(info.getValue())}
+        {formatCurrency(info.getValue(), currency)}
       </div>
     ),
     meta: {
@@ -117,6 +120,9 @@ const GRID_TEMPLATE_CLASS =
   'md:grid md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center';
 export default function LogsPage() {
   const { data: incomes = [], isLoading } = useIncomeLogs();
+  const { data: sessionData } = useSession();
+  const sessionUser = getSessionUser(sessionData);
+  const currency = resolveCurrency(sessionUser?.currency);
 
   const entryMonthOptions = useMemo(
     () => buildEntryMonthOptions(incomes),
@@ -232,6 +238,8 @@ export default function LogsPage() {
         : [...prev, platform],
     );
   };
+
+  const columns = useMemo(() => buildColumns(currency), [currency]);
 
   const table = useReactTable({
     data: dailySummaries,
@@ -437,7 +445,9 @@ export default function LogsPage() {
                           'text-sm',
                           'font-semibold',
                           'text-base-content/80',
-                          isPlatformColumn ? 'hidden md:block' : 'min-w-0 flex-1 md:flex-none',
+                          isPlatformColumn
+                            ? 'hidden md:block'
+                            : 'min-w-0 flex-1 md:flex-none',
                           isTotalColumn ? 'text-right' : 'text-left',
                         ]
                           .filter(Boolean)
@@ -479,7 +489,7 @@ export default function LogsPage() {
                                     {entry.platform}
                                   </p>
                                   <p className='text-xs text-base-content/60'>
-                                    {formatCurrency(entry.amount)}
+                                    {formatCurrency(entry.amount, currency)}
                                   </p>
                                 </div>
                                 <div className='flex items-center gap-2 text-xs'>
@@ -521,6 +531,7 @@ export default function LogsPage() {
         isOpen={modalOpen}
         editingEntry={editingEntry}
         onClose={handleCloseModal}
+        currency={currency}
       />
       {entryToDelete && (
         <div className='modal modal-open'>
@@ -529,7 +540,7 @@ export default function LogsPage() {
               Confirm deletion
             </h3>
             <p className='mt-2 text-sm text-base-content/60'>
-              Remove {formatCurrency(entryToDelete.amount)} from{' '}
+              Remove {formatCurrency(entryToDelete.amount, currency)} from{' '}
               {entryToDelete.date} ({entryToDelete.platform})? This action
               cannot be undone.
             </p>

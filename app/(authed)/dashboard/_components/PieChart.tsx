@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from 'recharts';
+import type { CurrencyCode } from '@/lib/currency';
 import {
   formatCurrency,
   getCurrentMonthEntries,
@@ -17,6 +18,7 @@ import {
 
 type PieChartProps = {
   incomes: IncomeEntry[];
+  currency: CurrencyCode;
 };
 
 type TimeframeKey = 'weekly' | 'monthly' | 'yearToDate' | 'last12Months';
@@ -122,7 +124,7 @@ const getEntriesForTimeframe = (
   }
 };
 
-export function PieChart({ incomes }: PieChartProps) {
+export function PieChart({ incomes, currency }: PieChartProps) {
   const [timeframe, setTimeframe] = useState<TimeframeKey>('monthly');
 
   useEffect(() => {
@@ -218,7 +220,7 @@ export function PieChart({ incomes }: PieChartProps) {
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(value) => formatCurrency(Number(value))}
+                  formatter={(value) => formatCurrency(Number(value), currency)}
                   labelFormatter={(label) => String(label)}
                 />
               </RechartPieChart>
@@ -245,7 +247,7 @@ export function PieChart({ incomes }: PieChartProps) {
                 <span className='text-base-content'>{item.platform}</span>
               </span>
               <span className='font-semibold text-base-content'>
-                {formatCurrency(item.amount)}
+                {formatCurrency(item.amount, currency)}
               </span>
             </div>
           ))}

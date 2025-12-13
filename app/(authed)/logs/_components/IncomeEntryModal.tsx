@@ -4,6 +4,8 @@ import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/style.css';
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 
+import type { CurrencyCode } from '@/lib/currency';
+import { getCurrencyIcon } from '@/lib/currency';
 import type { IncomeEntry } from '@/lib/income';
 import { useAddIncome, useUpdateIncome } from '@/lib/queries/income';
 
@@ -82,12 +84,14 @@ interface IncomeEntryModalProps {
   isOpen: boolean;
   editingEntry: IncomeEntry | null;
   onClose: () => void;
+  currency: CurrencyCode;
 }
 
 const IncomeEntryModal = ({
   isOpen,
   editingEntry,
   onClose,
+  currency,
 }: IncomeEntryModalProps) => {
   const addIncomeMutation = useAddIncome();
   const updateIncomeMutation = useUpdateIncome();
@@ -312,8 +316,10 @@ const IncomeEntryModal = ({
             </label>
             <label className='input validator w-full'>
               <span
-                className='fa-solid fa-sterling-sign text-base-content/60'
                 aria-hidden='true'
+                className={`fa-solid ${getCurrencyIcon(
+                  currency,
+                )} text-base-content/60`}
               />
               <input
                 type='number'

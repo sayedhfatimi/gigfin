@@ -1,12 +1,17 @@
 'use client';
 
+import type { CurrencyCode } from '@/lib/currency';
 import { type DailyIncomeSummary, formatCurrency } from '@/lib/income';
 
 type RecentDaysPanelProps = {
   dailySummaries: DailyIncomeSummary[];
+  currency: CurrencyCode;
 };
 
-export function RecentDaysPanel({ dailySummaries }: RecentDaysPanelProps) {
+export function RecentDaysPanel({
+  dailySummaries,
+  currency,
+}: RecentDaysPanelProps) {
   const recentDays = dailySummaries.slice(0, 3);
 
   return (
@@ -27,7 +32,7 @@ export function RecentDaysPanel({ dailySummaries }: RecentDaysPanelProps) {
                 </p>
               </div>
               <p className='font-semibold text-base-content'>
-                {formatCurrency(day.total)}
+                {formatCurrency(day.total, currency)}
               </p>
             </div>
           ))}

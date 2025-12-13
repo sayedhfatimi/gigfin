@@ -20,4 +20,14 @@ export const auth = betterAuth({
     enabled: true,
   },
   plugins: [twoFactorPlugin({ issuer: 'GigFin' })],
+  user: {
+    additionalFields: {
+      currency: {
+        type: 'string',
+        input: true,
+        output: true,
+        defaultValue: 'GBP',
+      },
+    },
+  },
 });

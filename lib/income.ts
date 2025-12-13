@@ -63,13 +63,6 @@ export const getPlatformDistribution = (entries: IncomeEntry[]) => {
     .sort((a, b) => b.amount - a.amount);
 };
 
-export const formatCurrency = (value: number) =>
-  Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: 'GBP',
-    maximumFractionDigits: 2,
-  }).format(value);
-
 const monthFormatter = new Intl.DateTimeFormat('en-GB', {
   month: 'short',
   year: 'numeric',
@@ -224,3 +217,5 @@ export const getMonthOptions = (
     return b.month - a.month;
   });
 };
+
+export { formatCurrency } from './currency';

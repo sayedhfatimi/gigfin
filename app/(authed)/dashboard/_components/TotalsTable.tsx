@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import type { CurrencyCode } from '@/lib/currency';
 import {
   formatCurrency,
   getMonthlyTotals,
@@ -9,6 +10,7 @@ import {
 
 type TotalsTableProps = {
   incomes: IncomeEntry[];
+  currency: CurrencyCode;
 };
 
 type TotalsTimeframe = 'months' | 'weeks' | 'days';
@@ -178,7 +180,7 @@ const getTotalsForTimeframe = (
   }
 };
 
-export function TotalsTable({ incomes }: TotalsTableProps) {
+export function TotalsTable({ incomes, currency }: TotalsTableProps) {
   const [timeframe, setTimeframe] = useState<TotalsTimeframe>('months');
 
   useEffect(() => {
@@ -255,7 +257,7 @@ export function TotalsTable({ incomes }: TotalsTableProps) {
               >
                 <td>{summary.label}</td>
                 <td className='font-semibold text-base-content'>
-                  {formatCurrency(summary.total)}
+                  {formatCurrency(summary.total, currency)}
                 </td>
               </tr>
             ))}

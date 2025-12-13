@@ -9,6 +9,7 @@ export const user = sqliteTable('user', {
     .default(false)
     .notNull(),
   image: text('image'),
+  currency: text('currency').default('GBP').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp_ms' })
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
     .notNull(),

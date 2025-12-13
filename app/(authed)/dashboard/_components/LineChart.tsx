@@ -10,6 +10,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import type { CurrencyCode } from '@/lib/currency';
 import {
   formatCurrency,
   getMonthlyTotals,
@@ -18,6 +19,7 @@ import {
 
 type LineChartProps = {
   incomes: IncomeEntry[];
+  currency: CurrencyCode;
 };
 
 type LineGraphDatum = {
@@ -130,7 +132,7 @@ const buildMonthlyTotals = (entries: IncomeEntry[]) => {
     .map((row) => ({ label: row.label, total: row.total }));
 };
 
-export function LineChart({ incomes }: LineChartProps) {
+export function LineChart({ incomes, currency }: LineChartProps) {
   const [timeframe, setTimeframe] = useState<LineGraphTimeframe>('year');
 
   useEffect(() => {
@@ -219,13 +221,15 @@ export function LineChart({ incomes }: LineChartProps) {
                 tick={{ fontSize: 12 }}
               />
               <YAxis
-                tickFormatter={(value) => formatCurrency(Number(value))}
+                tickFormatter={(value) =>
+                  formatCurrency(Number(value), currency)
+                }
                 axisLine={false}
                 tickLine={false}
                 width={72}
               />
               <Tooltip
-                formatter={(value) => formatCurrency(Number(value))}
+                formatter={(value) => formatCurrency(Number(value), currency)}
                 labelFormatter={(label) => String(label)}
                 contentStyle={{ fontSize: '12px' }}
               />
@@ -241,8 +245,8 @@ export function LineChart({ incomes }: LineChartProps) {
           </ResponsiveContainer>
         </div>
         <div className='mt-3 flex items-center justify-between text-xs font-semibold text-base-content/60'>
-          <span>{formatCurrency(0)}</span>
-          <span>{formatCurrency(lineChartMax)}</span>
+          <span>{formatCurrency(0, currency)}</span>
+          <span>{formatCurrency(lineChartMax, currency)}</span>
         </div>
       </div>
     </section>
