@@ -25,6 +25,9 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/data ./data
 COPY --from=builder /app/docker-entrypoint.sh ./docker-entrypoint.sh
+COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
+COPY --from=builder /app/db ./db
+COPY --from=builder /app/drizzle ./drizzle
 
 # Ensure the non-root user owns the application files for security.
 RUN chown -R node:node /app
