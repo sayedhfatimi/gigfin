@@ -1,5 +1,6 @@
 'use client';
 import { type ChangeEvent, useEffect, useState } from 'react';
+import { type ToastMessage, ToastStack } from '@/components/ToastStack';
 import { useSession } from '@/lib/auth-client';
 import type { CurrencyCode } from '@/lib/currency';
 import { currencyOptions, resolveCurrency } from '@/lib/currency';
@@ -14,10 +15,9 @@ export default function AccountPage() {
   const [selectedCurrency, setSelectedCurrency] =
     useState<CurrencyCode>(sessionCurrency);
   const [isUpdatingCurrency, setIsUpdatingCurrency] = useState(false);
-  const [currencyMessage, setCurrencyMessage] = useState<{
-    type: 'success' | 'error';
-    text: string;
-  } | null>(null);
+  const [currencyMessage, setCurrencyMessage] = useState<ToastMessage | null>(
+    null,
+  );
   useEffect(() => {
     setSelectedCurrency(sessionCurrency);
   }, [sessionCurrency]);
@@ -87,160 +87,151 @@ export default function AccountPage() {
   const isTwoFactorEnabled = Boolean(sessionUser?.twoFactorEnabled);
 
   return (
-    <div className='space-y-6'>
-      <header className='space-y-1'>
-        <p className='text-xs uppercase  text-base-content/60'>Account</p>
-        <h1 className='text-3xl font-semibold text-base-content'>Settings</h1>
-        <p className='text-sm text-base-content/60'>
-          Keep your login details and preferences tidy.
-        </p>
-      </header>
-
-      <section className='grid gap-6 lg:grid-cols-2'>
-        <div className=' border border-base-content/10 bg-base-100 p-6 shadow-sm'>
-          <div className='flex items-center justify-between'>
-            <p className='text-xs uppercase  text-base-content/50'>Session</p>
-            <span className='text-xs font-semibold text-base-content/60'>
-              Active
-            </span>
-          </div>
-          <div className='mt-6 space-y-2'>
-            <p className='text-sm text-base-content/70'>
-              Name
-              <span className='block text-base-content font-semibold'>
-                {sessionUser?.name ?? 'Not set'}
+    <>
+      <div className='space-y-6'>
+        <header className='space-y-1'>
+          <p className='text-xs uppercase  text-base-content/60'>Account</p>
+          <h1 className='text-3xl font-semibold text-base-content'>Settings</h1>
+          <p className='text-sm text-base-content/60'>
+            Keep your login details and preferences tidy.
+          </p>
+        </header>
+        <section className='grid gap-6 lg:grid-cols-2'>
+          <div className=' border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+            <div className='flex items-center justify-between'>
+              <p className='text-xs uppercase  text-base-content/50'>Session</p>
+              <span className='text-xs font-semibold text-base-content/60'>
+                Active
               </span>
-            </p>
-            <p className='text-sm text-base-content/70'>
-              Email
-              <span className='block text-base-content font-semibold'>
-                {sessionUser?.email ?? '—'}
-              </span>
-            </p>
-          </div>
-        </div>
-        <div className=' border border-base-content/10 bg-base-100 p-6 shadow-sm'>
-          <div className='flex items-center justify-between'>
-            <div>
-              <p className='text-xs uppercase text-base-content/50'>Security</p>
-              <p className='text-sm text-base-content/60'>
-                Keep your authentication choices up to date.
+            </div>
+            <div className='mt-6 space-y-2'>
+              <p className='text-sm text-base-content/70'>
+                Name
+                <span className='block text-base-content font-semibold'>
+                  {sessionUser?.name ?? 'Not set'}
+                </span>
+              </p>
+              <p className='text-sm text-base-content/70'>
+                Email
+                <span className='block text-base-content font-semibold'>
+                  {sessionUser?.email ?? '—'}
+                </span>
               </p>
             </div>
-            <span className='text-xs font-semibold text-base-content/60 text-right'>
-              {isTwoFactorEnabled
-                ? 'Two-factor enabled'
-                : 'Two-factor disabled'}
-            </span>
+          </div>
+          <div className=' border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+            <div className='flex items-center justify-between'>
+              <div>
+                <p className='text-xs uppercase text-base-content/50'>
+                  Security
+                </p>
+                <p className='text-sm text-base-content/60'>
+                  Keep your authentication choices up to date.
+                </p>
+              </div>
+              <span className='text-xs font-semibold text-base-content/60 text-right'>
+                {isTwoFactorEnabled
+                  ? 'Two-factor enabled'
+                  : 'Two-factor disabled'}
+              </span>
+            </div>
+            <div className='mt-6 space-y-4'>
+              <div className='flex flex-col gap-3 rounded border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
+                <div className='space-y-1'>
+                  <p className='text-xs uppercase  text-base-content/50'>
+                    Two-factor authentication
+                  </p>
+                  <p className='text-sm text-base-content/60'>
+                    Protect access to your account with an extra verification
+                    step.
+                  </p>
+                </div>
+                <button
+                  type='button'
+                  className='btn btn-primary text-sm font-semibold'
+                  onClick={openTwoFactorModal}
+                >
+                  Manage two-factor
+                </button>
+              </div>
+              <div className='flex flex-col gap-3 rounded border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
+                <div className='space-y-1'>
+                  <p className='text-xs uppercase  text-base-content/50'>
+                    Password
+                  </p>
+                  <p className='text-sm text-base-content/60'>
+                    Rotate your password whenever you need extra assurance.
+                  </p>
+                </div>
+                <button
+                  type='button'
+                  className='btn btn-secondary text-sm font-semibold'
+                  onClick={openPasswordModal}
+                >
+                  Change password
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+          <div className='flex items-center justify-between gap-4'>
+            <div>
+              <p className='text-xs uppercase text-base-content/50'>User</p>
+              <h2 className='text-sm text-base-content/60'>
+                Customize settings for your workspace.
+              </h2>
+            </div>
           </div>
           <div className='mt-6 space-y-4'>
             <div className='flex flex-col gap-3 rounded border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
               <div className='space-y-1'>
-                <p className='text-xs uppercase  text-base-content/50'>
-                  Two-factor authentication
+                <p className='text-xs uppercase text-base-content/50'>
+                  Default currency
                 </p>
                 <p className='text-sm text-base-content/60'>
-                  Protect access to your account with an extra verification
-                  step.
+                  This currency controls how values appear throughout your
+                  workspace.
                 </p>
               </div>
-              <button
-                type='button'
-                className='btn btn-primary text-sm font-semibold'
-                onClick={openTwoFactorModal}
-              >
-                Manage two-factor
-              </button>
-            </div>
-            <div className='flex flex-col gap-3 rounded border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
-              <div className='space-y-1'>
-                <p className='text-xs uppercase  text-base-content/50'>
-                  Password
-                </p>
-                <p className='text-sm text-base-content/60'>
-                  Rotate your password whenever you need extra assurance.
-                </p>
-              </div>
-              <button
-                type='button'
-                className='btn btn-secondary text-sm font-semibold'
-                onClick={openPasswordModal}
-              >
-                Change password
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm'>
-        <div className='flex items-center justify-between gap-4'>
-          <div>
-            <p className='text-xs uppercase text-base-content/50'>User</p>
-            <h2 className='text-sm text-base-content/60'>
-              Customize settings for your workspace.
-            </h2>
-          </div>
-        </div>
-        <div className='mt-6 space-y-4'>
-          <div className='flex flex-col gap-3 rounded border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
-            <div className='space-y-1'>
-              <p className='text-xs uppercase text-base-content/50'>
-                Default currency
-              </p>
-              <p className='text-sm text-base-content/60'>
-                This currency controls how values appear throughout your
-                workspace.
-              </p>
-            </div>
-            <div className='w-full max-w-xs'>
-              <label className='sr-only' htmlFor='default-currency'>
-                Default currency
-              </label>
-              <select
-                id='default-currency'
-                className='select w-full'
-                value={selectedCurrency}
-                onChange={handleCurrencyChange}
-                disabled={isUpdatingCurrency}
-              >
-                {currencyOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              {isUpdatingCurrency && (
-                <p className='text-xs text-base-content/60'>
-                  Saving preference…
-                </p>
-              )}
-              {currencyMessage && (
-                <p
-                  className={`text-sm ${
-                    currencyMessage.type === 'success'
-                      ? 'text-success'
-                      : 'text-error'
-                  }`}
+              <div className='w-full max-w-xs'>
+                <label className='sr-only' htmlFor='default-currency'>
+                  Default currency
+                </label>
+                <select
+                  id='default-currency'
+                  className='select w-full'
+                  value={selectedCurrency}
+                  onChange={handleCurrencyChange}
+                  disabled={isUpdatingCurrency}
                 >
-                  {currencyMessage.text}
-                </p>
-              )}
+                  {currencyOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {isTwoFactorModalOpen && (
-        <TwoFactorModal
-          isTwoFactorEnabled={isTwoFactorEnabled}
-          onClose={closeTwoFactorModal}
-        />
-      )}
+        {isTwoFactorModalOpen && (
+          <TwoFactorModal
+            isTwoFactorEnabled={isTwoFactorEnabled}
+            onClose={closeTwoFactorModal}
+          />
+        )}
 
-      {isPasswordModalOpen && (
-        <ChangePasswordModal onClose={closePasswordModal} />
-      )}
-    </div>
+        {isPasswordModalOpen && (
+          <ChangePasswordModal onClose={closePasswordModal} />
+        )}
+      </div>
+      <ToastStack
+        pendingMessage={isUpdatingCurrency ? 'Saving preference…' : undefined}
+        statusMessage={currencyMessage}
+      />
+    </>
   );
 }
