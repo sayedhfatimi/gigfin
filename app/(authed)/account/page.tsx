@@ -127,7 +127,7 @@ export default function AccountPage() {
                 Keep your authentication choices up to date.
               </p>
             </div>
-            <span className='text-xs font-semibold text-base-content/60'>
+            <span className='text-xs font-semibold text-base-content/60 text-right'>
               {isTwoFactorEnabled
                 ? 'Two-factor enabled'
                 : 'Two-factor disabled'}

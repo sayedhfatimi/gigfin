@@ -9,7 +9,7 @@ RUN npm ci
 # Copy the remaining source files and build the Next.js app.
 COPY . .
 RUN mkdir -p data \
-  && if [ ! -f data/db.sqlite ]; then npx drizzle-kit migrate; fi
+  && npx drizzle-kit migrate
 RUN npm run build
 RUN npm prune --production
 

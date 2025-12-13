@@ -38,18 +38,7 @@ export default function Nav({
       'items-center',
       'justify-center',
       'gap-1',
-      'rounded-2xl',
       'border',
-      'px-2',
-      'py-2',
-      'text-[0.65rem]',
-      'font-semibold',
-      'tracking-wide',
-      'transition-colors',
-      'focus-visible:outline',
-      'focus-visible:outline-2',
-      'focus-visible:outline-offset-2',
-      'focus-visible:outline-primary/50',
       active
         ? 'border-primary/50 bg-primary/10 text-primary'
         : 'border-transparent text-base-content/70 hover:border-base-content/30 hover:bg-base-200',
@@ -73,10 +62,7 @@ export default function Nav({
                 aria-current={active ? 'page' : undefined}
                 className={getDockButtonClasses(active)}
               >
-                <span
-                  aria-hidden='true'
-                  className={`fa-solid ${item.icon} text-lg`}
-                />
+                <span aria-hidden='true' className={`fa-solid ${item.icon}`} />
                 <span className='dock-label'>{item.label}</span>
               </Link>
             );
