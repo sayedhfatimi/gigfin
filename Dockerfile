@@ -21,6 +21,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV DB_FILE_NAME=file:./data/db.sqlite
 
+# Keep runtime node image on latest npm so runtime notices stop appearing.
+RUN npm install -g npm@latest
+
 # Copy the production-ready assets from the builder stage.
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
