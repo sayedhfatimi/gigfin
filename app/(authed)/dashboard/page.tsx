@@ -32,12 +32,15 @@ import {
 } from '@/lib/income';
 import { useIncomeLogs } from '@/lib/queries/income';
 import { getSessionUser } from '@/lib/session';
+import { DailyCadencePanel } from './_components/DailyCadencePanel';
 import { DashboardStats } from './_components/DashboardStats';
 import { LineChart } from './_components/LineChart';
 import { PlatformBreakdownBarChart } from './_components/PlatformBreakdownBarChart';
 import { PlatformBreakdownPieChart } from './_components/PlatformBreakdownPieChart';
+import { PlatformConcentrationPanel } from './_components/PlatformConcentrationPanel';
 import { RecentDaysPanel } from './_components/RecentDaysPanel';
 import { TotalsTable } from './_components/TotalsTable';
+import { YearlyRunRateChart } from './_components/YearlyRunRateChart';
 
 const ORDER_STORAGE_KEY = 'dashboard-widget-order';
 const VISIBILITY_STORAGE_KEY = 'dashboard-widget-visibility';
@@ -45,9 +48,12 @@ const VISIBILITY_STORAGE_KEY = 'dashboard-widget-visibility';
 type WidgetId =
   | 'stats'
   | 'recentDays'
+  | 'dailyCadence'
   | 'platformBreakdownPieChart'
   | 'platformBreakdownBarChart'
+  | 'platformConcentration'
   | 'lineChart'
+  | 'yearlyRunRate'
   | 'totalsTable';
 
 type DashboardWidgetDefinition = {
@@ -85,6 +91,9 @@ const buildDefaultOrder = (definitions: DashboardWidgetDefinition[]) =>
 
 const DEFAULT_WIDGET_VISIBILITY: Partial<Record<WidgetId, boolean>> = {
   platformBreakdownBarChart: false,
+  platformConcentration: false,
+  dailyCadence: false,
+  yearlyRunRate: false,
 };
 
 const buildDefaultVisibility = (definitions: DashboardWidgetDefinition[]) =>
@@ -212,6 +221,13 @@ export default function DashboardPage() {
         component: <DashboardStats stats={stats} />,
       },
       {
+        id: 'dailyCadence',
+        label: 'Daily cadence',
+        description: 'Logging streak and weekly coverage',
+        widthClass: 'md:col-span-1',
+        component: <DailyCadencePanel dailySummaries={dailySummaries} />,
+      },
+      {
         id: 'recentDays',
         label: 'Recent days',
         description: 'Most recent daily totals',
@@ -219,6 +235,18 @@ export default function DashboardPage() {
         component: (
           <RecentDaysPanel
             dailySummaries={dailySummaries}
+            currency={currency}
+          />
+        ),
+      },
+      {
+        id: 'platformConcentration',
+        label: 'Platform concentration',
+        description: 'Top-earning platforms this month',
+        widthClass: 'md:col-span-1',
+        component: (
+          <PlatformConcentrationPanel
+            platformDistribution={platformDistribution}
             currency={currency}
           />
         ),
@@ -249,6 +277,13 @@ export default function DashboardPage() {
         component: <LineChart incomes={incomes} currency={currency} />,
       },
       {
+        id: 'yearlyRunRate',
+        label: 'Yearly run rate',
+        description: 'Monthly totals for the current year',
+        widthClass: 'md:col-span-2',
+        component: <YearlyRunRateChart incomes={incomes} currency={currency} />,
+      },
+      {
         id: 'totalsTable',
         label: 'Totals',
         description: 'Rolling performance tables',
@@ -256,7 +291,7 @@ export default function DashboardPage() {
         component: <TotalsTable incomes={incomes} currency={currency} />,
       },
     ],
-    [stats, dailySummaries, incomes, currency],
+    [stats, dailySummaries, incomes, currency, platformDistribution],
   );
 
   const [widgetOrder, setWidgetOrder] = useState<WidgetId[]>(() =>
