@@ -664,7 +664,6 @@ function SortableWidget({
   children,
   id,
   isCustomizing,
-  isDisabled,
   className,
   disableHandle,
 }: SortableWidgetProps) {
@@ -742,11 +741,6 @@ function SortableWidget({
         </button>
       )}
       <div ref={contentRef}>{children}</div>
-      {isDisabled && isCustomizing && (
-        <span className='absolute bottom-3 left-4 z-40 rounded-full border border-base-content/20 bg-base-100/80 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-base-content/60'>
-          Hidden
-        </span>
-      )}
     </div>
   );
 }
