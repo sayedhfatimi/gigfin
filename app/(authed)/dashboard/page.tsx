@@ -34,7 +34,8 @@ import { useIncomeLogs } from '@/lib/queries/income';
 import { getSessionUser } from '@/lib/session';
 import { DashboardStats } from './_components/DashboardStats';
 import { LineChart } from './_components/LineChart';
-import { PieChart } from './_components/PieChart';
+import { PlatformBreakdownBarChart } from './_components/PlatformBreakdownBarChart';
+import { PlatformBreakdownPieChart } from './_components/PlatformBreakdownPieChart';
 import { RecentDaysPanel } from './_components/RecentDaysPanel';
 import { TotalsTable } from './_components/TotalsTable';
 
@@ -44,7 +45,8 @@ const VISIBILITY_STORAGE_KEY = 'dashboard-widget-visibility';
 type WidgetId =
   | 'stats'
   | 'recentDays'
-  | 'pieChart'
+  | 'platformBreakdownPieChart'
+  | 'platformBreakdownBarChart'
   | 'lineChart'
   | 'totalsTable';
 
@@ -81,10 +83,14 @@ const snapModifier = createSnapModifier(GRID_SIZE);
 const buildDefaultOrder = (definitions: DashboardWidgetDefinition[]) =>
   definitions.map((widget) => widget.id);
 
+const DEFAULT_WIDGET_VISIBILITY: Partial<Record<WidgetId, boolean>> = {
+  platformBreakdownBarChart: false,
+};
+
 const buildDefaultVisibility = (definitions: DashboardWidgetDefinition[]) =>
   definitions.reduce<Record<WidgetId, boolean>>(
     (state, widget) => {
-      state[widget.id] = true;
+      state[widget.id] = DEFAULT_WIDGET_VISIBILITY[widget.id] ?? true;
       return state;
     },
     {} as Record<WidgetId, boolean>,
@@ -218,11 +224,22 @@ export default function DashboardPage() {
         ),
       },
       {
-        id: 'pieChart',
-        label: 'Platform breakdown',
+        id: 'platformBreakdownPieChart',
+        label: 'Platform breakdown (Pie Chart)',
         description: 'Income share per platform',
         widthClass: 'md:col-span-1',
-        component: <PieChart incomes={incomes} currency={currency} />,
+        component: (
+          <PlatformBreakdownPieChart incomes={incomes} currency={currency} />
+        ),
+      },
+      {
+        id: 'platformBreakdownBarChart',
+        label: 'Platform breakdown (Bar Chart)',
+        description: 'Alternative view of platform share',
+        widthClass: 'md:col-span-1',
+        component: (
+          <PlatformBreakdownBarChart incomes={incomes} currency={currency} />
+        ),
       },
       {
         id: 'lineChart',

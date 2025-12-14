@@ -2,40 +2,33 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
+  Bar,
+  CartesianGrid,
   Cell,
-  Pie,
-  PieChart as RechartPieChart,
+  BarChart as RechartBarChart,
   ResponsiveContainer,
   Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts';
 import type { CurrencyCode } from '@/lib/currency';
 import {
   formatCurrency,
-  getCurrentMonthEntries,
   getPlatformDistribution,
   type IncomeEntry,
 } from '@/lib/income';
+import {
+  getEntriesForTimeframe,
+  type TimeframeKey,
+  timeframeOptions,
+} from '../_lib/platformBreakdownTimeframes';
 
-type PieChartProps = {
+type PlatformBreakdownBarChartProps = {
   incomes: IncomeEntry[];
   currency: CurrencyCode;
 };
 
-type TimeframeKey = 'weekly' | 'monthly' | 'yearToDate' | 'last12Months';
-
-type TimeframeOption = {
-  value: TimeframeKey;
-  label: string;
-};
-
-const timeframeOptions: TimeframeOption[] = [
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'yearToDate', label: 'Year to date' },
-  { value: 'last12Months', label: 'Last 12 months' },
-];
-
-const TIMEFRAME_STORAGE_KEY = 'dashboard-pie-chart-timeframe';
+const TIMEFRAME_STORAGE_KEY = 'dashboard-bar-chart-timeframe';
 
 const palette = [
   '#6366F1',
@@ -46,85 +39,10 @@ const palette = [
   '#EAB308',
 ];
 
-const normalizeStartOfDay = (date: Date) => {
-  const normalized = new Date(date);
-  normalized.setHours(0, 0, 0, 0);
-  return normalized;
-};
-
-const normalizeEndOfDay = (date: Date) => {
-  const normalized = new Date(date);
-  normalized.setHours(23, 59, 59, 999);
-  return normalized;
-};
-
-const parseEntryDate = (entry: IncomeEntry) => {
-  const parsed = new Date(entry.date);
-  if (Number.isNaN(parsed.getTime())) {
-    return null;
-  }
-  return parsed;
-};
-
-const filterEntriesBetween = (entries: IncomeEntry[], start: Date, end: Date) =>
-  entries.filter((entry) => {
-    const entryDate = parseEntryDate(entry);
-    if (!entryDate) {
-      return false;
-    }
-    return entryDate >= start && entryDate <= end;
-  });
-
-const getRecentDaysEntries = (
-  entries: IncomeEntry[],
-  days: number,
-  reference = new Date(),
-) => {
-  const end = normalizeEndOfDay(reference);
-  const start = normalizeStartOfDay(reference);
-  start.setDate(start.getDate() - (days - 1));
-  return filterEntriesBetween(entries, start, end);
-};
-
-const getYearToDateEntries = (
-  entries: IncomeEntry[],
-  reference = new Date(),
-) => {
-  const start = new Date(reference.getFullYear(), 0, 1);
-  start.setHours(0, 0, 0, 0);
-  const end = normalizeEndOfDay(reference);
-  return filterEntriesBetween(entries, start, end);
-};
-
-const getLastTwelveMonthsEntries = (
-  entries: IncomeEntry[],
-  reference = new Date(),
-) => {
-  const start = new Date(reference.getFullYear(), reference.getMonth() - 11, 1);
-  start.setHours(0, 0, 0, 0);
-  const end = normalizeEndOfDay(reference);
-  return filterEntriesBetween(entries, start, end);
-};
-
-const getEntriesForTimeframe = (
-  entries: IncomeEntry[],
-  timeframe: TimeframeKey,
-) => {
-  switch (timeframe) {
-    case 'weekly':
-      return getRecentDaysEntries(entries, 7);
-    case 'monthly':
-      return getCurrentMonthEntries(entries);
-    case 'yearToDate':
-      return getYearToDateEntries(entries);
-    case 'last12Months':
-      return getLastTwelveMonthsEntries(entries);
-    default:
-      return entries;
-  }
-};
-
-export function PieChart({ incomes, currency }: PieChartProps) {
+export function PlatformBreakdownBarChart({
+  incomes,
+  currency,
+}: PlatformBreakdownBarChartProps) {
   const [timeframe, setTimeframe] = useState<TimeframeKey>('monthly');
 
   useEffect(() => {
@@ -156,16 +74,17 @@ export function PieChart({ incomes, currency }: PieChartProps) {
     () => getPlatformDistribution(filteredEntries),
     [filteredEntries],
   );
-  const pieChartData = useMemo(
+  const barChartData = useMemo(
     () =>
-      platformDistribution.map((segment) => ({
-        name: segment.platform,
-        value: segment.amount,
+      platformDistribution.map((segment, index) => ({
+        platform: segment.platform,
+        amount: segment.amount,
+        fill: palette[index % palette.length],
       })),
     [platformDistribution],
   );
 
-  const hasPlatformData = pieChartData.length > 0;
+  const hasPlatformData = barChartData.length > 0;
 
   return (
     <section className=' border border-base-content/10 bg-base-100 p-6 shadow-sm'>
@@ -174,15 +93,15 @@ export function PieChart({ incomes, currency }: PieChartProps) {
           <h2 className='text-lg font-semibold text-base-content'>
             Platform breakdown
           </h2>
-          <p className='text-xs uppercase  text-base-content/60'>
-            Pie · {selectedOption.label}
+          <p className='text-xs uppercase text-base-content/60'>
+            Bar · {selectedOption.label}
           </p>
         </div>
         <div className='flex items-end gap-2'>
           <label className='select select-xs'>
             <span className='label hidden md:block'>Timeframe</span>
             <select
-              id='platform-breakdown-timeframe'
+              id='platform-breakdown-bar-timeframe'
               value={timeframe}
               onChange={(event) =>
                 setTimeframe(event.target.value as TimeframeKey)
@@ -201,32 +120,45 @@ export function PieChart({ incomes, currency }: PieChartProps) {
         <div className='h-44 w-full'>
           {hasPlatformData ? (
             <ResponsiveContainer width='100%' height='100%'>
-              <RechartPieChart>
-                <Pie
-                  data={pieChartData}
-                  dataKey='value'
-                  nameKey='name'
-                  cx='50%'
-                  cy='50%'
-                  innerRadius={34}
-                  outerRadius={64}
-                  paddingAngle={2}
-                >
-                  {pieChartData.map((segment, index) => (
-                    <Cell
-                      key={`${segment.name}-${index}`}
-                      fill={palette[index % palette.length]}
-                    />
-                  ))}
-                </Pie>
+              <RechartBarChart
+                data={barChartData}
+                margin={{ top: 8, right: 16, bottom: 6, left: 0 }}
+              >
+                <CartesianGrid
+                  strokeDasharray='3 3'
+                  stroke='#E5E7EB'
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey='platform'
+                  tick={{ fill: '#475569', fontSize: 10 }}
+                  axisLine={{ stroke: '#E5E7EB' }}
+                  tickLine={false}
+                />
+                <YAxis
+                  tickFormatter={(value) =>
+                    formatCurrency(Number(value), currency)
+                  }
+                  tick={{ fill: '#475569', fontSize: 10 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
                 <Tooltip
                   formatter={(value) => formatCurrency(Number(value), currency)}
                   labelFormatter={(label) => String(label)}
                 />
-              </RechartPieChart>
+                <Bar dataKey='amount' radius={[4, 4, 0, 0]}>
+                  {barChartData.map((entry, index) => (
+                    <Cell
+                      key={`${entry.platform}-${index}`}
+                      fill={entry.fill}
+                    />
+                  ))}
+                </Bar>
+              </RechartBarChart>
             </ResponsiveContainer>
           ) : (
-            <div className='flex h-full items-center justify-center rounded-full border border-dashed border-base-content/20 text-xs text-base-content/50'>
+            <div className='flex h-full items-center justify-center rounded border border-dashed border-base-content/20 text-xs text-base-content/50'>
               No {selectedOption.label.toLowerCase()} platform data yet
             </div>
           )}
