@@ -8,9 +8,28 @@
 
 # GigFin
 
+[![License](https://img.shields.io/github/license/sayedhfatimi/gigfin)](LICENSE)
+[![Last Commit](https://img.shields.io/github/last-commit/sayedhfatimi/gigfin)](https://github.com/sayedhfatimi/gigfin/commits)
+[![Repo Size](https://img.shields.io/github/repo-size/sayedhfatimi/gigfin)](https://github.com/sayedhfatimi/gigfin)
+[![Issues](https://img.shields.io/github/issues/sayedhfatimi/gigfin)](https://github.com/sayedhfatimi/gigfin/issues)
+
 GigFin helps gig workers keep a simple, reliable ledger of their overall income across platforms alongside monthly trends and platform breakdowns. Because the app focuses on platform-level income totals, it currently does not track individual line items per platform. It combines a responsive Next.js dashboard with Better Auth–powered credential login, 2FA, and a fast SQLite + Drizzle ORM backend so you can log earnings securely from any device.
 
 A hosted instance is available at https://gigfin.me, but GigFin is designed for self-hosting, and deploying your own instance is the recommended way to keep your data private and under your control.
+
+## Screenshots
+
+<p align="center">
+  <img src=".github/screenshots/01-dashboard.png" width="900" alt="GigFin dashboard overview" />
+</p>
+
+<p align="center">
+  <img src=".github/screenshots/02-logs.png" width="900" alt="Income logs table with filtering and platform tags" />
+</p>
+
+<p align="center">
+  <img src=".github/screenshots/03-account.png" width="900" alt="Account settings including security and export options" />
+</p>
 
 ## What’s inside
 
@@ -26,6 +45,11 @@ A hosted instance is available at https://gigfin.me, but GigFin is designed for 
 - **Drizzle ORM / Drizzle-Kit** for migrations and SQLite helpers
 - **better-auth** for token management, signup/login, and Two-Factor Auth
 - **TanStack Query & Table**, **Recharts**, and **DaisyUI/Tailwind** for the UI surfaces
+
+## Prerequisites
+
+- Node.js (LTS recommended) for local development
+- Docker + Docker Compose for production/self-hosting
 
 ## Environment variables
 
@@ -95,6 +119,13 @@ This section explains how to set up a local development environment for hacking 
 
 - Run `npm run build` to compile the app for production; the Docker build stage already runs this.
 - Run `npm run lint` to validate formatting and coding standards via Biome.
+
+## Contributing
+
+PRs welcome. For local development, follow **Getting started (local development)**, then run:
+
+- `npm run lint`
+- `npm run build`
 
 ## License
 
