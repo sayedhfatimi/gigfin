@@ -17,6 +17,19 @@ GigFin helps gig workers keep a simple, reliable ledger of their overall income 
 
 A hosted instance is available at https://gigfin.me, but GigFin is designed for self-hosting, and deploying your own instance is the recommended way to keep your data private and under your control.
 
+## Table of Contents
+
+- [Screenshots](#screenshots)
+- [What’s inside](#whats-inside)
+- [Tech stack](#tech-stack)
+- [Prerequisites](#prerequisites)
+- [Environment variables](#environment-variables)
+- [Deployment guidance](#deployment-guidance)
+- [Getting started (local development)](#getting-started-local-development)
+- [Build & test](#build--test)
+- [Contributing](#contributing)
+- [License](#license)
+
 ## Screenshots
 
 <p align="center">
@@ -53,14 +66,14 @@ A hosted instance is available at https://gigfin.me, but GigFin is designed for 
 
 ## Environment variables
 
-GigFin expects:
+GigFin expects the following values at runtime (set them via Coolify, another secrets manager, or a local `.env` file loaded with `dotenv`):
 
-- `BETTER_AUTH_SECRET`: required; generate one with `npx @better-auth/cli@latest secret` or run the command `openssl rand -base64 32` in a terminal.
-- `BETTER_AUTH_URL`: required; the public URL where your GigFin instance is accessible (e.g., `https://gigfin.me` or your own domain).
-- `DB_FILE_NAME`: optional; falls back to `file:./data/db.sqlite` and is shared with the Drizzle config and runtime.
-- `INTERNAL_API_BASE`: optional; defaults to `http://localhost:3000` and points GigFin at the internal API host.
+- `BETTER_AUTH_SECRET` (required): a secure string that Better Auth uses for signing. Generate one with `npx @better-auth/cli@latest secret` or `openssl rand -base64 32`, then keep it out of version control.
+- `BETTER_AUTH_URL` (required): the public URL where your GigFin instance is reached (for example `https://gigfin.me` or your custom domain). It must match the redirect URL configured in Better Auth.
+- `DB_FILE_NAME` (optional): connection string for SQLite (default: `file:./data/db.sqlite`). If you override it, make sure the path matches the named Docker volume or host directory you that want to persist.
+- `INTERNAL_API_BASE` (optional): internal API endpoint that GigFin pings (default: `http://localhost:3000`). Change it only if you run the frontend and backend on different hosts.
 
-You can surface them from Coolify or any secrets manager. Locally, load them via `.env` or `dotenv` before running `npm` scripts.
+Bake these values into `.env` before running `npm` scripts or supply them through your orchestration platform so they are available to both the build and runtime environments.
 
 ## Deployment guidance
 
@@ -72,9 +85,9 @@ You can surface them from Coolify or any secrets manager. Locally, load them via
    docker compose up --build
    ```
 
-2. The multi-stage `Dockerfile` now seeds `/app/data/db.sqlite` by running `npx drizzle-kit migrate` whenever the file is missing and copies `/app/data` into the runner stage.
-3. `docker-compose.yml` binds the `gigfin-data` volume to `/app/data`, ensuring the SQLite database persists across restarts.
-4. Docker Compose reads runtime environment variables from `.env` (see the `env_file` section in `docker-compose.yml`); keep your secrets there or load them through your orchestration platform.
+2. The multi-stage `Dockerfile` seeds `/app/data/db.sqlite` by running `npx drizzle-kit migrate` when the file is absent and copies `/app/data` into the runner stage.
+3. `docker-compose.yml` binds the `gigfin-data` volume to `/app/data`, so the SQLite database survives restarts.
+4. Docker Compose sources runtime environment variables from `.env` (see the `env_file` section in `docker-compose.yml`); store secrets there or inject them from your deployment platform.
 
 Bring it down with `docker compose down` when you need to rebuild.
 
@@ -93,7 +106,7 @@ This section explains how to set up a local development environment for hacking 
    npm install
    ```
 
-2. Copy `.env.example` (if provided) or create your own `.env` with:
+2. Copy `.env.example` (if it exists) to `.env` or create your own file with the recommended values and add any additional secrets you need.
 
    ```env
    DB_FILE_NAME=file:./data/db.sqlite
@@ -101,7 +114,7 @@ This section explains how to set up a local development environment for hacking 
    BETTER_AUTH_URL=http://localhost:3000
    ```
 
-3. Generate the SQLite schema:
+3. Generate or refresh the SQLite schema whenever you change database definitions:
 
    ```bash
    npx drizzle-kit migrate
@@ -113,7 +126,9 @@ This section explains how to set up a local development environment for hacking 
    npm run dev
    ```
 
-   Next.js watches your changes and reloads the page automatically. Open http://localhost:3000 in a browser to log in or sign up as a gig worker.
+   Next.js watches your changes and reloads automatically. Open http://localhost:3000 in a browser to log in or sign up as a gig worker.
+
+Once you have a working dev environment, run `npm run lint` and `npm run build` to verify there are no formatting or compilation issues before opening a PR.
 
 ## Build & test
 
@@ -122,10 +137,13 @@ This section explains how to set up a local development environment for hacking 
 
 ## Contributing
 
-PRs welcome. For local development, follow **Getting started (local development)**, then run:
+PRs welcome. Before opening one:
 
-- `npm run lint`
-- `npm run build`
+- Fork the repo, create a feature branch, and keep commits focused (squash or rebase before merging).
+- Follow **Getting started (local development)**, then refresh migrations and run `npm run lint` plus `npm run build` to confirm the changes pass checks.
+- Link relevant issues in the PR description, explain your approach, and note any follow-up work or deployment steps.
+
+When the branch is ready, open a PR targeting `main`, include screenshots or recordings if you touched the UI, and wait for CI to pass before merging.
 
 ## License
 
