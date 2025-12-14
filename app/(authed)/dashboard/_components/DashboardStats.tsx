@@ -15,7 +15,7 @@ type DashboardStatsProps = {
 
 export function DashboardStats({ stats }: DashboardStatsProps) {
   return (
-    <div className='stats w-full stats-vertical md:stats-horizontal'>
+    <div className='stats w-full stats-vertical md:stats-horizontal rounded-none shadow-sm'>
       {stats.map((stat) => (
         <StatCard key={stat.title} stat={stat} />
       ))}
