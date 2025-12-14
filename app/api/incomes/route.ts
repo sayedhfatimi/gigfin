@@ -5,38 +5,9 @@ import { NextResponse } from 'next/server';
 
 import { db } from '@/db';
 import { income } from '@/db/schema';
+import { requireUserId } from '@/lib/server/session';
 
-const SESSION_PATH = '/api/auth/get-session';
 const INCOME_PATH = '/api/incomes';
-const INTERNAL_API_BASE =
-  process.env.INTERNAL_API_BASE ?? 'http://127.0.0.1:3000';
-
-const getSessionFromRequest = async (request: NextRequest) => {
-  const url = new URL(SESSION_PATH, INTERNAL_API_BASE);
-
-  const headers = new Headers(request.headers);
-  headers.delete('host');
-
-  const sessionResponse = await fetch(url.toString(), {
-    method: 'GET',
-    headers,
-    credentials: 'include',
-    cache: 'no-store',
-  });
-
-  if (!sessionResponse.ok) {
-    return null;
-  }
-
-  return (await sessionResponse.json()) as {
-    user?: { id?: string };
-  } | null;
-};
-
-const requireUserId = async (request: NextRequest) => {
-  const session = await getSessionFromRequest(request);
-  return session?.user?.id ?? null;
-};
 
 const createEntry = async (data: {
   platform: string;

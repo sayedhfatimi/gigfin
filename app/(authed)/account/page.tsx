@@ -15,22 +15,20 @@ export default function AccountPage() {
   const [selectedCurrency, setSelectedCurrency] =
     useState<CurrencyCode>(sessionCurrency);
   const [isUpdatingCurrency, setIsUpdatingCurrency] = useState(false);
-  const [currencyMessage, setCurrencyMessage] = useState<ToastMessage | null>(
-    null,
-  );
+  const [statusMessage, setStatusMessage] = useState<ToastMessage | null>(null);
+  const [isExportingIncome, setIsExportingIncome] = useState(false);
   useEffect(() => {
     setSelectedCurrency(sessionCurrency);
   }, [sessionCurrency]);
   const [isTwoFactorModalOpen, setIsTwoFactorModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   useEffect(() => {
-    if (!currencyMessage) return;
+    if (!statusMessage) return;
     const timer = window.setTimeout(() => {
-      setCurrencyMessage(null);
-      setIsUpdatingCurrency(false);
+      setStatusMessage(null);
     }, 4000);
     return () => window.clearTimeout(timer);
-  }, [currencyMessage]);
+  }, [statusMessage]);
 
   const handleCurrencyChange = async (
     event: ChangeEvent<HTMLSelectElement>,
@@ -41,7 +39,7 @@ export default function AccountPage() {
     }
     const previousCurrency = selectedCurrency;
     setSelectedCurrency(nextCurrency);
-    setCurrencyMessage(null);
+    setStatusMessage(null);
     setIsUpdatingCurrency(true);
     try {
       const response = await fetch('/api/auth/update-user', {
@@ -54,18 +52,53 @@ export default function AccountPage() {
         throw new Error('Unable to update currency preference.');
       }
       await refetch();
-      setCurrencyMessage({
+      setStatusMessage({
         type: 'success',
         text: 'Currency preference saved.',
       });
     } catch (_error) {
       setSelectedCurrency(previousCurrency);
-      setCurrencyMessage({
+      setStatusMessage({
         type: 'error',
         text: 'Unable to save currency. Try again in a moment.',
       });
     } finally {
       setIsUpdatingCurrency(false);
+    }
+  };
+
+  const handleExportIncomeCsv = async () => {
+    setIsExportingIncome(true);
+    setStatusMessage(null);
+    try {
+      const response = await fetch('/api/export/incomes', {
+        method: 'GET',
+        credentials: 'include',
+        cache: 'no-store',
+      });
+      if (!response.ok) {
+        throw new Error('Unable to export income data.');
+      }
+      const blob = await response.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = downloadUrl;
+      anchor.download = 'gigfin-income-export.csv';
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(downloadUrl);
+      setStatusMessage({
+        type: 'success',
+        text: 'Income data download started.',
+      });
+    } catch (_error) {
+      setStatusMessage({
+        type: 'error',
+        text: 'Unable to export income data right now. Try again soon.',
+      });
+    } finally {
+      setIsExportingIncome(false);
     }
   };
 
@@ -217,6 +250,39 @@ export default function AccountPage() {
           </div>
         </section>
 
+        <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+          <div className='flex items-center justify-between gap-4'>
+            <div>
+              <p className='text-xs uppercase text-base-content/50'>
+                Export data
+              </p>
+              <h2 className='text-sm text-base-content/60'>
+                Download a copy of your logged income for backup or review.
+              </h2>
+            </div>
+          </div>
+          <div className='mt-6 space-y-4'>
+            <div className='flex flex-col gap-3 rounded border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
+              <div className='space-y-1'>
+                <p className='text-xs uppercase text-base-content/50'>
+                  Income logs
+                </p>
+                <p className='text-sm text-base-content/60'>
+                  Export every logged income entry as a CSV file.
+                </p>
+              </div>
+              <button
+                type='button'
+                className='btn btn-primary text-sm font-semibold'
+                onClick={handleExportIncomeCsv}
+                disabled={isExportingIncome}
+              >
+                {isExportingIncome ? 'Preparing CSV…' : 'Export income CSV'}
+              </button>
+            </div>
+          </div>
+        </section>
+
         {isTwoFactorModalOpen && (
           <TwoFactorModal
             isTwoFactorEnabled={isTwoFactorEnabled}
@@ -230,7 +296,7 @@ export default function AccountPage() {
       </div>
       <ToastStack
         pendingMessage={isUpdatingCurrency ? 'Saving preference…' : undefined}
-        statusMessage={currencyMessage}
+        statusMessage={statusMessage}
       />
     </>
   );
