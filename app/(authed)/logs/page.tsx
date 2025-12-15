@@ -1025,9 +1025,7 @@ export default function LogsPage() {
               label='Month'
               id='expenses-month-filter'
               value={selectedExpenseMonth}
-              onChange={(event) =>
-                setSelectedExpenseMonth(event.target.value)
-              }
+              onChange={(event) => setSelectedExpenseMonth(event.target.value)}
               disabled={isLoadingExpenses}
               ariaBusy={isLoadingExpenses}
               options={expenseMonthOptions.map((option) => ({

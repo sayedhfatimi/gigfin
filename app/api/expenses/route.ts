@@ -97,10 +97,7 @@ const buildExpensePayload = (body: unknown) => {
 
 type ExpensePayload = NonNullable<ReturnType<typeof buildExpensePayload>>;
 
-const createExpense = async (data: {
-  userId: string;
-  doc: ExpensePayload;
-}) => {
+const createExpense = async (data: { userId: string; doc: ExpensePayload }) => {
   const id = randomUUID();
   const [entry] = await db
     .insert(expense)

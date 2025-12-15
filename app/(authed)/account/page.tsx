@@ -52,12 +52,10 @@ export default function AccountPage() {
 
   const [selectedCurrency, setSelectedCurrency] =
     useState<CurrencyCode>(sessionCurrency);
-  const [selectedUnitSystem, setSelectedUnitSystem] = useState(
-    resolvedUnitSystem,
-  );
-  const [selectedVolumeUnit, setSelectedVolumeUnit] = useState(
-    resolvedVolumeUnit,
-  );
+  const [selectedUnitSystem, setSelectedUnitSystem] =
+    useState(resolvedUnitSystem);
+  const [selectedVolumeUnit, setSelectedVolumeUnit] =
+    useState(resolvedVolumeUnit);
   const [isUpdatingCurrency, setIsUpdatingCurrency] = useState(false);
   const [isUpdatingUnitSystem, setIsUpdatingUnitSystem] = useState(false);
   const [isUpdatingVolumeUnit, setIsUpdatingVolumeUnit] = useState(false);
