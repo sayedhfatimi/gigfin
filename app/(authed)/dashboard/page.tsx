@@ -556,6 +556,24 @@ export default function DashboardPage() {
     setActiveWidgetId(null);
   };
 
+  const handleResetToDefaults = () => {
+    const defaultOrder = buildDefaultOrder(widgetDefinitions);
+    const defaultVisibility = buildDefaultVisibility(widgetDefinitions);
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(ORDER_STORAGE_KEY);
+      window.localStorage.removeItem(VISIBILITY_STORAGE_KEY);
+    }
+
+    setWidgetOrder(defaultOrder);
+    setWidgetEnabled(defaultVisibility);
+    setPersistedConfig({
+      order: [...defaultOrder],
+      enabled: { ...defaultVisibility },
+    });
+    setActiveWidgetId(null);
+  };
+
   if (isPending) {
     return (
       <div className='flex min-h-[60vh] items-center justify-center'>
@@ -608,13 +626,26 @@ export default function DashboardPage() {
                         className='btn btn-sm btn-primary'
                         onClick={handleFinishCustomizing}
                       >
-                        Finish customizing
+                        <i className='fa-solid fa-check' aria-hidden='true' />
+                        Finish
                       </button>
                       <button
                         type='button'
-                        className='btn btn-sm btn-ghost'
+                        className='btn btn-sm btn-error'
+                        onClick={handleResetToDefaults}
+                      >
+                        <i
+                          className='fa-solid fa-rotate-left'
+                          aria-hidden='true'
+                        />
+                        Reset to defaults
+                      </button>
+                      <button
+                        type='button'
+                        className='btn btn-sm btn-ghost btn-outline'
                         onClick={handleCancelCustomizing}
                       >
+                        <i className='fa-solid fa-xmark' aria-hidden='true' />
                         Cancel
                       </button>
                     </>
@@ -685,7 +716,12 @@ export default function DashboardPage() {
                 : 'max-h-[45vh] overflow-y-auto'
             }`}
           >
-            <div className='space-y-4'>
+            <div
+              className={combineClasses(
+                'space-y-4',
+                isMobileView ? 'pb-24' : undefined,
+              )}
+            >
               <div>
                 <p className='text-sm uppercase text-base-content/60'>
                   Customize widgets
@@ -756,13 +792,26 @@ export default function DashboardPage() {
                     className='btn btn-sm btn-primary'
                     onClick={handleFinishCustomizing}
                   >
-                    Finish customizing
+                    <span
+                      className='fa-solid fa-check mr-1'
+                      aria-hidden='true'
+                    />
+                    Finish
                   </button>
                   <button
                     type='button'
-                    className='btn btn-sm btn-ghost'
+                    className='btn btn-sm btn-error'
+                    onClick={handleResetToDefaults}
+                  >
+                    <i className='fa-solid fa-rotate-left' aria-hidden='true' />
+                    Reset
+                  </button>
+                  <button
+                    type='button'
+                    className='btn btn-sm btn-ghost btn-outline'
                     onClick={handleCancelCustomizing}
                   >
+                    <i className='fa-solid fa-xmark' aria-hidden='true' />
                     Cancel
                   </button>
                 </div>
