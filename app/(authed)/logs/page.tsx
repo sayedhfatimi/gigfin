@@ -14,8 +14,11 @@ import { useSession } from '@/lib/auth-client';
 import type { CurrencyCode } from '@/lib/currency';
 import { resolveCurrency } from '@/lib/currency';
 import {
+  buildExpenseMonthOptions,
   type ExpenseEntry,
   expenseTypeOptions,
+  formatExpenseType,
+  getExpenseEntryMonth,
   type UnitRateUnit,
 } from '@/lib/expenses';
 import {
@@ -148,13 +151,6 @@ const LOG_TABS: { label: string; key: View }[] = [
   { label: 'Expenses', key: 'expenses' },
 ];
 
-const expenseTypeLabelMap = new Map(
-  expenseTypeOptions.map((option) => [option.value, option.label]),
-);
-
-const formatExpenseType = (value: string) =>
-  expenseTypeLabelMap.get(value) ?? value;
-
 const formatDateLabel = (value: string) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -182,43 +178,6 @@ const formatExpenseRate = (entry: ExpenseEntry) => {
             ? 'gallon (Imperial)'
             : entry.unitRateUnit;
   return `${entry.unitRateMinor}p/${unitLabel}`;
-};
-
-const getExpenseEntryMonth = (entry: ExpenseEntry) => {
-  const date = new Date(entry.paidAt);
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-  return {
-    year: date.getFullYear(),
-    month: date.getMonth(),
-  };
-};
-
-const buildExpenseMonthOptions = (entries: ExpenseEntry[]): MonthOption[] => {
-  const map = new Map<string, MonthOption>();
-  entries.forEach((entry) => {
-    const parsed = getExpenseEntryMonth(entry);
-    if (!parsed) {
-      return;
-    }
-    const key = `${parsed.year}-${parsed.month}`;
-    if (map.has(key)) {
-      return;
-    }
-    map.set(key, {
-      key,
-      label: formatMonthLabel(parsed.year, parsed.month),
-      year: parsed.year,
-      month: parsed.month,
-    });
-  });
-  return Array.from(map.values()).sort((a, b) => {
-    if (a.year !== b.year) {
-      return b.year - a.year;
-    }
-    return b.month - a.month;
-  });
 };
 
 type ExpenseSortColumn = 'date' | 'type' | 'amount';

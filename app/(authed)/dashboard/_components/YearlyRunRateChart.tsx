@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Bar,
   CartesianGrid,
@@ -11,6 +11,8 @@ import {
   YAxis,
 } from 'recharts';
 import type { CurrencyCode } from '@/lib/currency';
+import type { ExpenseEntry } from '@/lib/expenses';
+import { getYearlyMonthlyExpenseTotals } from '@/lib/expenses';
 import {
   formatCurrency,
   getYearlyMonthlyTotals,
@@ -19,20 +21,63 @@ import {
 
 type YearlyRunRateChartProps = {
   incomes: IncomeEntry[];
+  expenses: ExpenseEntry[];
   currency: CurrencyCode;
 };
 
+type ChartView = 'income' | 'expense' | 'both';
+
+const viewOptions: { value: ChartView; label: string }[] = [
+  { value: 'income', label: 'Income only' },
+  { value: 'expense', label: 'Expenses only' },
+  { value: 'both', label: 'Income + Expenses' },
+];
+
 export function YearlyRunRateChart({
   incomes,
+  expenses,
   currency,
 }: YearlyRunRateChartProps) {
-  const chartData = useMemo(() => getYearlyMonthlyTotals(incomes), [incomes]);
-  const hasData = chartData.some((row) => row.total > 0);
-  const peakAmount = useMemo(
-    () =>
-      chartData.length ? Math.max(...chartData.map((row) => row.total)) : 0,
-    [chartData],
+  const [view, setView] = useState<ChartView>('both');
+
+  const isIncomeVisible = view !== 'expense';
+  const isExpenseVisible = view !== 'income';
+
+  const incomeChartData = useMemo(
+    () => getYearlyMonthlyTotals(incomes),
+    [incomes],
   );
+  const expenseChartData = useMemo(
+    () => getYearlyMonthlyExpenseTotals(expenses),
+    [expenses],
+  );
+  const combinedChartData = useMemo(
+    () =>
+      incomeChartData.map((row, index) => ({
+        label: row.label,
+        income: row.total,
+        expense: expenseChartData[index]?.total ?? 0,
+      })),
+    [incomeChartData, expenseChartData],
+  );
+  const hasData = combinedChartData.some(
+    (row) => row.income > 0 || row.expense > 0,
+  );
+  const peakAmount = useMemo(() => {
+    if (!combinedChartData.length) {
+      return 0;
+    }
+    let max = 0;
+    combinedChartData.forEach((row) => {
+      if (isIncomeVisible) {
+        max = Math.max(max, row.income);
+      }
+      if (isExpenseVisible) {
+        max = Math.max(max, row.expense);
+      }
+    });
+    return max;
+  }, [combinedChartData, isIncomeVisible, isExpenseVisible]);
 
   return (
     <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm'>
@@ -45,15 +90,31 @@ export function YearlyRunRateChart({
             Monthly totals · This year
           </p>
         </div>
-        <p className='text-xs text-base-content/60'>
-          Peak {formatCurrency(peakAmount, currency)}
-        </p>
+        <div className='flex flex-col-reverse md:flex-row items-end md:items-center gap-2 whitespace-nowrap'>
+          <label className='select select-xs'>
+            <span className='label hidden md:block'>Show</span>
+            <select
+              id='yearly-run-rate-view'
+              value={view}
+              onChange={(event) => setView(event.target.value as ChartView)}
+            >
+              {viewOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <span className='text-xs text-base-content/60'>
+            Peak {formatCurrency(peakAmount, currency)}
+          </span>
+        </div>
       </div>
       <div className='mt-6 h-52 w-full'>
         {hasData ? (
           <ResponsiveContainer width='100%' height='100%'>
             <RechartBarChart
-              data={chartData}
+              data={combinedChartData}
               margin={{ top: 8, right: 16, bottom: 6, left: 0 }}
             >
               <CartesianGrid
@@ -81,12 +142,29 @@ export function YearlyRunRateChart({
                 labelFormatter={(label) => String(label)}
                 contentStyle={{ fontSize: '12px' }}
               />
-              <Bar dataKey='total' radius={[4, 4, 0, 0]} fill='#6366F1' />
+              {isIncomeVisible && (
+                <Bar
+                  dataKey='income'
+                  name='Income'
+                  radius={[4, 4, 0, 0]}
+                  fill='#6366F1'
+                  barSize={20}
+                />
+              )}
+              {isExpenseVisible && (
+                <Bar
+                  dataKey='expense'
+                  name='Expenses'
+                  radius={[4, 4, 0, 0]}
+                  fill='#EF4444'
+                  barSize={20}
+                />
+              )}
             </RechartBarChart>
           </ResponsiveContainer>
         ) : (
           <div className='flex h-full items-center justify-center rounded border border-dashed border-base-content/20 text-xs text-base-content/50'>
-            No income logged yet to build a yearly run rate
+            No transactions logged yet to build a yearly run rate
           </div>
         )}
       </div>

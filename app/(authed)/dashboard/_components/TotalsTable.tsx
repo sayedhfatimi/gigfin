@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { CurrencyCode } from '@/lib/currency';
+import type { ExpenseEntry } from '@/lib/expenses';
 import {
   formatCurrency,
   getMonthlyTotals,
@@ -10,6 +11,7 @@ import {
 
 type TotalsTableProps = {
   incomes: IncomeEntry[];
+  expenses: ExpenseEntry[];
   currency: CurrencyCode;
 };
 
@@ -40,7 +42,8 @@ const STORAGE_KEY = 'dashboard-totals-table-timeframe';
 type TotalsSummary = {
   key: string;
   label: string;
-  total: number;
+  income: number;
+  expense: number;
 };
 
 const dayFormatter = new Intl.DateTimeFormat('en-GB', {
@@ -68,13 +71,44 @@ const normalizeEndOfDay = (date: Date) => {
 
 const formatDateKey = (date: Date) => date.toISOString().split('T')[0];
 
-const parseEntryDate = (entry: IncomeEntry) => {
-  const parsed = new Date(entry.date);
+type NormalizedEntry = {
+  date: Date;
+  amount: number;
+};
+
+const parseDateValue = (value: string) => {
+  const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) {
     return null;
   }
   return parsed;
 };
+
+const parseIncomeEntryDate = (entry: IncomeEntry) => parseDateValue(entry.date);
+const parseExpenseEntryDate = (entry: ExpenseEntry) =>
+  parseDateValue(entry.paidAt);
+
+const normalizeIncomeEntries = (entries: IncomeEntry[]): NormalizedEntry[] =>
+  entries
+    .map((entry) => {
+      const parsed = parseIncomeEntryDate(entry);
+      if (!parsed) {
+        return null;
+      }
+      return { date: parsed, amount: entry.amount };
+    })
+    .filter((entry): entry is NormalizedEntry => entry !== null);
+
+const normalizeExpenseEntries = (entries: ExpenseEntry[]): NormalizedEntry[] =>
+  entries
+    .map((entry) => {
+      const parsed = parseExpenseEntryDate(entry);
+      if (!parsed) {
+        return null;
+      }
+      return { date: parsed, amount: entry.amountMinor / 100 };
+    })
+    .filter((entry): entry is NormalizedEntry => entry !== null);
 
 const getWeekStart = (date: Date) => {
   const normalized = new Date(date);
@@ -84,27 +118,45 @@ const getWeekStart = (date: Date) => {
   return normalized;
 };
 
+const aggregateBetween = (
+  entries: NormalizedEntry[],
+  start: Date,
+  end: Date,
+  getKey: (entryDate: Date) => string,
+) => {
+  const totals = new Map<string, number>();
+  entries.forEach((entry) => {
+    if (entry.date < start || entry.date > end) {
+      return;
+    }
+    const key = getKey(entry.date);
+    totals.set(key, (totals.get(key) ?? 0) + entry.amount);
+  });
+  return totals;
+};
+
 const buildDailyTotals = (
-  entries: IncomeEntry[],
+  incomeEntries: NormalizedEntry[],
+  expenseEntries: NormalizedEntry[],
   days: number,
   reference = new Date(),
 ): TotalsSummary[] => {
-  const totals = new Map<string, number>();
   const end = normalizeEndOfDay(reference);
   const start = normalizeStartOfDay(end);
   start.setDate(start.getDate() - (days - 1));
 
-  entries.forEach((entry) => {
-    const entryDate = parseEntryDate(entry);
-    if (!entryDate) {
-      return;
-    }
-    if (entryDate < start || entryDate > end) {
-      return;
-    }
-    const key = formatDateKey(entryDate);
-    totals.set(key, (totals.get(key) ?? 0) + entry.amount);
-  });
+  const incomeTotals = aggregateBetween(
+    incomeEntries,
+    start,
+    end,
+    formatDateKey,
+  );
+  const expenseTotals = aggregateBetween(
+    expenseEntries,
+    start,
+    end,
+    formatDateKey,
+  );
 
   const data: TotalsSummary[] = [];
   for (let offset = 0; offset < days; offset += 1) {
@@ -114,35 +166,36 @@ const buildDailyTotals = (
     data.push({
       key,
       label: weekdayFormatter.format(current),
-      total: totals.get(key) ?? 0,
+      income: incomeTotals.get(key) ?? 0,
+      expense: expenseTotals.get(key) ?? 0,
     });
   }
   return data;
 };
 
 const buildWeeklyTotals = (
-  entries: IncomeEntry[],
+  incomeEntries: NormalizedEntry[],
+  expenseEntries: NormalizedEntry[],
   weeks: number,
   reference = new Date(),
 ): TotalsSummary[] => {
-  const totals = new Map<string, number>();
   const end = normalizeEndOfDay(reference);
   const currentWeekStart = getWeekStart(reference);
   const earliestWeekStart = new Date(currentWeekStart);
   earliestWeekStart.setDate(currentWeekStart.getDate() - (weeks - 1) * 7);
 
-  entries.forEach((entry) => {
-    const entryDate = parseEntryDate(entry);
-    if (!entryDate) {
-      return;
-    }
-    if (entryDate < earliestWeekStart || entryDate > end) {
-      return;
-    }
-    const weekStart = getWeekStart(entryDate);
-    const key = weekStart.toISOString();
-    totals.set(key, (totals.get(key) ?? 0) + entry.amount);
-  });
+  const incomeTotals = aggregateBetween(
+    incomeEntries,
+    earliestWeekStart,
+    end,
+    (date) => getWeekStart(date).toISOString(),
+  );
+  const expenseTotals = aggregateBetween(
+    expenseEntries,
+    earliestWeekStart,
+    end,
+    (date) => getWeekStart(date).toISOString(),
+  );
 
   const data: TotalsSummary[] = [];
   for (let offset = 0; offset < weeks; offset += 1) {
@@ -152,35 +205,53 @@ const buildWeeklyTotals = (
     data.push({
       key,
       label: `Week of ${dayFormatter.format(targetWeekStart)}`,
-      total: totals.get(key) ?? 0,
+      income: incomeTotals.get(key) ?? 0,
+      expense: expenseTotals.get(key) ?? 0,
     });
   }
   return data;
 };
 
-const buildMonthlyTotals = (entries: IncomeEntry[]) => {
-  return getMonthlyTotals(entries, 6).map((summary) => ({
-    key: `${summary.year}-${summary.month}`,
-    label: summary.label,
-    total: summary.total,
-  }));
+const buildMonthlyTotals = (
+  incomeEntries: IncomeEntry[],
+  expenseEntries: NormalizedEntry[],
+) => {
+  const incomeSummaries = getMonthlyTotals(incomeEntries, 6);
+  const expenseTotals = new Map<string, number>();
+  expenseEntries.forEach((entry) => {
+    const key = `${entry.date.getFullYear()}-${entry.date.getMonth()}`;
+    expenseTotals.set(key, (expenseTotals.get(key) ?? 0) + entry.amount);
+  });
+
+  return incomeSummaries.map((summary) => {
+    const key = `${summary.year}-${summary.month}`;
+    return {
+      key,
+      label: summary.label,
+      income: summary.total,
+      expense: expenseTotals.get(key) ?? 0,
+    };
+  });
 };
 
 const getTotalsForTimeframe = (
   timeframe: TotalsTimeframe,
-  incomes: IncomeEntry[],
-): TotalsSummary[] => {
+  incomeEntries: IncomeEntry[],
+  expenseEntries: ExpenseEntry[],
+) => {
+  const normalizedIncome = normalizeIncomeEntries(incomeEntries);
+  const normalizedExpense = normalizeExpenseEntries(expenseEntries);
   switch (timeframe) {
     case 'weeks':
-      return buildWeeklyTotals(incomes, 6);
+      return buildWeeklyTotals(normalizedIncome, normalizedExpense, 6);
     case 'days':
-      return buildDailyTotals(incomes, 6);
+      return buildDailyTotals(normalizedIncome, normalizedExpense, 6);
     default:
-      return buildMonthlyTotals(incomes);
+      return buildMonthlyTotals(incomeEntries, normalizedExpense);
   }
 };
 
-export function TotalsTable({ incomes, currency }: TotalsTableProps) {
+export function TotalsTable({ incomes, expenses, currency }: TotalsTableProps) {
   const [timeframe, setTimeframe] = useState<TotalsTimeframe>('months');
 
   useEffect(() => {
@@ -205,8 +276,8 @@ export function TotalsTable({ incomes, currency }: TotalsTableProps) {
     timeframeOptions[0];
 
   const totalsData = useMemo(
-    () => getTotalsForTimeframe(timeframe, incomes),
-    [incomes, timeframe],
+    () => getTotalsForTimeframe(timeframe, incomes, expenses),
+    [incomes, expenses, timeframe],
   );
 
   return (
@@ -245,7 +316,13 @@ export function TotalsTable({ incomes, currency }: TotalsTableProps) {
                 Period
               </th>
               <th className='text-left text-xs uppercase text-base-content/50'>
-                Total
+                Income
+              </th>
+              <th className='text-left text-xs uppercase text-base-content/50'>
+                Expenses
+              </th>
+              <th className='text-left text-xs uppercase text-base-content/50'>
+                Net
               </th>
             </tr>
           </thead>
@@ -257,7 +334,19 @@ export function TotalsTable({ incomes, currency }: TotalsTableProps) {
               >
                 <td>{summary.label}</td>
                 <td className='font-semibold text-base-content'>
-                  {formatCurrency(summary.total, currency)}
+                  {formatCurrency(summary.income, currency)}
+                </td>
+                <td className='font-semibold text-base-content'>
+                  {formatCurrency(summary.expense, currency)}
+                </td>
+                <td
+                  className={`font-semibold ${
+                    summary.income - summary.expense >= 0
+                      ? 'text-success'
+                      : 'text-error'
+                  }`}
+                >
+                  {formatCurrency(summary.income - summary.expense, currency)}
                 </td>
               </tr>
             ))}

@@ -23,21 +23,25 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useSession } from '@/lib/auth-client';
 import { resolveCurrency } from '@/lib/currency';
+import { getCurrentMonthExpenses } from '@/lib/expenses';
 import {
   aggregateDailyIncomes,
   formatCurrency,
   getCurrentMonthEntries,
-  getMonthlyTotals,
   getPlatformDistribution,
 } from '@/lib/income';
+import { useExpenseLogs } from '@/lib/queries/expenses';
 import { useIncomeLogs } from '@/lib/queries/income';
 import { getSessionUser } from '@/lib/session';
 import { DailyCadencePanel } from './_components/DailyCadencePanel';
 import { DashboardStats } from './_components/DashboardStats';
+import { ExpenseCategoryBreakdownPanel } from './_components/ExpenseCategoryBreakdownPanel';
+import { ExpenseOverviewPanel } from './_components/ExpenseOverviewPanel';
 import { LineChart } from './_components/LineChart';
 import { PlatformBreakdownBarChart } from './_components/PlatformBreakdownBarChart';
 import { PlatformBreakdownPieChart } from './_components/PlatformBreakdownPieChart';
 import { PlatformConcentrationPanel } from './_components/PlatformConcentrationPanel';
+import { ProfitabilityPanel } from './_components/ProfitabilityPanel';
 import { RecentDaysPanel } from './_components/RecentDaysPanel';
 import { TotalsTable } from './_components/TotalsTable';
 import { YearlyRunRateChart } from './_components/YearlyRunRateChart';
@@ -47,6 +51,9 @@ const VISIBILITY_STORAGE_KEY = 'dashboard-widget-visibility';
 
 type WidgetId =
   | 'stats'
+  | 'profitability'
+  | 'expenseOverview'
+  | 'expenseCategoryBreakdown'
   | 'recentDays'
   | 'dailyCadence'
   | 'platformBreakdownPieChart'
@@ -93,7 +100,7 @@ const DEFAULT_WIDGET_VISIBILITY: Partial<Record<WidgetId, boolean>> = {
   platformBreakdownBarChart: false,
   platformConcentration: false,
   dailyCadence: false,
-  yearlyRunRate: false,
+  recentDays: false,
 };
 
 const buildDefaultVisibility = (definitions: DashboardWidgetDefinition[]) =>
@@ -144,6 +151,7 @@ export default function DashboardPage() {
   const sessionUser = getSessionUser(sessionData);
   const currency = resolveCurrency(sessionUser?.currency);
   const { data: incomes = [] } = useIncomeLogs();
+  const { data: expenses = [] } = useExpenseLogs();
 
   const dailySummaries = useMemo(
     () => aggregateDailyIncomes(incomes),
@@ -165,11 +173,22 @@ export default function DashboardPage() {
     () => currentMonthEntries.reduce((acc, row) => acc + row.amount, 0),
     [currentMonthEntries],
   );
-  const monthlyTotals = useMemo(() => getMonthlyTotals(incomes, 6), [incomes]);
   const trackedDaysCount = dailySummaries.length;
   const averagePerDay = trackedDaysCount ? totalIncome / trackedDaysCount : 0;
-  const currentMonthLabel = monthlyTotals[0]?.label ?? 'Current month';
   const currentMonthEntriesCount = currentMonthEntries.length;
+  const currentMonthExpenses = useMemo(
+    () => getCurrentMonthExpenses(expenses),
+    [expenses],
+  );
+  const currentMonthExpenseTotal = useMemo(
+    () =>
+      currentMonthExpenses.reduce(
+        (acc, entry) => acc + entry.amountMinor / 100,
+        0,
+      ),
+    [currentMonthExpenses],
+  );
+  const currentMonthExpenseCount = currentMonthExpenses.length;
   const stats = useMemo(() => {
     const trackedDaysLabel = `Across ${trackedDaysCount} ${
       trackedDaysCount === 1 ? 'day' : 'days'
@@ -189,9 +208,10 @@ export default function DashboardPage() {
         valueClass: 'text-secondary',
       },
       {
-        title: 'Platforms this month',
-        value: String(platformDistribution.length),
-        desc: currentMonthLabel,
+        title: 'Total expenses',
+        value: formatCurrency(currentMonthExpenseTotal, currency),
+        desc: `${currentMonthExpenseCount} entries logged`,
+        valueClass: 'text-error',
       },
       {
         title: 'Current month',
@@ -203,12 +223,12 @@ export default function DashboardPage() {
   }, [
     totalIncome,
     averagePerDay,
-    platformDistribution.length,
-    currentMonthLabel,
     currentMonthTotal,
     currentMonthEntriesCount,
     trackedDaysCount,
     currency,
+    currentMonthExpenseTotal,
+    currentMonthExpenseCount,
   ]);
 
   const widgetDefinitions = useMemo<DashboardWidgetDefinition[]>(
@@ -219,6 +239,40 @@ export default function DashboardPage() {
         description: 'Income overview',
         widthClass: 'md:col-span-2',
         component: <DashboardStats stats={stats} />,
+      },
+      {
+        id: 'profitability',
+        label: 'Profitability',
+        description: 'Net profit and KPIs',
+        widthClass: 'md:col-span-1',
+        component: (
+          <ProfitabilityPanel
+            incomes={incomes}
+            expenses={expenses}
+            currency={currency}
+          />
+        ),
+      },
+      {
+        id: 'expenseOverview',
+        label: 'Spend overview',
+        description: 'Current month spend at a glance',
+        widthClass: 'md:col-span-1',
+        component: (
+          <ExpenseOverviewPanel expenses={expenses} currency={currency} />
+        ),
+      },
+      {
+        id: 'expenseCategoryBreakdown',
+        label: 'Expense breakdown',
+        description: 'Spend by category & timeframe',
+        widthClass: 'md:col-span-1',
+        component: (
+          <ExpenseCategoryBreakdownPanel
+            expenses={expenses}
+            currency={currency}
+          />
+        ),
       },
       {
         id: 'dailyCadence',
@@ -274,24 +328,42 @@ export default function DashboardPage() {
         label: 'Income trend',
         description: 'Track time-based momentum',
         widthClass: 'md:col-span-2',
-        component: <LineChart incomes={incomes} currency={currency} />,
+        component: (
+          <LineChart
+            incomes={incomes}
+            expenses={expenses}
+            currency={currency}
+          />
+        ),
       },
       {
         id: 'yearlyRunRate',
         label: 'Yearly run rate',
         description: 'Monthly totals for the current year',
         widthClass: 'md:col-span-2',
-        component: <YearlyRunRateChart incomes={incomes} currency={currency} />,
+        component: (
+          <YearlyRunRateChart
+            incomes={incomes}
+            expenses={expenses}
+            currency={currency}
+          />
+        ),
       },
       {
         id: 'totalsTable',
         label: 'Totals',
         description: 'Rolling performance tables',
         widthClass: 'md:col-span-2',
-        component: <TotalsTable incomes={incomes} currency={currency} />,
+        component: (
+          <TotalsTable
+            incomes={incomes}
+            expenses={expenses}
+            currency={currency}
+          />
+        ),
       },
     ],
-    [stats, dailySummaries, incomes, currency, platformDistribution],
+    [stats, dailySummaries, incomes, currency, platformDistribution, expenses],
   );
 
   const [widgetOrder, setWidgetOrder] = useState<WidgetId[]>(() =>

@@ -1,28 +1,6 @@
-import type { IncomeEntry } from '@/lib/income';
-import { getCurrentMonthEntries } from '@/lib/income';
-
-export type TimeframeKey = 'weekly' | 'monthly' | 'yearToDate' | 'last12Months';
-
-type TimeframeOption = {
-  value: TimeframeKey;
-  label: string;
-  description: string;
-};
-
-export const timeframeOptions: TimeframeOption[] = [
-  { value: 'weekly', label: 'Weekly', description: 'Last 7 days' },
-  { value: 'monthly', label: 'Monthly', description: 'Current month' },
-  {
-    value: 'yearToDate',
-    label: 'Year to date',
-    description: 'Since January 1st',
-  },
-  {
-    value: 'last12Months',
-    label: 'Last 12 months',
-    description: 'Rolling year',
-  },
-];
+import type { ExpenseEntry } from '@/lib/expenses';
+import { getCurrentMonthExpenses } from '@/lib/expenses';
+import type { TimeframeKey } from './platformBreakdownTimeframes';
 
 const normalizeStartOfDay = (date: Date) => {
   const normalized = new Date(date);
@@ -36,15 +14,19 @@ const normalizeEndOfDay = (date: Date) => {
   return normalized;
 };
 
-const parseEntryDate = (entry: IncomeEntry) => {
-  const parsed = new Date(entry.date);
+const parseEntryDate = (entry: ExpenseEntry) => {
+  const parsed = new Date(entry.paidAt);
   if (Number.isNaN(parsed.getTime())) {
     return null;
   }
   return parsed;
 };
 
-const filterEntriesBetween = (entries: IncomeEntry[], start: Date, end: Date) =>
+const filterEntriesBetween = (
+  entries: ExpenseEntry[],
+  start: Date,
+  end: Date,
+) =>
   entries.filter((entry) => {
     const entryDate = parseEntryDate(entry);
     if (!entryDate) {
@@ -54,7 +36,7 @@ const filterEntriesBetween = (entries: IncomeEntry[], start: Date, end: Date) =>
   });
 
 const getRecentDaysEntries = (
-  entries: IncomeEntry[],
+  entries: ExpenseEntry[],
   days: number,
   reference = new Date(),
 ) => {
@@ -65,7 +47,7 @@ const getRecentDaysEntries = (
 };
 
 const getYearToDateEntries = (
-  entries: IncomeEntry[],
+  entries: ExpenseEntry[],
   reference = new Date(),
 ) => {
   const start = new Date(reference.getFullYear(), 0, 1);
@@ -75,7 +57,7 @@ const getYearToDateEntries = (
 };
 
 const getLastTwelveMonthsEntries = (
-  entries: IncomeEntry[],
+  entries: ExpenseEntry[],
   reference = new Date(),
 ) => {
   const start = new Date(reference.getFullYear(), reference.getMonth() - 11, 1);
@@ -84,15 +66,15 @@ const getLastTwelveMonthsEntries = (
   return filterEntriesBetween(entries, start, end);
 };
 
-export const getEntriesForTimeframe = (
-  entries: IncomeEntry[],
+export const getExpenseEntriesForTimeframe = (
+  entries: ExpenseEntry[],
   timeframe: TimeframeKey,
 ) => {
   switch (timeframe) {
     case 'weekly':
       return getRecentDaysEntries(entries, 7);
     case 'monthly':
-      return getCurrentMonthEntries(entries);
+      return getCurrentMonthExpenses(entries);
     case 'yearToDate':
       return getYearToDateEntries(entries);
     case 'last12Months':
