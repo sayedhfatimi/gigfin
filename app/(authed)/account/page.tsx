@@ -1,5 +1,11 @@
 'use client';
-import { type ChangeEvent, useEffect, useState } from 'react';
+import {
+  type ChangeEvent,
+  type Dispatch,
+  type SetStateAction,
+  useEffect,
+  useState,
+} from 'react';
 import { type ToastMessage, ToastStack } from '@/components/ToastStack';
 import { useSession } from '@/lib/auth-client';
 import type { CurrencyCode } from '@/lib/currency';
@@ -35,14 +41,22 @@ export default function AccountPage() {
   const { data: sessionData, isPending, refetch } = useSession();
   const sessionUser = getSessionUser(sessionData);
   const sessionCurrency = resolveCurrency(sessionUser?.currency);
+  const resolvedUnitSystem = (() => {
+    const unitSystem = sessionUser?.unitSystem;
+    return typeof unitSystem === 'string' ? unitSystem : 'metric';
+  })();
+  const resolvedVolumeUnit = (() => {
+    const volumeUnit = sessionUser?.volumeUnit;
+    return typeof volumeUnit === 'string' ? volumeUnit : 'litre';
+  })();
 
   const [selectedCurrency, setSelectedCurrency] =
     useState<CurrencyCode>(sessionCurrency);
   const [selectedUnitSystem, setSelectedUnitSystem] = useState(
-    sessionUser?.unitSystem ?? 'metric',
+    resolvedUnitSystem,
   );
   const [selectedVolumeUnit, setSelectedVolumeUnit] = useState(
-    sessionUser?.volumeUnit ?? 'litre',
+    resolvedVolumeUnit,
   );
   const [isUpdatingCurrency, setIsUpdatingCurrency] = useState(false);
   const [isUpdatingUnitSystem, setIsUpdatingUnitSystem] = useState(false);
@@ -69,9 +83,9 @@ export default function AccountPage() {
 
   useEffect(() => {
     setSelectedCurrency(sessionCurrency);
-    setSelectedUnitSystem(sessionUser?.unitSystem ?? 'metric');
-    setSelectedVolumeUnit(sessionUser?.volumeUnit ?? 'litre');
-  }, [sessionCurrency, sessionUser?.unitSystem, sessionUser?.volumeUnit]);
+    setSelectedUnitSystem(resolvedUnitSystem);
+    setSelectedVolumeUnit(resolvedVolumeUnit);
+  }, [sessionCurrency, resolvedUnitSystem, resolvedVolumeUnit]);
 
   useEffect(() => {
     if (!statusMessage) {
@@ -83,10 +97,10 @@ export default function AccountPage() {
     return () => window.clearTimeout(timer);
   }, [statusMessage]);
 
-  const updateUserPreference = async (
+  const updateUserPreference = async <T extends string>(
     payload: Record<string, string>,
-    previousValue: string,
-    setValue: (value: string) => void,
+    previousValue: T,
+    setValue: Dispatch<SetStateAction<T>>,
     setIsUpdating: (value: boolean) => void,
     successText: string,
     errorText: string,

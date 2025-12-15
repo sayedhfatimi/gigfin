@@ -95,9 +95,11 @@ const buildExpensePayload = (body: unknown) => {
   };
 };
 
+type ExpensePayload = NonNullable<ReturnType<typeof buildExpensePayload>>;
+
 const createExpense = async (data: {
   userId: string;
-  doc: ReturnType<typeof buildExpensePayload>;
+  doc: ExpensePayload;
 }) => {
   const id = randomUUID();
   const [entry] = await db
@@ -122,7 +124,7 @@ const createExpense = async (data: {
 const updateExpense = async (data: {
   id: string;
   userId: string;
-  doc: ReturnType<typeof buildExpensePayload>;
+  doc: ExpensePayload;
 }) => {
   const [entry] = await db
     .update(expense)
@@ -159,8 +161,8 @@ const hydrateExpense = (row: {
   unitRateMinor: number | null;
   unitRateUnit: UnitRateUnit | null;
   detailsJson: string | null;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
   vehicleLabel?: string | null;
   vehicleType?: string | null;
 }) => {
@@ -205,7 +207,12 @@ export async function GET(request: NextRequest) {
     .where(eq(expense.userId, userId))
     .orderBy(desc(expense.paidAt), desc(expense.createdAt));
 
-  const entries = rows.map(hydrateExpense);
+  const entries = rows.map((row) =>
+    hydrateExpense({
+      ...row,
+      unitRateUnit: parseUnitRateUnit(row.unitRateUnit),
+    }),
+  );
   return NextResponse.json(entries);
 }
 
