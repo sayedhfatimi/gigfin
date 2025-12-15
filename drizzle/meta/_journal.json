@@ -15,6 +15,13 @@
       "when": 1765625053169,
       "tag": "0001_outgoing_lionheart",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1765791527755,
+      "tag": "0002_workable_prowler",
+      "breakpoints": true
     }
   ]
 }

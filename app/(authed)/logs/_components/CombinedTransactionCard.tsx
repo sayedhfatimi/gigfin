@@ -1,0 +1,72 @@
+'use client';
+
+import EntryActions from './EntryActions';
+
+type CombinedTransactionCardProps = {
+  label: string;
+  dateLabel: string;
+  vehicleLabel?: string;
+  amountText: string;
+  isIncome: boolean;
+  expenseRate?: string;
+  onEdit: () => void;
+  onDelete: () => void;
+  deleteDisabled?: boolean;
+};
+
+export default function CombinedTransactionCard({
+  label,
+  dateLabel,
+  vehicleLabel,
+  amountText,
+  isIncome,
+  expenseRate,
+  onEdit,
+  onDelete,
+  deleteDisabled,
+}: CombinedTransactionCardProps) {
+  return (
+    <div className='border border-base-content/10 bg-base-200 p-4 shadow-sm space-y-2'>
+      <div className='flex flex-col gap-2 md:flex-row md:items-center md:justify-between'>
+        <div className='space-y-1'>
+          <div className='flex items-center gap-2'>
+            <p className='text-sm font-semibold text-base-content'>{label}</p>
+          </div>
+          <p className='text-xs uppercase text-base-content/60'>
+            {dateLabel}
+            {vehicleLabel ? <> · {vehicleLabel}</> : null}
+          </p>
+        </div>
+        <div className='text-right'>
+          <p
+            className={`text-sm font-semibold ${
+              isIncome ? 'text-success' : 'text-error'
+            }`}
+          >
+            {isIncome ? '+' : '-'}
+            {amountText}
+          </p>
+          {expenseRate && (
+            <p className='text-xs text-base-content/60'>{expenseRate}</p>
+          )}
+        </div>
+      </div>
+      <div className='flex flex-row items-center justify-between'>
+        <EntryActions
+          onEdit={onEdit}
+          onDelete={onDelete}
+          deleteDisabled={deleteDisabled}
+        />
+        <span
+          className={`badge ${
+            isIncome ? 'badge-success' : 'badge-error'
+          } badge-sm`}
+        >
+          <i
+            className={`fa-solid fa-${isIncome ? 'arrow-right' : 'arrow-left'}`}
+          />
+        </span>
+      </div>
+    </div>
+  );
+}

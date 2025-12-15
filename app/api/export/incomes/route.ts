@@ -6,11 +6,7 @@ import { db } from '@/db';
 import { income } from '@/db/schema';
 import { requireUserId } from '@/lib/server/session';
 
-const formatDateValue = (value: string | Date | null | undefined) =>
-  value instanceof Date ? value.toISOString() : (value ?? '');
-
-const escapeCsvValue = (value: unknown) =>
-  `"${String(value ?? '').replace(/"/g, '""')}"`;
+import { escapeCsvValue, formatDateValue } from '../utils';
 
 const buildIncomeCsv = (
   entries: {

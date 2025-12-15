@@ -28,6 +28,18 @@ export const auth = betterAuth({
         output: true,
         defaultValue: 'GBP',
       },
+      unitSystem: {
+        type: 'string',
+        input: true,
+        output: true,
+        defaultValue: 'metric',
+      },
+      volumeUnit: {
+        type: 'string',
+        input: true,
+        output: true,
+        defaultValue: 'litre',
+      },
     },
   },
 });
