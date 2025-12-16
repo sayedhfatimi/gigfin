@@ -42,6 +42,8 @@ export type IncomeTableProps = {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  expandedRows: Set<string>;
+  onToggleRow: (rowId: string) => void;
 };
 
 export default function IncomeTable({
@@ -68,6 +70,8 @@ export default function IncomeTable({
   currentPage,
   totalPages,
   onPageChange,
+  expandedRows,
+  onToggleRow,
 }: IncomeTableProps) {
   const hasPlatforms = platformOptions.length > 0;
 
@@ -184,6 +188,8 @@ export default function IncomeTable({
                 onEditEntry={onEditEntry}
                 onDeleteEntry={onDeleteEntry}
                 deleteDisabled={deleteDisabled}
+                isExpanded={expandedRows.has(row.id)}
+                onToggle={() => onToggleRow(row.id)}
               />
             ))}
           </div>

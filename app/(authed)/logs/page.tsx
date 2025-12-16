@@ -202,8 +202,22 @@ export default function LogsPage() {
   const [entryToDelete, setEntryToDelete] = useState<DeletableEntry | null>(
     null,
   );
+  const [expandedIncomeRows, setExpandedIncomeRows] = useState<Set<string>>(
+    () => new Set(),
+  );
   const toggleExpenseRow = (id: string) => {
     setExpandedExpenseRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+  const toggleIncomeRow = (id: string) => {
+    setExpandedIncomeRows((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
@@ -481,7 +495,6 @@ export default function LogsPage() {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    getRowCanExpand: () => true,
   });
   const incomePaginationModel = incomeTable.getPaginationRowModel();
   const incomePageRows = incomePaginationModel.rows;
@@ -761,6 +774,8 @@ export default function LogsPage() {
           currentPage={incomeCurrentPage}
           totalPages={incomeTotalPages}
           onPageChange={handleIncomePageChange}
+          expandedRows={expandedIncomeRows}
+          onToggleRow={toggleIncomeRow}
         />
       )}
 

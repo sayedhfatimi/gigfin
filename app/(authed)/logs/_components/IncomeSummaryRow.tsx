@@ -13,6 +13,8 @@ type IncomeSummaryRowProps = {
   onEditEntry: (entry: IncomeEntry) => void;
   onDeleteEntry: (entry: IncomeEntry) => void;
   deleteDisabled: boolean;
+  isExpanded: boolean;
+  onToggle: () => void;
 };
 
 export default function IncomeSummaryRow({
@@ -21,16 +23,16 @@ export default function IncomeSummaryRow({
   onEditEntry,
   onDeleteEntry,
   deleteDisabled,
+  isExpanded,
+  onToggle,
 }: IncomeSummaryRowProps) {
-  const isExpanded = row.getIsExpanded();
-
   return (
     <div className='space-y-0.5'>
       <div className='border border-base-content/10 bg-base-200/80 shadow-sm'>
         <button
           type='button'
           className='flex w-full flex-wrap items-center gap-4 p-4 text-left transition hover:bg-base-100 md:grid md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center'
-          onClick={() => row.toggleExpanded()}
+          onClick={onToggle}
         >
           {row.getVisibleCells().map((cell) => {
             const isPlatformColumn = cell.column.id === 'breakdown';
