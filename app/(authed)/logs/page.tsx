@@ -1,10 +1,10 @@
 'use client';
 
-import type { Column, SortingState } from '@tanstack/react-table';
+import type { SortingState } from '@tanstack/react-table';
 import {
   createColumnHelper,
-  flexRender,
   getCoreRowModel,
+  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
@@ -16,7 +16,6 @@ import { resolveCurrency } from '@/lib/currency';
 import {
   buildExpenseMonthOptions,
   type ExpenseEntry,
-  expenseTypeOptions,
   formatExpenseType,
   getExpenseEntryMonth,
   type UnitRateUnit,
@@ -25,10 +24,8 @@ import {
   aggregateDailyIncomes,
   type DailyIncomeSummary,
   formatCurrency,
-  formatMonthLabel,
   getEntryMonth,
   type IncomeEntry,
-  type MonthOption,
 } from '@/lib/income';
 import type { ExpensePayload } from '@/lib/queries/expenses';
 import {
@@ -45,71 +42,26 @@ import {
 } from '@/lib/queries/income';
 import { useVehicleProfiles } from '@/lib/queries/vehicleProfiles';
 import { getSessionUser } from '@/lib/session';
-import CombinedTransactionCard from './_components/CombinedTransactionCard';
-import EntryActions from './_components/EntryActions';
+import CombinedTable from './_components/CombinedTable';
 import EntryModal from './_components/EntryModal';
-import FilterPanel from './_components/FilterPanel';
-import FilterRow from './_components/FilterRow';
-import FilterSelect from './_components/FilterSelect';
-import LoadingState from './_components/LoadingState';
+import ExpenseTable from './_components/ExpenseTable';
+import IncomeTable from './_components/IncomeTable';
+import VehicleFilterControl from './_components/VehicleFilterControl';
+
+import {
+  buildEntryMonthOptions,
+  formatDateLabel,
+  renderSortableHeader,
+} from './_lib/formatters';
+import type {
+  CombinedTransaction,
+  DeletableEntry,
+  ExpenseSortColumn,
+  ExpenseSortState,
+} from './_lib/types';
 
 const columnHelper = createColumnHelper<DailyIncomeSummary>();
-const GRID_TEMPLATE_CLASS =
-  'md:grid md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center';
-
-const buildEntryMonthOptions = (entries: IncomeEntry[]): MonthOption[] => {
-  const map = new Map<string, MonthOption>();
-  entries.forEach((entry) => {
-    const parsed = getEntryMonth(entry);
-    if (!parsed) {
-      return;
-    }
-    const key = `${parsed.year}-${parsed.month}`;
-    if (map.has(key)) {
-      return;
-    }
-    map.set(key, {
-      key,
-      label: formatMonthLabel(parsed.year, parsed.month),
-      year: parsed.year,
-      month: parsed.month,
-    });
-  });
-  return Array.from(map.values()).sort((a, b) => {
-    if (a.year !== b.year) {
-      return b.year - a.year;
-    }
-    return b.month - a.month;
-  });
-};
-
-const renderSortableHeader = (
-  column: Column<DailyIncomeSummary>,
-  label: string,
-  align: 'left' | 'right' = 'left',
-) => {
-  const alignmentClasses =
-    align === 'right' ? 'justify-end text-right' : 'justify-start text-left';
-  return (
-    <button
-      type='button'
-      className={`flex w-full items-center gap-2 text-xs font-semibold uppercase ${alignmentClasses}`}
-      onClick={() => column.toggleSorting()}
-    >
-      <span className='text-base-content'>{label}</span>
-      <span
-        aria-hidden='true'
-        className={`fa-solid ${
-          column.getIsSorted() === 'asc'
-            ? 'fa-arrow-up'
-            : column.getIsSorted() === 'desc'
-              ? 'fa-arrow-down'
-              : 'fa-arrows-up-down'
-        } text-[0.6rem] text-base-content/60`}
-      />
-    </button>
-  );
-};
+const PAGE_SIZE = 10;
 
 const buildColumns = (currency: CurrencyCode) => [
   columnHelper.accessor('date', {
@@ -151,51 +103,25 @@ const LOG_TABS: { label: string; key: View }[] = [
   { label: 'Expenses', key: 'expenses' },
 ];
 
-const formatDateLabel = (value: string) => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-  return new Intl.DateTimeFormat('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(date);
-};
-
-const formatExpenseRate = (entry: ExpenseEntry) => {
-  if (!entry.unitRateMinor || !entry.unitRateUnit) {
-    return '—';
-  }
-  const unitLabel =
-    entry.unitRateUnit === 'kwh'
-      ? 'kWh'
-      : entry.unitRateUnit === 'litre'
-        ? 'litre'
-        : entry.unitRateUnit === 'gallon_us'
-          ? 'gallon (US)'
-          : entry.unitRateUnit === 'gallon_imp'
-            ? 'gallon (Imperial)'
-            : entry.unitRateUnit;
-  return `${entry.unitRateMinor}p/${unitLabel}`;
-};
-
-type ExpenseSortColumn = 'date' | 'type' | 'amount';
-
-type ExpenseSortState = null | {
-  column: ExpenseSortColumn;
-  direction: 'asc' | 'desc';
-};
-
 type EntryTab = 'income' | 'expense';
 
 type View = 'all' | 'income' | 'expenses';
 
-type CombinedTransaction =
-  | { type: 'income'; entry: IncomeEntry; date: string }
-  | { type: 'expense'; entry: ExpenseEntry; date: string };
+const combinedColumnHelper = createColumnHelper<CombinedTransaction>();
+const combinedColumns = [
+  combinedColumnHelper.accessor('date', {
+    header: 'Date',
+    cell: (info) => info.getValue(),
+  }),
+];
 
-type DeletableEntry = CombinedTransaction;
+const expenseColumnHelper = createColumnHelper<ExpenseEntry>();
+const expenseColumns = [
+  expenseColumnHelper.accessor('paidAt', {
+    header: 'Date',
+    cell: (info) => info.getValue(),
+  }),
+];
 
 export default function LogsPage() {
   const router = useRouter();
@@ -231,6 +157,25 @@ export default function LogsPage() {
   const [selectedMonth, setSelectedMonth] = useState('');
   const [platformFilter, setPlatformFilter] = useState<string[]>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const platformFilterKey = platformFilter.join(',');
+  const sortingSignature = useMemo(
+    () =>
+      sorting.map((state) => `${state.id}-${state.desc ?? false}`).join(','),
+    [sorting],
+  );
+  const incomeResetSignature = `${selectedMonth}-${platformFilterKey}-${sortingSignature}`;
+  const [combinedPagination, setCombinedPagination] = useState({
+    pageIndex: 0,
+    pageSize: PAGE_SIZE,
+  });
+  const [incomePagination, setIncomePagination] = useState({
+    pageIndex: 0,
+    pageSize: PAGE_SIZE,
+  });
+  const [expensePagination, setExpensePagination] = useState({
+    pageIndex: 0,
+    pageSize: PAGE_SIZE,
+  });
   const [selectedVehicleFilter, setSelectedVehicleFilter] = useState<
     string | null
   >(null);
@@ -243,6 +188,10 @@ export default function LogsPage() {
     column: 'date',
     direction: 'desc',
   });
+  const expenseSortSignature = expenseSort
+    ? `${expenseSort.column}-${expenseSort.direction}`
+    : 'none';
+  const expenseResetSignature = `${selectedExpenseMonth}-${selectedExpenseType}-${selectedVehicleFilter ?? ''}-${expenseSortSignature}`;
 
   const [entryModalOpen, setEntryModalOpen] = useState(false);
   const [entryModalTab, setEntryModalTab] = useState<EntryTab>('income');
@@ -324,6 +273,20 @@ export default function LogsPage() {
         : expenseMonthOptions[0].key,
     );
   }, [expenseMonthOptions]);
+
+  useEffect(() => {
+    void incomeResetSignature;
+    setIncomePagination((prev) =>
+      prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 },
+    );
+  }, [incomeResetSignature]);
+
+  useEffect(() => {
+    void expenseResetSignature;
+    setExpensePagination((prev) =>
+      prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 },
+    );
+  }, [expenseResetSignature]);
 
   const filteredByMonth = useMemo(() => {
     if (!selectedMonth) {
@@ -415,6 +378,33 @@ export default function LogsPage() {
     return entries;
   }, [expenseSort, filteredExpensesByMonth]);
 
+  const expenseTable = useReactTable({
+    data: sortedExpenses,
+    columns: expenseColumns,
+    state: { pagination: expensePagination },
+    onPaginationChange: setExpensePagination,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
+  const expensePaginationModel = expenseTable.getPaginationRowModel();
+  const expensePageEntries = expensePaginationModel.rows.map(
+    (row) => row.original,
+  );
+  const expenseTotalPages = expenseTable.getPageCount();
+  const expenseCurrentPage = expensePagination.pageIndex + 1;
+  const handleExpensePageChange = (page: number) =>
+    expenseTable.setPageIndex(page - 1);
+
+  useEffect(() => {
+    const maxPageIndex = Math.max(0, expenseTotalPages - 1);
+    if (expensePagination.pageIndex > maxPageIndex) {
+      setExpensePagination((prev) => ({
+        ...prev,
+        pageIndex: maxPageIndex,
+      }));
+    }
+  }, [expensePagination.pageIndex, expenseTotalPages]);
+
   const combinedTransactions = useMemo(() => {
     const data: CombinedTransaction[] = [
       ...incomes.map((entry) => ({
@@ -435,10 +425,45 @@ export default function LogsPage() {
     });
   }, [incomes, filteredExpensesByVehicle]);
 
+  const combinedResetSignature = `${selectedVehicleFilter ?? ''}-${combinedTransactions.length}`;
+
+  useEffect(() => {
+    void combinedResetSignature;
+    setCombinedPagination((prev) =>
+      prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 },
+    );
+  }, [combinedResetSignature]);
+
   const dailySummaries = useMemo(
     () => aggregateDailyIncomes(filteredIncomes),
     [filteredIncomes],
   );
+
+  const combinedTable = useReactTable({
+    data: combinedTransactions,
+    columns: combinedColumns,
+    state: { pagination: combinedPagination },
+    onPaginationChange: setCombinedPagination,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
+  const combinedPaginationModel = combinedTable.getPaginationRowModel();
+  const combinedPageRows = combinedPaginationModel.rows;
+  const combinedPageTransactions = combinedPageRows.map((row) => row.original);
+  const combinedTotalPages = combinedTable.getPageCount();
+  const combinedCurrentPage = combinedPagination.pageIndex + 1;
+  const handleCombinedPageChange = (page: number) =>
+    combinedTable.setPageIndex(page - 1);
+
+  useEffect(() => {
+    const maxPageIndex = Math.max(0, combinedTotalPages - 1);
+    if (combinedPagination.pageIndex > maxPageIndex) {
+      setCombinedPagination((prev) => ({
+        ...prev,
+        pageIndex: maxPageIndex,
+      }));
+    }
+  }, [combinedPagination.pageIndex, combinedTotalPages]);
 
   const platformOptions = useMemo(() => {
     const platforms = Array.from(
@@ -447,15 +472,33 @@ export default function LogsPage() {
     return platforms.sort();
   }, [incomes]);
 
-  const table = useReactTable({
+  const incomeTable = useReactTable({
     data: dailySummaries,
     columns: buildColumns(currency),
-    state: { sorting },
+    state: { sorting, pagination: incomePagination },
     onSortingChange: setSorting,
+    onPaginationChange: setIncomePagination,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     getRowCanExpand: () => true,
   });
+  const incomePaginationModel = incomeTable.getPaginationRowModel();
+  const incomePageRows = incomePaginationModel.rows;
+  const incomeTotalPages = incomeTable.getPageCount();
+  const incomeCurrentPage = incomePagination.pageIndex + 1;
+  const handleIncomePageChange = (page: number) =>
+    incomeTable.setPageIndex(page - 1);
+
+  useEffect(() => {
+    const maxPageIndex = Math.max(0, incomeTotalPages - 1);
+    if (incomePagination.pageIndex > maxPageIndex) {
+      setIncomePagination((prev) => ({
+        ...prev,
+        pageIndex: maxPageIndex,
+      }));
+    }
+  }, [incomePagination.pageIndex, incomeTotalPages]);
 
   const handleResetTableControls = () => {
     setSelectedMonth(defaultIncomeMonthKey);
@@ -580,6 +623,21 @@ export default function LogsPage() {
     setEntryToDelete(entry);
   };
 
+  const handleDeleteIncomeEntry = (entry: IncomeEntry) => {
+    handleDeleteEntry({
+      type: 'income',
+      entry,
+      date: entry.date,
+    });
+  };
+  const handleDeleteExpenseEntry = (entry: ExpenseEntry) => {
+    handleDeleteEntry({
+      type: 'expense',
+      entry,
+      date: entry.paidAt,
+    });
+  };
+
   const handleConfirmDelete = async () => {
     if (!entryToDelete) {
       return;
@@ -613,66 +671,18 @@ export default function LogsPage() {
         ? 'Review logged expenses with context around the rate, vehicle, and notes.'
         : 'Review every income and expense transaction in one chronological feed.';
 
-  const vehicleFilterControl = hasVehicleProfiles ? (
-    <div className='flex flex-row items-center gap-2'>
-      <label className='select select-sm'>
-        <select
-          value={selectedVehicleFilter ?? ''}
-          onChange={(event) =>
-            setSelectedVehicleFilter(
-              event.target.value ? event.target.value : null,
-            )
-          }
-        >
-          <option value=''>All vehicles</option>
-          {vehicleProfiles.map((profile) => (
-            <option key={profile.id} value={profile.id}>
-              {profile.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <button
-        type='button'
-        className='btn btn-xs btn-square btn-error text-xs hidden md:inline-flex'
-        onClick={() => setSelectedVehicleFilter(null)}
-        disabled={!selectedVehicleFilter}
-        aria-label='Clear platform filters'
-      >
-        <i className='fa-solid fa-xmark' aria-hidden='true' />
-      </button>
-    </div>
-  ) : null;
-
-  const renderExpenseSortButton = (
-    column: ExpenseSortColumn,
-    label: string,
-    alignRight = false,
-  ) => {
-    const isActive = expenseSort?.column === column;
-    const alignmentClasses =
-      alignRight === true
-        ? 'justify-end text-right'
-        : 'justify-start text-left';
-    return (
-      <button
-        type='button'
-        className={`flex w-full items-center gap-2 text-xs font-semibold uppercase ${alignmentClasses}`}
-        onClick={() => toggleExpenseSort(column)}
-        aria-pressed={isActive}
-      >
-        <span className={`text-base-content ${isActive ? 'text-primary' : ''}`}>
-          {label}
-        </span>
-        <span
-          aria-hidden='true'
-          className={`fa-solid ${getExpenseSortIcon(column)} text-[0.6rem] ${
-            isActive ? 'text-primary' : 'text-base-content/60'
-          }`}
-        />
-      </button>
-    );
+  const handleVehicleFilterClear = () => {
+    setSelectedVehicleFilter(null);
   };
+
+  const vehicleFilterControl = hasVehicleProfiles ? (
+    <VehicleFilterControl
+      vehicleProfiles={vehicleProfiles}
+      selectedVehicleFilter={selectedVehicleFilter}
+      onChange={setSelectedVehicleFilter}
+      onClear={handleVehicleFilterClear}
+    />
+  ) : null;
 
   return (
     <div className='space-y-6'>
@@ -712,421 +722,74 @@ export default function LogsPage() {
       </header>
 
       {view === 'all' && (
-        <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm space-y-4'>
-          {vehicleFilterControl && (
-            <div className='flex flex-col gap-2 text-sm text-base-content/70 md:flex-row md:items-center md:justify-between'>
-              <span className='text-xs uppercase'>Vehicles</span>
-              <div>{vehicleFilterControl}</div>
-            </div>
-          )}
-          {isAnyLoading ? (
-            <LoadingState message='Loading logs…' />
-          ) : combinedTransactions.length === 0 ? (
-            <div className='flex min-h-40 flex-col items-center justify-center text-sm text-base-content/60'>
-              <p>
-                No transactions yet. Add your first income or expense entry.
-              </p>
-            </div>
-          ) : (
-            <div className='space-y-3'>
-              {combinedTransactions.map((item) => {
-                const label =
-                  item.type === 'income'
-                    ? item.entry.platform
-                    : formatExpenseType(item.entry.expenseType);
-                const amountText =
-                  item.type === 'income'
-                    ? formatCurrency(item.entry.amount, currency)
-                    : formatCurrency(item.entry.amountMinor / 100, currency);
-                return (
-                  <CombinedTransactionCard
-                    key={`${item.type}-${item.entry.id}`}
-                    label={label}
-                    dateLabel={formatDateLabel(item.date)}
-                    vehicleLabel={
-                      item.type === 'expense'
-                        ? item.entry.vehicle?.label
-                        : undefined
-                    }
-                    amountText={amountText}
-                    isIncome={item.type === 'income'}
-                    expenseRate={
-                      item.type === 'expense'
-                        ? formatExpenseRate(item.entry)
-                        : undefined
-                    }
-                    onEdit={() =>
-                      item.type === 'income'
-                        ? handleEditIncome(item.entry)
-                        : handleEditExpense(item.entry)
-                    }
-                    onDelete={() => handleDeleteEntry(item)}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </section>
+        <CombinedTable
+          currency={currency}
+          isLoading={isAnyLoading}
+          transactions={combinedPageTransactions}
+          vehicleFilterControl={vehicleFilterControl}
+          currentPage={combinedCurrentPage}
+          totalPages={combinedTotalPages}
+          onPageChange={handleCombinedPageChange}
+          onEditIncome={handleEditIncome}
+          onEditExpense={handleEditExpense}
+          onDeleteEntry={handleDeleteEntry}
+        />
       )}
 
       {view === 'income' && (
-        <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm space-y-4'>
-          <FilterPanel
-            title='Filtering Options'
-            onReset={handleResetTableControls}
-            isResetDisabled={!isIncomeFilterDirty}
-          >
-            <FilterSelect
-              label='Month'
-              id='monthly-filter'
-              value={selectedMonth}
-              onChange={(event) => setSelectedMonth(event.target.value)}
-              disabled={isLoadingIncomes}
-              ariaBusy={isLoadingIncomes}
-              rowClassName='gap-1'
-              options={monthOptions.map((option) => ({
-                value: option.key,
-                label: option.label,
-              }))}
-            />
-            {platformOptions.length ? (
-              <FilterRow label='Platforms' className='gap-2'>
-                <div className='flex flex-wrap gap-2 px-1 md:flex-nowrap md:overflow-x-auto'>
-                  {platformOptions.map((platform) => {
-                    const isChecked = platformFilter.includes(platform);
-                    return (
-                      <label
-                        key={platform}
-                        className={`btn btn-xs normal-case ${
-                          isChecked
-                            ? 'btn-primary btn-active text-white'
-                            : 'btn-outline'
-                        }`}
-                      >
-                        <input
-                          type='checkbox'
-                          name='platforms'
-                          value={platform}
-                          aria-label={platform}
-                          checked={isChecked}
-                          onChange={() => togglePlatformSelection(platform)}
-                          className='sr-only'
-                        />
-                        {platform}
-                      </label>
-                    );
-                  })}
-                  <button
-                    type='button'
-                    className='btn btn-xs btn-square btn-error text-xs hidden md:inline-flex'
-                    onClick={handlePlatformFilterReset}
-                    disabled={!platformFilter.length}
-                    aria-label='Clear platform filters'
-                  >
-                    <i className='fa-solid fa-xmark' aria-hidden='true' />
-                  </button>
-                </div>
-              </FilterRow>
-            ) : (
-              <span className='text-xs uppercase text-base-content/60'>
-                No platforms yet
-              </span>
-            )}
-          </FilterPanel>
-          {isLoadingIncomes ? (
-            <LoadingState message='Loading logs…' />
-          ) : !incomeHasEntriesForSelectedMonth ? (
-            <div className='flex min-h-60 flex-col items-center justify-center gap-3 text-sm text-base-content/60'>
-              <p>{emptyMonthMessage}</p>
-              <p className='text-xs text-base-content/60'>
-                {hasAnyIncome
-                  ? `Switch months or add an income entry to fill the timeframe.`
-                  : 'Hit the button above to log your first income.'}
-              </p>
-              <button
-                type='button'
-                className='btn btn-sm btn-outline'
-                onClick={() => openEntryModal('income')}
-              >
-                Create entry
-              </button>
-            </div>
-          ) : (
-            <div className='space-y-3'>
-              {table.getHeaderGroups().length ? (
-                <div
-                  className={`hidden ${GRID_TEMPLATE_CLASS} bg-base-100/50 py-3 gap-4 text-xs uppercase text-base-content/60 px-4`}
-                >
-                  {table.getHeaderGroups()[0].headers.map((header) => (
-                    <div key={header.id} className='text-left'>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                    </div>
-                  ))}
-                  <span
-                    aria-hidden='true'
-                    className='fa-solid fa-up-down text-xs text-base-content/60'
-                  />
-                </div>
-              ) : null}
-              <div className='space-y-3'>
-                {table.getRowModel().rows.map((row) => (
-                  <div key={row.id} className='space-y-0.5'>
-                    <div className='border border-base-content/10 bg-base-200/80 shadow-sm'>
-                      <button
-                        type='button'
-                        className={`flex w-full flex-wrap items-center gap-4 p-4 text-left transition hover:bg-base-100 ${GRID_TEMPLATE_CLASS}`}
-                        onClick={() => row.toggleExpanded()}
-                      >
-                        {row.getVisibleCells().map((cell) => {
-                          const isPlatformColumn =
-                            cell.column.id === 'breakdown';
-                          const isTotalColumn = cell.column.id === 'total';
-                          const classes = [
-                            'truncate',
-                            'text-sm',
-                            'font-semibold',
-                            'text-base-content/80',
-                            isPlatformColumn
-                              ? 'hidden md:block'
-                              : 'min-w-0 flex-1 md:flex-none',
-                            isTotalColumn ? 'text-right' : 'text-left',
-                          ]
-                            .filter(Boolean)
-                            .join(' ');
-                          return (
-                            <div key={cell.id} className={classes}>
-                              {flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext(),
-                              )}
-                            </div>
-                          );
-                        })}
-                        <span
-                          aria-hidden='true'
-                          className={`fa-solid fa-chevron-${
-                            row.getIsExpanded() ? 'up' : 'down'
-                          } ml-auto text-xs text-base-content/60`}
-                        />
-                      </button>
-                      {row.getIsExpanded() && (
-                        <div className='border-t border-base-content/10 bg-base-100 p-4'>
-                          <div className='flex items-center justify-between text-sm font-semibold text-base-content/60'>
-                            <span>Entries</span>
-                            <span className='text-xs uppercase '>
-                              {row.original.entries.length}{' '}
-                              {row.original.entries.length === 1
-                                ? 'entry'
-                                : 'entries'}
-                            </span>
-                          </div>
-                          <div className='mt-3 space-y-2 text-sm text-base-content/70'>
-                            {row.original.entries.length ? (
-                              row.original.entries.map((entry) => (
-                                <div
-                                  key={entry.id}
-                                  className='flex items-center justify-between border border-base-content/10 bg-base-200/80 px-3 py-2'
-                                >
-                                  <div>
-                                    <p className='font-medium text-base-content'>
-                                      {entry.platform}
-                                    </p>
-                                    <p className='text-xs text-base-content/60'>
-                                      {formatCurrency(entry.amount, currency)}
-                                    </p>
-                                  </div>
-                                  <EntryActions
-                                    onEdit={() => handleEditIncome(entry)}
-                                    onDelete={() =>
-                                      handleDeleteEntry({
-                                        type: 'income',
-                                        entry,
-                                        date: entry.date,
-                                      })
-                                    }
-                                    deleteDisabled={
-                                      deleteIncomeMutation.isPending
-                                    }
-                                    editClassName='btn btn-xs btn-outline btn-ghost'
-                                  />
-                                </div>
-                              ))
-                            ) : (
-                              <p className='text-xs text-base-content/50'>
-                                No entries were recorded for this day.
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </section>
+        <IncomeTable
+          isLoading={isLoadingIncomes}
+          incomeTable={incomeTable}
+          pageRows={incomePageRows}
+          currency={currency}
+          platformOptions={platformOptions}
+          platformFilter={platformFilter}
+          monthOptions={monthOptions}
+          selectedMonth={selectedMonth}
+          onMonthChange={setSelectedMonth}
+          togglePlatformSelection={togglePlatformSelection}
+          onPlatformFilterReset={handlePlatformFilterReset}
+          onResetFilters={handleResetTableControls}
+          isFilterDirty={isIncomeFilterDirty}
+          hasEntriesForSelectedMonth={incomeHasEntriesForSelectedMonth}
+          emptyMonthMessage={emptyMonthMessage}
+          hasAnyIncome={hasAnyIncome}
+          onEditEntry={handleEditIncome}
+          onDeleteEntry={handleDeleteIncomeEntry}
+          deleteDisabled={deleteIncomeMutation.isPending}
+          onCreateEntry={() => openEntryModal('income')}
+          currentPage={incomeCurrentPage}
+          totalPages={incomeTotalPages}
+          onPageChange={handleIncomePageChange}
+        />
       )}
 
       {view === 'expenses' && (
-        <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm space-y-4'>
-          <FilterPanel
-            title='Filtering Options'
-            onReset={handleResetExpenseFilters}
-            isResetDisabled={!isExpenseFilterDirty}
-          >
-            <FilterSelect
-              label='Month'
-              id='expenses-month-filter'
-              value={selectedExpenseMonth}
-              onChange={(event) => setSelectedExpenseMonth(event.target.value)}
-              disabled={isLoadingExpenses}
-              ariaBusy={isLoadingExpenses}
-              options={expenseMonthOptions.map((option) => ({
-                value: option.key,
-                label: option.label,
-              }))}
-            />
-            <FilterSelect
-              label='Type'
-              value={selectedExpenseType}
-              onChange={(event) => setSelectedExpenseType(event.target.value)}
-              disabled={isLoadingExpenses}
-              ariaBusy={isLoadingExpenses}
-              options={[
-                { value: 'all', label: 'All types' },
-                ...expenseTypeOptions.map((option) => ({
-                  value: option.value,
-                  label: option.label,
-                })),
-              ]}
-            />
-            <FilterRow label='Vehicles'>
-              <div className='flex flex-wrap justify-end gap-2'>
-                {vehicleFilterControl ?? (
-                  <span className='text-xs uppercase text-base-content/60'>
-                    Add a vehicle profile to filter expenses.
-                  </span>
-                )}
-              </div>
-            </FilterRow>
-          </FilterPanel>
-          {isLoadingExpenses ? (
-            <LoadingState message='Loading expenses…' />
-          ) : filteredExpensesByMonth.length === 0 ? (
-            <div className='flex min-h-40 flex-col items-center justify-center text-sm text-base-content/60'>
-              <p>{expenseEmptyMessage}</p>
-            </div>
-          ) : (
-            <div className='space-y-3'>
-              <div
-                className={`hidden ${GRID_TEMPLATE_CLASS} bg-base-100/50 py-3 gap-4 text-xs uppercase text-base-content/60 px-4`}
-              >
-                <div className='text-left'>
-                  {renderExpenseSortButton('date', 'Date')}
-                </div>
-                <div className='text-left'>
-                  {renderExpenseSortButton('type', 'Type')}
-                </div>
-                <div className='text-right'>
-                  {renderExpenseSortButton('amount', 'Amount', true)}
-                </div>
-                <span
-                  aria-hidden='true'
-                  className='fa-solid fa-up-down text-xs text-base-content/60'
-                />
-              </div>
-              <div className='space-y-2'>
-                {sortedExpenses.map((entry) => {
-                  const isExpanded = expandedExpenseRows.has(entry.id);
-                  const amountText = formatCurrency(
-                    entry.amountMinor / 100,
-                    currency,
-                  );
-                  return (
-                    <div key={entry.id} className='space-y-0.5'>
-                      <div className='border border-base-content/10 bg-base-200/80 shadow-sm'>
-                        <button
-                          type='button'
-                          className={`flex w-full flex-wrap items-center gap-4 p-4 text-left transition hover:bg-base-100 ${GRID_TEMPLATE_CLASS}`}
-                          onClick={() => toggleExpenseRow(entry.id)}
-                          aria-expanded={isExpanded}
-                        >
-                          <span className='min-w-0 flex-1 text-sm font-semibold text-base-content/80'>
-                            {formatDateLabel(entry.paidAt)}
-                          </span>
-                          <span className='min-w-0 text-sm font-semibold text-base-content/80'>
-                            {formatExpenseType(entry.expenseType)}
-                          </span>
-                          <span className='min-w-0 text-right text-sm font-semibold text-error'>
-                            -{amountText}
-                          </span>
-                          <span
-                            aria-hidden='true'
-                            className={`fa-solid fa-chevron-${
-                              isExpanded ? 'up' : 'down'
-                            } ml-auto text-xs text-base-content/60`}
-                          />
-                        </button>
-                        {isExpanded && (
-                          <div className='border-t border-base-content/10 bg-base-100 p-4 text-sm text-base-content/70'>
-                            <div className='grid gap-3 md:grid-cols-4 items-center'>
-                              <div>
-                                <p className='text-xs uppercase text-base-content/60'>
-                                  Vehicle
-                                </p>
-                                <p className='text-sm text-base-content'>
-                                  {entry.vehicle?.label ?? '—'}
-                                </p>
-                              </div>
-                              <div>
-                                <p className='text-xs uppercase text-base-content/60'>
-                                  Rate
-                                </p>
-                                <p className='text-sm text-base-content'>
-                                  {formatExpenseRate(entry)}
-                                </p>
-                              </div>
-                              <div>
-                                <p className='text-xs uppercase text-base-content/60'>
-                                  Notes
-                                </p>
-                                <p className='text-sm text-base-content/70 wrap-break-word'>
-                                  {entry.notes ?? '—'}
-                                </p>
-                              </div>
-                              <div className='flex flex-wrap gap-2 justify-end'>
-                                <EntryActions
-                                  onEdit={() => handleEditExpense(entry)}
-                                  onDelete={() =>
-                                    handleDeleteEntry({
-                                      type: 'expense',
-                                      entry,
-                                      date: entry.paidAt,
-                                    })
-                                  }
-                                  deleteDisabled={
-                                    deleteExpenseMutation.isPending
-                                  }
-                                  editClassName='btn btn-xs btn-outline btn-ghost'
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </section>
+        <ExpenseTable
+          isLoading={isLoadingExpenses}
+          expensePageEntries={expensePageEntries}
+          currency={currency}
+          expenseSort={expenseSort}
+          toggleExpenseSort={toggleExpenseSort}
+          getExpenseSortIcon={getExpenseSortIcon}
+          selectedExpenseMonth={selectedExpenseMonth}
+          expenseMonthOptions={expenseMonthOptions}
+          selectedExpenseType={selectedExpenseType}
+          onMonthChange={setSelectedExpenseMonth}
+          onTypeChange={setSelectedExpenseType}
+          isExpenseFilterDirty={isExpenseFilterDirty}
+          onResetFilters={handleResetExpenseFilters}
+          vehicleFilterControl={vehicleFilterControl}
+          expenseEmptyMessage={expenseEmptyMessage}
+          expandedExpenseRows={expandedExpenseRows}
+          onToggleExpenseRow={toggleExpenseRow}
+          onEditExpense={handleEditExpense}
+          onDeleteExpense={handleDeleteExpenseEntry}
+          deleteDisabled={deleteExpenseMutation.isPending}
+          currentPage={expenseCurrentPage}
+          totalPages={expenseTotalPages}
+          onPageChange={handleExpensePageChange}
+        />
       )}
 
       <EntryModal
