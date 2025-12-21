@@ -3,11 +3,13 @@ import {
   type ChangeEvent,
   type Dispatch,
   type SetStateAction,
+  useCallback,
   useEffect,
   useState,
 } from 'react';
+import { UAParser } from 'ua-parser-js';
 import { type ToastMessage, ToastStack } from '@/components/ToastStack';
-import { useSession } from '@/lib/auth-client';
+import { authClient, useSession } from '@/lib/auth-client';
 import type { CurrencyCode } from '@/lib/currency';
 import { currencyOptions, resolveCurrency } from '@/lib/currency';
 import {
@@ -37,7 +39,76 @@ const vehicleTypeLabelByValue = new Map(
   vehicleTypeOptions.map((option) => [option.value, option.label]),
 );
 
-export default function AccountPage() {
+type ParsedUserAgent = {
+  browserLabel: string;
+  osLabel: string;
+  deviceLabel: string;
+};
+
+const buildVersionLabel = (
+  name?: string | null,
+  version?: string | null,
+  fallback = 'Unknown',
+) => {
+  if (!name) {
+    return fallback;
+  }
+  return version ? `${name} ${version}` : name;
+};
+
+const parseUserAgentMetadata = (userAgent?: string | null): ParsedUserAgent => {
+  if (!userAgent) {
+    return {
+      browserLabel: 'Unknown browser',
+      osLabel: 'Unknown OS',
+      deviceLabel: 'Unknown device',
+    };
+  }
+  const parser = new UAParser(userAgent);
+  const { name: browserName, version: browserVersion } = parser.getBrowser();
+  const { name: osName, version: osVersion } = parser.getOS();
+  const device = parser.getDevice();
+  const browserLabel = buildVersionLabel(
+    browserName,
+    browserVersion,
+    'Unknown browser',
+  );
+  const osLabel = buildVersionLabel(osName, osVersion, 'Unknown OS');
+  let deviceLabel = 'Unknown device';
+  const deviceParts = [device.vendor, device.model].filter(Boolean);
+  if (deviceParts.length) {
+    deviceLabel = deviceParts.join(' ');
+  } else if (device.type) {
+    deviceLabel = device.type;
+  }
+  return { browserLabel, osLabel, deviceLabel };
+};
+
+type SessionListItem = {
+  id: string;
+  token?: string | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  createdAt: string | number | Date;
+  updatedAt: string | number | Date;
+  expiresAt: string | number | Date;
+};
+
+const formatSessionTimestamp = (value?: string | number | Date | null) => {
+  if (!value) {
+    return 'Unknown';
+  }
+  const sessionDate = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(sessionDate.getTime())) {
+    return 'Unknown';
+  }
+  return new Intl.DateTimeFormat('en-GB', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(sessionDate);
+};
+
+export default function SettingsPage() {
   const { data: sessionData, isPending, refetch } = useSession();
   const sessionUser = getSessionUser(sessionData);
   const sessionCurrency = resolveCurrency(sessionUser?.currency);
@@ -49,6 +120,9 @@ export default function AccountPage() {
     const volumeUnit = sessionUser?.volumeUnit;
     return typeof volumeUnit === 'string' ? volumeUnit : 'litre';
   })();
+
+  const currentSessionIdentifier =
+    sessionData?.session?.token ?? sessionData?.session?.id ?? null;
 
   const [selectedCurrency, setSelectedCurrency] =
     useState<CurrencyCode>(sessionCurrency);
@@ -65,6 +139,13 @@ export default function AccountPage() {
   const [isExportingAll, setIsExportingAll] = useState(false);
   const [isTwoFactorModalOpen, setIsTwoFactorModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [activeSessions, setActiveSessions] = useState<SessionListItem[]>([]);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(true);
+  const [sessionsError, setSessionsError] = useState<string | null>(null);
+  const [isRevokingSessions, setIsRevokingSessions] = useState(false);
+  const [revokingSessionTokens, setRevokingSessionTokens] = useState<string[]>(
+    [],
+  );
 
   const { data: vehicleProfiles = [], isLoading: isLoadingVehicleProfiles } =
     useVehicleProfiles();
@@ -94,6 +175,90 @@ export default function AccountPage() {
     }, 4000);
     return () => window.clearTimeout(timer);
   }, [statusMessage]);
+
+  const loadSessions = useCallback(async () => {
+    setIsLoadingSessions(true);
+    setSessionsError(null);
+    try {
+      const { data, error } = await authClient.listSessions();
+      if (error) {
+        setSessionsError(
+          error?.message ?? 'Unable to load active sessions right now.',
+        );
+        setActiveSessions([]);
+        return;
+      }
+      setActiveSessions(Array.isArray(data) ? data : []);
+    } catch (caught) {
+      setSessionsError(
+        caught instanceof Error
+          ? caught.message
+          : 'Unable to load active sessions right now.',
+      );
+      setActiveSessions([]);
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadSessions();
+  }, [loadSessions]);
+
+  const handleRevokeSession = async (sessionToken?: string | null) => {
+    if (!sessionToken) {
+      return;
+    }
+    if (revokingSessionTokens.includes(sessionToken)) {
+      return;
+    }
+    setRevokingSessionTokens((previous) => [...previous, sessionToken]);
+    setStatusMessage(null);
+    try {
+      const { data, error } = await authClient.revokeSession({
+        token: sessionToken,
+      });
+      if (error || !data?.status) {
+        throw new Error('Unable to revoke session.');
+      }
+      setStatusMessage({
+        type: 'success',
+        text: 'Session revoked.',
+      });
+      await loadSessions();
+    } catch {
+      setStatusMessage({
+        type: 'error',
+        text: 'Unable to revoke that session right now.',
+      });
+    } finally {
+      setRevokingSessionTokens((previous) =>
+        previous.filter((token) => token !== sessionToken),
+      );
+    }
+  };
+
+  const safeCurrentSessionIdentifier =
+    currentSessionIdentifier ??
+    activeSessions[0]?.token ??
+    activeSessions[0]?.id ??
+    null;
+  const currentSession =
+    activeSessions.find((session) => {
+      const identifier = session.token ?? session.id;
+      return (
+        safeCurrentSessionIdentifier !== null &&
+        identifier === safeCurrentSessionIdentifier
+      );
+    }) ??
+    activeSessions[0] ??
+    null;
+  const otherSessions = currentSession
+    ? activeSessions.filter((session) => session !== currentSession)
+    : activeSessions;
+  const currentSessionAgent = currentSession
+    ? parseUserAgentMetadata(currentSession.userAgent)
+    : null;
 
   const updateUserPreference = async <T extends string>(
     payload: Record<string, string>,
@@ -180,6 +345,33 @@ export default function AccountPage() {
       'Volume unit saved.',
       'Unable to save volume unit. Try again in a moment.',
     );
+  };
+
+  const handleRevokeSessions = async () => {
+    if (isRevokingSessions) {
+      return;
+    }
+    setIsRevokingSessions(true);
+    setStatusMessage(null);
+    try {
+      const { data, error } = await authClient.revokeSessions();
+      if (error || !data?.status) {
+        throw new Error('Unable to revoke sessions.');
+      }
+      setStatusMessage({
+        type: 'success',
+        text: 'Signed out of every session.',
+      });
+      setActiveSessions([]);
+      await refetch();
+    } catch {
+      setStatusMessage({
+        type: 'error',
+        text: 'Unable to sign you out of every session right now.',
+      });
+    } finally {
+      setIsRevokingSessions(false);
+    }
   };
 
   const handleVehicleProfileSubmit = (payload: {
@@ -390,7 +582,9 @@ export default function AccountPage() {
     <>
       <div className='space-y-6'>
         <header className='space-y-1'>
-          <p className='text-xs uppercase  text-base-content/60'>Account</p>
+          <p className='text-xs uppercase text-base-content/60'>
+            User Preferences
+          </p>
           <h1 className='text-3xl font-semibold text-base-content'>Settings</h1>
           <p className='text-sm text-base-content/60'>
             Keep your login details and preferences tidy.
@@ -398,25 +592,219 @@ export default function AccountPage() {
         </header>
         <section className='grid gap-6 lg:grid-cols-2'>
           <div className=' border border-base-content/10 bg-base-100 p-6 shadow-sm'>
-            <div className='flex items-center justify-between'>
-              <p className='text-xs uppercase  text-base-content/50'>Session</p>
-              <span className='text-xs font-semibold text-base-content/60'>
-                Active
-              </span>
+            <div className='flex items-start justify-between gap-4'>
+              <div>
+                <p className='text-xs uppercase text-base-content/50'>
+                  Sessions
+                </p>
+                <p className='text-sm text-base-content/60'>
+                  Keep tabs on every device that has signed in with this
+                  account.
+                </p>
+              </div>
+              <button
+                type='button'
+                className='btn btn-sm btn-secondary text-xs font-semibold normal-case'
+                onClick={handleRevokeSessions}
+                disabled={isRevokingSessions}
+              >
+                {isRevokingSessions
+                  ? 'Signing out everywhere…'
+                  : 'Sign out everywhere'}
+              </button>
             </div>
-            <div className='mt-6 space-y-2'>
-              <p className='text-sm text-base-content/70'>
-                Name
-                <span className='block text-base-content font-semibold'>
+            <div className='mt-6 grid gap-4 md:grid-cols-2'>
+              <div>
+                <p className='text-xs uppercase text-base-content/50'>Name</p>
+                <p className='text-base font-semibold text-base-content'>
                   {sessionUser?.name ?? 'Not set'}
-                </span>
-              </p>
-              <p className='text-sm text-base-content/70'>
-                Email
-                <span className='block text-base-content font-semibold'>
+                </p>
+              </div>
+              <div>
+                <p className='text-xs uppercase text-base-content/50'>Email</p>
+                <p className='text-base font-semibold text-base-content'>
                   {sessionUser?.email ?? '—'}
-                </span>
-              </p>
+                </p>
+              </div>
+            </div>
+            <div className='mt-6 space-y-4'>
+              {isLoadingSessions ? (
+                <p className='text-sm text-base-content/60'>
+                  Loading sessions…
+                </p>
+              ) : activeSessions.length === 0 ? (
+                <div className='flex flex-col gap-1 rounded border border-base-content/10 px-4 py-5 text-sm text-base-content/60'>
+                  <p>No active sessions found.</p>
+                  <p className='text-xs text-base-content/50'>
+                    Sign in again to refresh this list.
+                  </p>
+                </div>
+              ) : (
+                <div className='space-y-4'>
+                  {currentSession ? (
+                    <div
+                      className='border border-base-content/10 bg-base-200 p-4 shadow-sm'
+                      key={currentSession.token ?? currentSession.id}
+                    >
+                      <div className='flex items-start justify-between gap-3'>
+                        <div>
+                          <p className='text-sm font-semibold text-base-content'>
+                            {currentSessionAgent?.browserLabel ??
+                              'Unknown browser'}
+                          </p>
+                          <p className='text-xs text-base-content/60'>
+                            {currentSessionAgent?.osLabel ?? 'Unknown OS'}
+                          </p>
+                          <p className='text-xs text-base-content/50'>
+                            {currentSessionAgent?.deviceLabel ??
+                              'Unknown device'}
+                          </p>
+                        </div>
+                        <span className='badge badge-sm badge-primary'>
+                          Current session
+                        </span>
+                      </div>
+                      <div className='mt-3 grid gap-3 text-xs text-base-content/60 md:grid-cols-2'>
+                        <div className='space-y-1'>
+                          <p className='text-xs uppercase text-base-content/50'>
+                            Session timeline
+                          </p>
+                          <p>
+                            {`Created ${formatSessionTimestamp(currentSession.createdAt)}`}
+                          </p>
+                          <p>
+                            {`Last updated ${formatSessionTimestamp(currentSession.updatedAt)}`}
+                          </p>
+                        </div>
+                        <div className='space-y-2 md:text-right'>
+                          <p className='text-xs uppercase text-base-content/50'>
+                            Metadata
+                          </p>
+                          <p>
+                            {`Expires ${formatSessionTimestamp(currentSession.expiresAt)}`}
+                          </p>
+                          <div>
+                            <p className='text-xs uppercase text-base-content/50'>
+                              IP address
+                            </p>
+                            <p className='text-sm font-semibold text-base-content'>
+                              {currentSession.ipAddress ?? 'Unknown IP'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className='rounded-2xl border border-base-content/10 bg-base-200 p-4 text-sm text-base-content/60 shadow-sm'>
+                      Unable to determine the current session.
+                    </div>
+                  )}
+                  <div className='space-y-2'>
+                    <p className='text-xs uppercase text-base-content/50'>
+                      Other sessions
+                    </p>
+                    <p className='text-sm text-base-content/60'>
+                      Expand any additional session to view its details.
+                    </p>
+                    {otherSessions.length === 0 ? (
+                      <p className='text-sm text-base-content/70'>
+                        No additional active sessions.
+                      </p>
+                    ) : (
+                      <div className='space-y-3'>
+                        {otherSessions.map((sessionInfo) => {
+                          const identifier =
+                            sessionInfo.token ?? sessionInfo.id;
+                          const parsedAgent = parseUserAgentMetadata(
+                            sessionInfo.userAgent,
+                          );
+                          return (
+                            <div
+                              key={identifier}
+                              className='collapse collapse-arrow border border-base-content/10 bg-base-200'
+                            >
+                              <input type='checkbox' />
+                              <div className='collapse-title flex items-center justify-between gap-3'>
+                                <div>
+                                  <p className='text-sm font-semibold text-base-content'>
+                                    {parsedAgent.browserLabel}
+                                  </p>
+                                  <p className='text-xs text-base-content/60'>
+                                    {parsedAgent.osLabel}
+                                  </p>
+                                </div>
+                                <p className='text-xs uppercase text-base-content/50'>
+                                  {parsedAgent.deviceLabel}
+                                </p>
+                              </div>
+                              <div className='collapse-content space-y-4 border-t border-base-content/10 pt-4 text-xs text-base-content/60'>
+                                <div className='grid gap-3 md:grid-cols-2'>
+                                  <div className='space-y-1'>
+                                    <p className='text-xs uppercase text-base-content/50'>
+                                      Session timeline
+                                    </p>
+                                    <p>
+                                      {`Created ${formatSessionTimestamp(
+                                        sessionInfo.createdAt,
+                                      )}`}
+                                    </p>
+                                    <p>
+                                      {`Last updated ${formatSessionTimestamp(
+                                        sessionInfo.updatedAt,
+                                      )}`}
+                                    </p>
+                                  </div>
+                                  <div className='space-y-2 md:text-right'>
+                                    <p className='text-xs uppercase text-base-content/50'>
+                                      Metadata
+                                    </p>
+                                    <p>
+                                      {`Expires ${formatSessionTimestamp(
+                                        sessionInfo.expiresAt,
+                                      )}`}
+                                    </p>
+                                    <div>
+                                      <p className='text-xs uppercase text-base-content/50'>
+                                        IP address
+                                      </p>
+                                      <p className='text-sm font-semibold text-base-content'>
+                                        {sessionInfo.ipAddress ?? 'Unknown IP'}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                                {sessionInfo.token && (
+                                  <div className='flex justify-end'>
+                                    <button
+                                      type='button'
+                                      className='btn btn-sm btn-outline text-xs normal-case'
+                                      onClick={() =>
+                                        handleRevokeSession(sessionInfo.token)
+                                      }
+                                      disabled={revokingSessionTokens.includes(
+                                        sessionInfo.token,
+                                      )}
+                                    >
+                                      {revokingSessionTokens.includes(
+                                        sessionInfo.token,
+                                      )
+                                        ? 'Revoking…'
+                                        : 'Revoke session'}
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {sessionsError && (
+                <p className='text-xs text-error'>{sessionsError}</p>
+              )}
             </div>
           </div>
           <div className=' border border-base-content/10 bg-base-100 p-6 shadow-sm'>
@@ -598,7 +986,7 @@ export default function AccountPage() {
                 Loading vehicle profiles…
               </p>
             ) : vehicleProfiles.length === 0 ? (
-              <div className='flex flex-col gap-3 rounded border border-base-content/10 px-4 py-5 text-sm text-base-content/60'>
+              <div className='flex flex-col gap-3 border border-base-content/10 px-4 py-5 text-sm text-base-content/60'>
                 <p>No vehicle profiles yet.</p>
                 <button
                   type='button'
@@ -613,7 +1001,7 @@ export default function AccountPage() {
                 {vehicleProfiles.map((profile) => (
                   <div
                     key={profile.id}
-                    className='rounded-2xl border border-base-content/10 bg-base-200 p-4 shadow-sm'
+                    className='border border-base-content/10 bg-base-200 p-4 shadow-sm'
                   >
                     <div className='flex items-center justify-between gap-4'>
                       <div>

@@ -11,7 +11,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: 'fa-chart-line' },
   { label: 'Logs', href: '/logs', icon: 'fa-table' },
-  { label: 'Account', href: '/account', icon: 'fa-user' },
+  { label: 'Settings', href: '/settings', icon: 'fa-gear' },
 ];
 
 type AuthedNavVariant = 'sidebar' | 'mobile';
