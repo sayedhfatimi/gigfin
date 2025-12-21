@@ -13,22 +13,26 @@
 [![Repo Size](https://img.shields.io/github/repo-size/sayedhfatimi/gigfin)](https://github.com/sayedhfatimi/gigfin)
 [![Issues](https://img.shields.io/github/issues/sayedhfatimi/gigfin)](https://github.com/sayedhfatimi/gigfin/issues)
 
-GigFin helps gig workers keep a simple, reliable ledger of their overall income across platforms alongside monthly trends and platform breakdowns. Because the app focuses on platform-level income totals, it currently does not track individual line items per platform. It combines a responsive Next.js dashboard with Better Auth–powered credential login, 2FA, and a fast SQLite + Drizzle ORM backend so you can log earnings securely from any device.
+GigFin helps gig workers keep a simple, reliable ledger of their overall income across platforms alongside monthly trends and platform breakdowns. Because the app focuses on platform-level income totals, it currently does not track individual line items per platform. Recent updates add customizable dashboards, built-in expense tracking, and vehicle profiles while keeping the same responsive Next.js dashboard, Better Auth–powered credential login, 2FA, and fast SQLite + Drizzle ORM backend so you can log earnings securely from any device.
 
 A hosted instance is available at https://gigfin.me, but GigFin is designed for self-hosting, and deploying your own instance is the recommended way to keep your data private and under your control.
 
 ## Table of Contents
 
-- [Screenshots](#screenshots)
-- [What’s inside](#whats-inside)
-- [Tech stack](#tech-stack)
-- [Prerequisites](#prerequisites)
-- [Environment variables](#environment-variables)
-- [Deployment guidance](#deployment-guidance)
-- [Getting started (local development)](#getting-started-local-development)
-- [Build & test](#build--test)
-- [Contributing](#contributing)
-- [License](#license)
+- [GigFin](#gigfin)
+  - [Table of Contents](#table-of-contents)
+  - [Screenshots](#screenshots)
+  - [What’s inside](#whats-inside)
+  - [Tech stack](#tech-stack)
+  - [Prerequisites](#prerequisites)
+  - [Environment variables](#environment-variables)
+  - [Deployment guidance](#deployment-guidance)
+    - [Docker \& Compose](#docker--compose)
+    - [Coolify](#coolify)
+  - [Getting started (local development)](#getting-started-local-development)
+  - [Build \& test](#build--test)
+  - [Contributing](#contributing)
+  - [License](#license)
 
 ## Screenshots
 
@@ -41,13 +45,15 @@ A hosted instance is available at https://gigfin.me, but GigFin is designed for 
 </p>
 
 <p align="center">
-  <img src=".github/screenshots/03-account.png" width="900" alt="Account settings including security and export options" />
+  <img src=".github/screenshots/03-settings.png" width="900" alt="Account settings including security and export options" />
 </p>
 
 ## What’s inside
 
-- **Feature-rich dashboard:** Totals, average‑per‑day, and platform mix charts plus recent daily summaries give quick insight into your hustle.
-- **Log & filter rentry history:** Add income per platform and filter by months or platforms to compare runs.
+- **Customizable, feature-rich dashboard:** Totals, average‑per‑day, and platform mix charts plus recent daily summaries pair with configurable cards, metric prioritization, and saved layouts.
+- **Detailed expense tracking:** Capture receipts, tag costs to gigs, and keep deductible-ready summaries beside your income totals.
+- **Vehicle profiles & maintenance:** Track each bike or car with fuel, mileage, and service notes so every trip stays tied to the right ride.
+- **Log & filter entry history:** Add income per platform and filter by months or platforms to compare runs.
 - **Local persistence:** Drizzle + SQLite stores every entry in `/app/data/db.sqlite`, so the Docker stack keeps state in a named volume.
 - **Security-first auth:** Credential login, signup, and optional 2FA flows powered by Better Auth keep sessions locked down.
 - **Theming & accessibility:** Adaptive light/dark styles bring clarity to the hero copy, quick add forms, and stats view.

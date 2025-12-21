@@ -36,16 +36,28 @@ const signupInitial: SignupForm = {
 
 const featureHighlights = [
   {
-    icon: '🧾',
+    icon: '🧮',
     title: 'Ledger that knows your platforms',
     description:
       'Log Uber Eats, Deliveroo, Just Eat, Amazon Flex, and other gigs without juggling spreadsheets.',
   },
   {
-    icon: '📊',
-    title: 'Instant summaries',
+    icon: '🎛️',
+    title: 'Customizable dashboards',
     description:
-      'Filter by month or platform and let charts summarize total income in seconds.',
+      'Pin the stats that matter to you, reorder views, and surface the insights you check most often.',
+  },
+  {
+    icon: '🧾',
+    title: 'Expense tracking on the go',
+    description:
+      'Capture receipts, tag costs to gigs, and keep deductible-ready summaries beside your income.',
+  },
+  {
+    icon: '🚗',
+    title: 'Vehicle profiles & maintenance',
+    description:
+      'Track each car or bike with fuel, mileage, and maintenance notes so every trip stays tied to a ride.',
   },
   {
     icon: '🔒',
@@ -365,12 +377,17 @@ function HomeContent() {
                       </p>
                     </div>
                     <h1 className='text-4xl font-semibold leading-tight text-slate-900 dark:text-white lg:text-5xl'>
-                      A secure ledger for every gig payout
+                      A secure, customizable ledger for every gig payout
                     </h1>
                     <p className='text-lg text-base-content/80'>
                       Uber Eats, Deliveroo, Just Eat, Amazon Flex, and every
                       other gig platform—track your total income without the
                       spreadsheet clutter.
+                    </p>
+                    <p className='text-lg text-base-content/80'>
+                      Shape dashboards, log expenses, and keep vehicle profiles
+                      alongside income so every trip stays tied to the right
+                      context.
                     </p>
                     <p className='text-sm text-base-content/70'>
                       Free and open source. Secure by default.
