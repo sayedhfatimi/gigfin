@@ -12,6 +12,7 @@ import {
 } from '@/db/schema';
 
 export const auth = betterAuth({
+  appName: 'GigFin',
   database: drizzleAdapter(db, {
     provider: 'sqlite',
     schema: { account, income, session, user, verification, twoFactor },
@@ -20,6 +21,11 @@ export const auth = betterAuth({
     enabled: true,
   },
   plugins: [twoFactorPlugin({ issuer: 'GigFin' })],
+  advanced: {
+    ipAddress: {
+      ipAddressHeaders: ['cf-connecting-ip'],
+    },
+  },
   user: {
     additionalFields: {
       currency: {

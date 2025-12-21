@@ -39,7 +39,10 @@ export default function ExpenseLogRow({
           <span className='min-w-0 flex-1 text-sm font-semibold text-base-content/80'>
             {formatDateLabel(entry.paidAt)}
           </span>
-          <span className='min-w-0 text-sm font-semibold text-base-content/80'>
+          <span
+            className='min-w-0 max-w-48 truncate text-sm font-semibold text-base-content/80 md:max-w-none'
+            title={formatExpenseType(entry.expenseType)}
+          >
             {formatExpenseType(entry.expenseType)}
           </span>
           <span className='min-w-0 text-right text-sm font-semibold text-error'>

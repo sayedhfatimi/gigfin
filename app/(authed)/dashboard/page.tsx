@@ -37,6 +37,7 @@ import { DailyCadencePanel } from './_components/DailyCadencePanel';
 import { DashboardStats } from './_components/DashboardStats';
 import { ExpenseCategoryBreakdownPanel } from './_components/ExpenseCategoryBreakdownPanel';
 import { ExpenseOverviewPanel } from './_components/ExpenseOverviewPanel';
+import { FuelConsumptionPanel } from './_components/FuelConsumptionPanel';
 import { LineChart } from './_components/LineChart';
 import { PlatformBreakdownBarChart } from './_components/PlatformBreakdownBarChart';
 import { PlatformBreakdownPieChart } from './_components/PlatformBreakdownPieChart';
@@ -54,6 +55,7 @@ type WidgetId =
   | 'profitability'
   | 'expenseOverview'
   | 'expenseCategoryBreakdown'
+  | 'fuelConsumption'
   | 'recentDays'
   | 'dailyCadence'
   | 'platformBreakdownPieChart'
@@ -101,6 +103,7 @@ const DEFAULT_WIDGET_VISIBILITY: Partial<Record<WidgetId, boolean>> = {
   platformConcentration: false,
   dailyCadence: false,
   recentDays: false,
+  fuelConsumption: false,
 };
 
 const buildDefaultVisibility = (definitions: DashboardWidgetDefinition[]) =>
@@ -273,6 +276,13 @@ export default function DashboardPage() {
             currency={currency}
           />
         ),
+      },
+      {
+        id: 'fuelConsumption',
+        label: 'Fuel & energy usage',
+        description: 'Track volume consumed by vehicle and timeframe',
+        widthClass: 'md:col-span-1',
+        component: <FuelConsumptionPanel expenses={expenses} />,
       },
       {
         id: 'dailyCadence',
