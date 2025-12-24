@@ -27,6 +27,13 @@ import {
   getEntryMonth,
   type IncomeEntry,
 } from '@/lib/income';
+import {
+  formatOdometerDistance,
+  formatOdometerReading,
+  getOdometerDistance,
+  type OdometerEntry,
+  type OdometerUnit,
+} from '@/lib/odometer';
 import { useChargingVendors } from '@/lib/queries/chargingVendors';
 import type { ExpensePayload } from '@/lib/queries/expenses';
 import {
@@ -41,12 +48,20 @@ import {
   useIncomeLogs,
   useUpdateIncome,
 } from '@/lib/queries/income';
+import type { OdometerPayload } from '@/lib/queries/odometers';
+import {
+  useAddOdometer,
+  useDeleteOdometer,
+  useOdometerLogs,
+  useUpdateOdometer,
+} from '@/lib/queries/odometers';
 import { useVehicleProfiles } from '@/lib/queries/vehicleProfiles';
 import { getSessionUser } from '@/lib/session';
 import CombinedTable from './_components/CombinedTable';
 import EntryModal from './_components/EntryModal';
 import ExpenseTable from './_components/ExpenseTable';
 import IncomeTable from './_components/IncomeTable';
+import OdometerTable from './_components/OdometerTable';
 import VehicleFilterControl from './_components/VehicleFilterControl';
 
 import {
@@ -102,11 +117,12 @@ const LOG_TABS: { label: string; key: View }[] = [
   { label: 'All', key: 'all' },
   { label: 'Income', key: 'income' },
   { label: 'Expenses', key: 'expenses' },
+  { label: 'Odometer', key: 'odometer' },
 ];
 
-type EntryTab = 'income' | 'expense';
+type EntryTab = 'income' | 'expense' | 'odometer';
 
-type View = 'all' | 'income' | 'expenses';
+type View = 'all' | 'income' | 'expenses' | 'odometer';
 
 const combinedColumnHelper = createColumnHelper<CombinedTransaction>();
 const combinedColumns = [
@@ -129,7 +145,9 @@ export default function LogsPage() {
   const searchParams = useSearchParams();
   const rawView = searchParams.get('view');
   const view: View =
-    rawView === 'income' || rawView === 'expenses' ? rawView : 'all';
+    rawView === 'income' || rawView === 'expenses' || rawView === 'odometer'
+      ? rawView
+      : 'all';
   const handleSetView = (nextView: View) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('view', nextView);
@@ -140,6 +158,9 @@ export default function LogsPage() {
   const sessionUser = getSessionUser(sessionData);
   const currency = resolveCurrency(sessionUser?.currency);
   const volumeUnit = (sessionUser?.volumeUnit ?? 'litre') as UnitRateUnit;
+  const odometerUnit = (
+    sessionUser?.odometerUnit === 'miles' ? 'miles' : 'km'
+  ) as OdometerUnit;
 
   const { data: incomes = [], isLoading: isLoadingIncomes } = useIncomeLogs();
   const addIncomeMutation = useAddIncome();
@@ -151,6 +172,12 @@ export default function LogsPage() {
   const addExpenseMutation = useAddExpense();
   const updateExpenseMutation = useUpdateExpense();
   const deleteExpenseMutation = useDeleteExpense();
+
+  const { data: odometers = [], isLoading: isLoadingOdometers } =
+    useOdometerLogs();
+  const addOdometerMutation = useAddOdometer();
+  const updateOdometerMutation = useUpdateOdometer();
+  const deleteOdometerMutation = useDeleteOdometer();
 
   const { data: vehicleProfiles = [], isLoading: isLoadingVehicleProfiles } =
     useVehicleProfiles();
@@ -199,6 +226,9 @@ export default function LogsPage() {
   const [entryModalTab, setEntryModalTab] = useState<EntryTab>('income');
   const [editingIncome, setEditingIncome] = useState<IncomeEntry | null>(null);
   const [editingExpense, setEditingExpense] = useState<ExpenseEntry | null>(
+    null,
+  );
+  const [editingOdometer, setEditingOdometer] = useState<OdometerEntry | null>(
     null,
   );
   const [entryToDelete, setEntryToDelete] = useState<DeletableEntry | null>(
@@ -338,6 +368,15 @@ export default function LogsPage() {
     );
   }, [expenses, selectedVehicleFilter]);
 
+  const filteredOdometersByVehicle = useMemo(() => {
+    if (!selectedVehicleFilter) {
+      return odometers;
+    }
+    return odometers.filter(
+      (entry) => entry.vehicleProfileId === selectedVehicleFilter,
+    );
+  }, [odometers, selectedVehicleFilter]);
+
   const filteredExpensesByType = useMemo(() => {
     if (!selectedExpenseType || selectedExpenseType === 'all') {
       return filteredExpensesByVehicle;
@@ -433,13 +472,18 @@ export default function LogsPage() {
         entry,
         date: entry.paidAt,
       })),
+      ...filteredOdometersByVehicle.map((entry) => ({
+        type: 'odometer' as const,
+        entry,
+        date: entry.date,
+      })),
     ];
     return data.sort((a, b) => {
       const aTimestamp = new Date(a.date).getTime();
       const bTimestamp = new Date(b.date).getTime();
       return bTimestamp - aTimestamp;
     });
-  }, [incomes, filteredExpensesByVehicle]);
+  }, [incomes, filteredExpensesByVehicle, filteredOdometersByVehicle]);
 
   const combinedResetSignature = `${selectedVehicleFilter ?? ''}-${combinedTransactions.length}`;
 
@@ -584,18 +628,32 @@ export default function LogsPage() {
     setEntryModalTab(tab);
     setEditingIncome(null);
     setEditingExpense(null);
+    setEditingOdometer(null);
     setEntryModalOpen(true);
   };
   const closeEntryModal = () => {
     setEntryModalOpen(false);
     setEditingIncome(null);
     setEditingExpense(null);
+    setEditingOdometer(null);
+  };
+  const handleAddEntry = () => {
+    if (view === 'expenses') {
+      openEntryModal('expense');
+      return;
+    }
+    if (view === 'odometer') {
+      openEntryModal('odometer');
+      return;
+    }
+    openEntryModal('income');
   };
 
   const handleEditIncome = (entry: IncomeEntry) => {
     setEntryModalTab('income');
     setEditingIncome(entry);
     setEditingExpense(null);
+    setEditingOdometer(null);
     setEntryModalOpen(true);
   };
 
@@ -603,6 +661,15 @@ export default function LogsPage() {
     setEntryModalTab('expense');
     setEditingExpense(entry);
     setEditingIncome(null);
+    setEditingOdometer(null);
+    setEntryModalOpen(true);
+  };
+
+  const handleEditOdometer = (entry: OdometerEntry) => {
+    setEntryModalTab('odometer');
+    setEditingOdometer(entry);
+    setEditingIncome(null);
+    setEditingExpense(null);
     setEntryModalOpen(true);
   };
 
@@ -634,6 +701,16 @@ export default function LogsPage() {
     await updateExpenseMutation.mutateAsync(payload);
   };
 
+  const handleAddOdometer = async (payload: OdometerPayload) => {
+    await addOdometerMutation.mutateAsync(payload);
+  };
+
+  const handleUpdateOdometer = async (
+    payload: OdometerPayload & { id: string },
+  ) => {
+    await updateOdometerMutation.mutateAsync(payload);
+  };
+
   const handleDeleteEntry = (entry: DeletableEntry) => {
     setEntryToDelete(entry);
   };
@@ -652,6 +729,13 @@ export default function LogsPage() {
       date: entry.paidAt,
     });
   };
+  const handleDeleteOdometerEntry = (entry: OdometerEntry) => {
+    handleDeleteEntry({
+      type: 'odometer',
+      entry,
+      date: entry.date,
+    });
+  };
 
   const handleConfirmDelete = async () => {
     if (!entryToDelete) {
@@ -659,8 +743,12 @@ export default function LogsPage() {
     }
     if (entryToDelete.type === 'income') {
       await deleteIncomeMutation.mutateAsync({ id: entryToDelete.entry.id });
-    } else {
+    } else if (entryToDelete.type === 'expense') {
       await deleteExpenseMutation.mutateAsync({ id: entryToDelete.entry.id });
+    } else {
+      await deleteOdometerMutation.mutateAsync({
+        id: entryToDelete.entry.id,
+      });
     }
     setEntryToDelete(null);
   };
@@ -669,22 +757,36 @@ export default function LogsPage() {
     setEntryToDelete(null);
   };
 
+  const deletePending =
+    entryToDelete?.type === 'income'
+      ? deleteIncomeMutation.isPending
+      : entryToDelete?.type === 'expense'
+        ? deleteExpenseMutation.isPending
+        : deleteOdometerMutation.isPending;
+
   const incomeHasEntriesForSelectedMonth = dailySummaries.length > 0;
 
   const isAnyLoading =
-    isLoadingIncomes || isLoadingExpenses || isLoadingVehicleProfiles;
+    isLoadingIncomes ||
+    isLoadingExpenses ||
+    isLoadingVehicleProfiles ||
+    isLoadingOdometers;
 
   const incomeMutationPending =
     addIncomeMutation.isPending || updateIncomeMutation.isPending;
   const expenseMutationPending =
     addExpenseMutation.isPending || updateExpenseMutation.isPending;
+  const odometerMutationPending =
+    addOdometerMutation.isPending || updateOdometerMutation.isPending;
 
   const viewDescription =
     view === 'income'
       ? 'Tabulate daily totals and expand each row to see platform breakdowns.'
       : view === 'expenses'
         ? 'Review logged expenses with context around the rate, vehicle, and notes.'
-        : 'Review every income and expense transaction in one chronological feed.';
+        : view === 'odometer'
+          ? 'Capture shift start and end odometer readings for each day.'
+          : 'Review every income and expense transaction in one chronological feed.';
 
   const handleVehicleFilterClear = () => {
     setSelectedVehicleFilter(null);
@@ -726,7 +828,7 @@ export default function LogsPage() {
             <button
               type='button'
               className='btn btn-primary btn-sm md:btn-md'
-              onClick={() => openEntryModal('income')}
+              onClick={handleAddEntry}
             >
               <span className='fa-solid fa-plus mr-2' aria-hidden='true' />
               Add
@@ -747,7 +849,9 @@ export default function LogsPage() {
           onPageChange={handleCombinedPageChange}
           onEditIncome={handleEditIncome}
           onEditExpense={handleEditExpense}
+          onEditOdometer={handleEditOdometer}
           onDeleteEntry={handleDeleteEntry}
+          odometerUnit={odometerUnit}
         />
       )}
 
@@ -809,6 +913,19 @@ export default function LogsPage() {
         />
       )}
 
+      {view === 'odometer' && (
+        <OdometerTable
+          entries={filteredOdometersByVehicle}
+          isLoading={isLoadingOdometers}
+          onCreateEntry={() => openEntryModal('odometer')}
+          onEditEntry={handleEditOdometer}
+          onDeleteEntry={handleDeleteOdometerEntry}
+          deleteDisabled={deleteOdometerMutation.isPending}
+          vehicleFilterControl={vehicleFilterControl}
+          odometerUnit={odometerUnit}
+        />
+      )}
+
       <EntryModal
         isOpen={entryModalOpen}
         activeTab={entryModalTab}
@@ -818,6 +935,7 @@ export default function LogsPage() {
         volumeUnit={volumeUnit}
         editingIncome={editingIncome}
         editingExpense={editingExpense}
+        editingOdometer={editingOdometer}
         chargingVendors={chargingVendors}
         onSubmitIncome={(payload) => {
           if (payload.id) {
@@ -837,8 +955,14 @@ export default function LogsPage() {
             ? handleUpdateExpense(payload as ExpensePayload & { id: string })
             : handleAddExpense(payload)
         }
+        onSubmitOdometer={(payload) =>
+          payload.id
+            ? handleUpdateOdometer(payload as OdometerPayload & { id: string })
+            : handleAddOdometer(payload)
+        }
         isSubmittingIncome={incomeMutationPending}
         isSubmittingExpense={expenseMutationPending}
+        isSubmittingOdometer={odometerMutationPending}
         onClose={closeEntryModal}
       />
 
@@ -850,16 +974,35 @@ export default function LogsPage() {
             </h3>
             <p className='mt-2 text-sm text-base-content/60'>
               Remove{' '}
-              {entryToDelete.type === 'income'
-                ? formatCurrency(entryToDelete.entry.amount, currency)
-                : formatCurrency(
-                    entryToDelete.entry.amountMinor / 100,
-                    currency,
+              {entryToDelete.type === 'income' ? (
+                formatCurrency(entryToDelete.entry.amount, currency)
+              ) : entryToDelete.type === 'expense' ? (
+                formatCurrency(entryToDelete.entry.amountMinor / 100, currency)
+              ) : (
+                <>
+                  {formatOdometerReading(
+                    entryToDelete.entry.startReading,
+                    odometerUnit,
                   )}{' '}
+                  →{' '}
+                  {formatOdometerReading(
+                    entryToDelete.entry.endReading,
+                    odometerUnit,
+                  )}{' '}
+                  (
+                  {formatOdometerDistance(
+                    getOdometerDistance(entryToDelete.entry),
+                    odometerUnit,
+                  )}
+                  )
+                </>
+              )}{' '}
               from {formatDateLabel(entryToDelete.date)} (
               {entryToDelete.type === 'income'
                 ? entryToDelete.entry.platform
-                : formatExpenseType(entryToDelete.entry.expenseType)}
+                : entryToDelete.type === 'expense'
+                  ? formatExpenseType(entryToDelete.entry.expenseType)
+                  : 'Odometer reading'}
               )? This action cannot be undone.
             </p>
             <div className='modal-action mt-4'>
@@ -872,21 +1015,9 @@ export default function LogsPage() {
               </button>
               <button
                 type='button'
-                className={`btn btn-error ${
-                  (
-                    entryToDelete.type === 'income'
-                      ? deleteIncomeMutation.isPending
-                      : deleteExpenseMutation.isPending
-                  )
-                    ? 'loading'
-                    : ''
-                }`}
+                className={`btn btn-error ${deletePending ? 'loading' : ''}`}
                 onClick={handleConfirmDelete}
-                disabled={
-                  entryToDelete.type === 'income'
-                    ? deleteIncomeMutation.isPending
-                    : deleteExpenseMutation.isPending
-                }
+                disabled={deletePending}
               >
                 Delete entry
               </button>

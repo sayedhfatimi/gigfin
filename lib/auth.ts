@@ -46,6 +46,12 @@ export const auth = betterAuth({
         output: true,
         defaultValue: 'litre',
       },
+      odometerUnit: {
+        type: 'string',
+        input: true,
+        output: true,
+        defaultValue: 'km',
+      },
     },
   },
 });

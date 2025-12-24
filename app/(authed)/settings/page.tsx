@@ -14,6 +14,7 @@ import type { ChargingVendor } from '@/lib/charging-vendor';
 import type { CurrencyCode } from '@/lib/currency';
 import { currencyOptions, resolveCurrency } from '@/lib/currency';
 import type { UnitRateUnit } from '@/lib/expenses';
+import type { OdometerUnit } from '@/lib/odometer';
 import {
   useChargingVendors,
   useCreateChargingVendor,
@@ -36,6 +37,11 @@ import VehicleProfileModal from './_components/VehicleProfileModal';
 const UNIT_SYSTEM_OPTIONS = [
   { value: 'metric', label: 'Metric' },
   { value: 'imperial', label: 'Imperial' },
+];
+
+const ODOMETER_UNIT_OPTIONS = [
+  { value: 'km', label: 'Kilometres (km)' },
+  { value: 'miles', label: 'Miles (mi)' },
 ];
 
 const VOLUME_UNIT_OPTIONS = [
@@ -135,6 +141,10 @@ export default function SettingsPage() {
     const volumeUnit = sessionUser?.volumeUnit;
     return typeof volumeUnit === 'string' ? volumeUnit : 'litre';
   })();
+  const resolvedOdometerUnit = (() => {
+    const odometerUnit = sessionUser?.odometerUnit;
+    return odometerUnit === 'miles' ? 'miles' : 'km';
+  })();
 
   const currentSessionIdentifier =
     sessionData?.session?.token ?? sessionData?.session?.id ?? null;
@@ -145,9 +155,12 @@ export default function SettingsPage() {
     useState(resolvedUnitSystem);
   const [selectedVolumeUnit, setSelectedVolumeUnit] =
     useState(resolvedVolumeUnit);
+  const [selectedOdometerUnit, setSelectedOdometerUnit] =
+    useState<OdometerUnit>(resolvedOdometerUnit);
   const [isUpdatingCurrency, setIsUpdatingCurrency] = useState(false);
   const [isUpdatingUnitSystem, setIsUpdatingUnitSystem] = useState(false);
   const [isUpdatingVolumeUnit, setIsUpdatingVolumeUnit] = useState(false);
+  const [isUpdatingOdometerUnit, setIsUpdatingOdometerUnit] = useState(false);
   const [statusMessage, setStatusMessage] = useState<ToastMessage | null>(null);
   const [isExportingIncome, setIsExportingIncome] = useState(false);
   const [isExportingExpense, setIsExportingExpense] = useState(false);
@@ -192,7 +205,13 @@ export default function SettingsPage() {
     setSelectedCurrency(sessionCurrency);
     setSelectedUnitSystem(resolvedUnitSystem);
     setSelectedVolumeUnit(resolvedVolumeUnit);
-  }, [sessionCurrency, resolvedUnitSystem, resolvedVolumeUnit]);
+    setSelectedOdometerUnit(resolvedOdometerUnit);
+  }, [
+    sessionCurrency,
+    resolvedUnitSystem,
+    resolvedVolumeUnit,
+    resolvedOdometerUnit,
+  ]);
 
   useEffect(() => {
     if (!statusMessage) {
@@ -372,6 +391,25 @@ export default function SettingsPage() {
       setIsUpdatingVolumeUnit,
       'Volume unit saved.',
       'Unable to save volume unit. Try again in a moment.',
+    );
+  };
+
+  const handleOdometerUnitChange = async (
+    event: ChangeEvent<HTMLSelectElement>,
+  ) => {
+    const nextOdometerUnit = event.target.value as OdometerUnit;
+    if (nextOdometerUnit === selectedOdometerUnit) {
+      return;
+    }
+    const previousUnit = selectedOdometerUnit;
+    setSelectedOdometerUnit(nextOdometerUnit);
+    await updateUserPreference(
+      { odometerUnit: nextOdometerUnit },
+      previousUnit,
+      setSelectedOdometerUnit,
+      setIsUpdatingOdometerUnit,
+      'Odometer unit saved.',
+      'Unable to save odometer unit. Try again shortly.',
     );
   };
 
@@ -1030,6 +1068,35 @@ export default function SettingsPage() {
                   disabled={isUpdatingUnitSystem}
                 >
                   {UNIT_SYSTEM_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className='flex flex-col gap-3 rounded border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
+              <div className='space-y-1'>
+                <p className='text-xs uppercase text-base-content/50'>
+                  Odometer units
+                </p>
+                <p className='text-sm text-base-content/60'>
+                  Display odometer readings in kilometres or miles on the logs
+                  view.
+                </p>
+              </div>
+              <div className='w-full max-w-xs'>
+                <label className='sr-only' htmlFor='odometer-units'>
+                  Odometer units
+                </label>
+                <select
+                  id='odometer-units'
+                  className='select w-full'
+                  value={selectedOdometerUnit}
+                  onChange={handleOdometerUnitChange}
+                  disabled={isUpdatingOdometerUnit}
+                >
+                  {ODOMETER_UNIT_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>

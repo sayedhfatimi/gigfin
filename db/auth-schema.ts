@@ -9,9 +9,6 @@ export const user = sqliteTable('user', {
     .default(false)
     .notNull(),
   image: text('image'),
-  currency: text('currency').default('GBP').notNull(),
-  unitSystem: text('unit_system').default('metric').notNull(),
-  volumeUnit: text('volume_unit').default('litre').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp_ms' })
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
     .notNull(),
@@ -22,6 +19,10 @@ export const user = sqliteTable('user', {
   twoFactorEnabled: integer('two_factor_enabled', { mode: 'boolean' }).default(
     false,
   ),
+  currency: text('currency').default('GBP'),
+  unitSystem: text('unit_system').default('metric'),
+  volumeUnit: text('volume_unit').default('litre'),
+  odometerUnit: text('odometer_unit').default('km'),
 });
 
 export const session = sqliteTable(

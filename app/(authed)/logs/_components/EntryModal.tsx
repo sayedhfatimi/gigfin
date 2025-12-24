@@ -7,7 +7,9 @@ import { getCurrencyIcon } from '@/lib/currency';
 import type { ExpenseEntry, UnitRateUnit } from '@/lib/expenses';
 import { expenseTypeOptions } from '@/lib/expenses';
 import type { IncomeEntry } from '@/lib/income';
+import type { OdometerEntry } from '@/lib/odometer';
 import type { ExpensePayload } from '@/lib/queries/expenses';
+import type { OdometerPayload } from '@/lib/queries/odometers';
 import type { VehicleProfile } from '@/lib/vehicle';
 
 const incomeSources = [
@@ -32,7 +34,7 @@ const getVendorRateLabel = (vendor: ChargingVendor) =>
     vendor.unitRateUnit === 'kwh' ? 'kWh' : vendor.unitRateUnit
   }`;
 
-type EntryTab = 'income' | 'expense';
+type EntryTab = 'income' | 'expense' | 'odometer';
 
 type EntryModalProps = {
   isOpen: boolean;
@@ -43,6 +45,7 @@ type EntryModalProps = {
   volumeUnit: UnitRateUnit;
   editingIncome: IncomeEntry | null;
   editingExpense: ExpenseEntry | null;
+  editingOdometer: OdometerEntry | null;
   chargingVendors: ChargingVendor[];
   onSubmitIncome: (payload: {
     id?: string;
@@ -51,8 +54,12 @@ type EntryModalProps = {
     amount: number;
   }) => Promise<void>;
   onSubmitExpense: (payload: ExpensePayload & { id?: string }) => Promise<void>;
+  onSubmitOdometer: (
+    payload: OdometerPayload & { id?: string },
+  ) => Promise<void>;
   isSubmittingIncome: boolean;
   isSubmittingExpense: boolean;
+  isSubmittingOdometer: boolean;
   onClose: () => void;
 };
 
@@ -65,15 +72,19 @@ const EntryModal = ({
   volumeUnit,
   editingIncome,
   editingExpense,
+  editingOdometer,
   chargingVendors,
   onSubmitIncome,
   onSubmitExpense,
+  onSubmitOdometer,
   isSubmittingIncome,
   isSubmittingExpense,
+  isSubmittingOdometer,
   onClose,
 }: EntryModalProps) => {
   const isEditingIncome = Boolean(editingIncome);
   const isEditingExpense = Boolean(editingExpense);
+  const isEditingOdometer = Boolean(editingOdometer);
   const [incomeDate, setIncomeDate] = useState(getTodayIso());
   const [incomePlatform, setIncomePlatform] = useState(incomeSources[0]);
   const [incomeAmount, setIncomeAmount] = useState('');
@@ -88,6 +99,11 @@ const EntryModal = ({
   const [formError, setFormError] = useState('');
   const [selectedVendorId, setSelectedVendorId] = useState('');
   const [vendorNotesPrefill, setVendorNotesPrefill] = useState('');
+
+  const [odometerDate, setOdometerDate] = useState(getTodayIso());
+  const [odometerStartReading, setOdometerStartReading] = useState('');
+  const [odometerEndReading, setOdometerEndReading] = useState('');
+  const [odometerVehicleProfileId, setOdometerVehicleProfileId] = useState('');
 
   const defaultVehicleProfileId = useMemo(
     () => vehicleProfiles.find((profile) => profile.isDefault)?.id ?? '',
@@ -145,6 +161,23 @@ const EntryModal = ({
       setVendorNotesPrefill('');
     }
   }, [editingExpense, isOpen, defaultVehicleProfileId]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    if (editingOdometer) {
+      setOdometerDate(editingOdometer.date);
+      setOdometerStartReading(editingOdometer.startReading.toString());
+      setOdometerEndReading(editingOdometer.endReading.toString());
+      setOdometerVehicleProfileId(editingOdometer.vehicleProfileId ?? '');
+    } else {
+      setOdometerDate(getTodayIso());
+      setOdometerStartReading('');
+      setOdometerEndReading('');
+      setOdometerVehicleProfileId(defaultVehicleProfileId);
+    }
+  }, [editingOdometer, isOpen, defaultVehicleProfileId]);
 
   useEffect(() => {
     if (!selectedVehicle) {
@@ -300,14 +333,55 @@ const EntryModal = ({
     }
   };
 
+  const handleOdometerSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const startValue = Number.parseFloat(odometerStartReading);
+    const endValue = Number.parseFloat(odometerEndReading);
+    if (
+      Number.isNaN(startValue) ||
+      Number.isNaN(endValue) ||
+      startValue < 0 ||
+      endValue < 0
+    ) {
+      setFormError('Enter valid start and end odometer readings.');
+      return;
+    }
+    if (endValue < startValue) {
+      setFormError(
+        'End reading must be equal to or greater than the start reading.',
+      );
+      return;
+    }
+    const payload: OdometerPayload & { id?: string } = {
+      id: editingOdometer?.id,
+      date: odometerDate,
+      startReading: startValue,
+      endReading: endValue,
+      vehicleProfileId: odometerVehicleProfileId || null,
+    };
+    setFormError('');
+    try {
+      await onSubmitOdometer(payload);
+      handleClose();
+    } catch {
+      setFormError('Unable to save odometer entry. Try again shortly.');
+    }
+  };
+
   const title =
     activeTab === 'income'
       ? editingIncome
         ? 'Update income entry'
         : 'Log new income'
-      : editingExpense
-        ? 'Update expense entry'
-        : 'Log new expense';
+      : activeTab === 'expense'
+        ? editingExpense
+          ? 'Update expense entry'
+          : 'Log new expense'
+        : editingOdometer
+          ? 'Update odometer entry'
+          : 'Log new odometer reading';
+
+  const isEditingAny = isEditingIncome || isEditingExpense || isEditingOdometer;
 
   if (!isOpen) {
     return null;
@@ -320,17 +394,21 @@ const EntryModal = ({
           <h3 className='text-lg font-semibold text-base-content'>{title}</h3>
 
           <div role='tablist' className='tabs tabs-box'>
-            {(['income', 'expense'] as EntryTab[]).map((tab) => {
-              const isTabDisabled =
-                (tab === 'income' && isEditingExpense) ||
-                (tab === 'expense' && isEditingIncome);
+            {(['income', 'expense', 'odometer'] as EntryTab[]).map((tab) => {
+              const isTabDisabled = isEditingAny && activeTab !== tab;
               return (
                 <input
                   key={tab}
                   type='radio'
                   name='entry-modal-tabs'
                   className='tab'
-                  aria-label={tab === 'income' ? 'Income' : 'Expense'}
+                  aria-label={
+                    tab === 'income'
+                      ? 'Income'
+                      : tab === 'expense'
+                        ? 'Expense'
+                        : 'Odometer'
+                  }
                   checked={activeTab === tab}
                   onChange={() => onTabChange(tab)}
                   disabled={isTabDisabled}
@@ -408,7 +486,7 @@ const EntryModal = ({
               </button>
             </div>
           </form>
-        ) : (
+        ) : activeTab === 'expense' ? (
           <form className='mt-4 space-y-4' onSubmit={handleExpenseSubmit}>
             <label className='input w-full'>
               <span className='label text-xs uppercase text-base-content/50'>
@@ -564,6 +642,92 @@ const EntryModal = ({
                 disabled={isSubmittingExpense}
               >
                 {editingExpense ? 'Save changes' : 'Add expense'}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <form className='mt-4 space-y-4' onSubmit={handleOdometerSubmit}>
+            <label className='input w-full'>
+              <span className='label text-xs uppercase text-base-content/50'>
+                Date
+              </span>
+              <input
+                type='date'
+                value={odometerDate}
+                onChange={(event) => setOdometerDate(event.target.value)}
+                required
+              />
+            </label>
+            <div className='grid gap-2 md:grid-cols-2'>
+              <label className='input validator w-full'>
+                <span className='label text-xs uppercase text-base-content/50'>
+                  Start reading
+                </span>
+                <input
+                  type='number'
+                  step='0.1'
+                  min='0'
+                  placeholder='e.g. 12345.6'
+                  value={odometerStartReading}
+                  onChange={(event) =>
+                    setOdometerStartReading(event.target.value)
+                  }
+                  required
+                />
+              </label>
+              <label className='input validator w-full'>
+                <span className='label text-xs uppercase text-base-content/50'>
+                  End reading
+                </span>
+                <input
+                  type='number'
+                  step='0.1'
+                  min='0'
+                  placeholder='e.g. 12360.2'
+                  value={odometerEndReading}
+                  onChange={(event) =>
+                    setOdometerEndReading(event.target.value)
+                  }
+                  required
+                />
+              </label>
+            </div>
+            <label className='select w-full'>
+              <span className='label text-xs uppercase text-base-content/50'>
+                Vehicle profile
+              </span>
+              <select
+                value={odometerVehicleProfileId}
+                onChange={(event) =>
+                  setOdometerVehicleProfileId(event.target.value)
+                }
+              >
+                <option value=''>None</option>
+                {vehicleProfiles.map((profile) => (
+                  <option key={profile.id} value={profile.id}>
+                    {profile.label} · {profile.vehicleType}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {formError && <p className='text-sm text-error'>{formError}</p>}
+            <div className='modal-action'>
+              <button
+                type='button'
+                className='btn btn-ghost'
+                onClick={handleClose}
+                disabled={isSubmittingOdometer}
+              >
+                Cancel
+              </button>
+              <button
+                type='submit'
+                className={`btn btn-primary ${
+                  isSubmittingOdometer ? 'loading' : ''
+                }`}
+                disabled={isSubmittingOdometer}
+              >
+                {editingOdometer ? 'Save changes' : 'Add odometer reading'}
               </button>
             </div>
           </form>

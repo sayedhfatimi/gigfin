@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1765232246637,
-      "tag": "0000_silent_gladiator",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1765625053169,
-      "tag": "0001_outgoing_lionheart",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1765791527755,
-      "tag": "0002_workable_prowler",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1766589543911,
-      "tag": "0003_large_champions",
+      "when": 1766595816254,
+      "tag": "0000_polite_bloodstorm",
       "breakpoints": true
     }
   ]

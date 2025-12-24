@@ -4,12 +4,14 @@ import { account, session, twoFactor, user, verification } from './auth-schema';
 import { chargingVendor } from './charging-vendor-schema';
 import { expense } from './expense-schema';
 import { income } from './income-schema';
+import { odometer } from './odometer-schema';
 import { vehicleProfile } from './vehicle-profile-schema';
 
 export {
   account,
   expense,
   income,
+  odometer,
   session,
   twoFactor,
   user,
@@ -62,6 +64,17 @@ export const expenseRelations = relations(expense, ({ one }) => ({
   }),
   vehicleProfile: one(vehicleProfile, {
     fields: [expense.vehicleProfileId],
+    references: [vehicleProfile.id],
+  }),
+}));
+
+export const odometerRelations = relations(odometer, ({ one }) => ({
+  user: one(user, {
+    fields: [odometer.userId],
+    references: [user.id],
+  }),
+  vehicleProfile: one(vehicleProfile, {
+    fields: [odometer.vehicleProfileId],
     references: [vehicleProfile.id],
   }),
 }));
