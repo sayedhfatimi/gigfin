@@ -12,7 +12,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - gigfin-data:/app/data
+      - gigfin-data:/app/data:rw
     restart: unless-stopped
 
 volumes:
