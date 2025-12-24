@@ -25,6 +25,7 @@ export default function ExpenseLogRow({
   onDelete,
   deleteDisabled,
 }: ExpenseLogRowProps) {
+  const expenseTypeLabel = formatExpenseType(entry.expenseType);
   const amountText = formatCurrency(entry.amountMinor / 100, currency);
 
   return (
@@ -40,10 +41,10 @@ export default function ExpenseLogRow({
             {formatDateLabel(entry.paidAt)}
           </span>
           <span
-            className='min-w-0 max-w-48 truncate text-sm font-semibold text-base-content/80 md:max-w-none'
-            title={formatExpenseType(entry.expenseType)}
+            className='hidden min-w-0 max-w-48 truncate text-sm font-semibold text-base-content/80 md:max-w-none md:block'
+            title={expenseTypeLabel}
           >
-            {formatExpenseType(entry.expenseType)}
+            {expenseTypeLabel}
           </span>
           <span className='min-w-0 text-right text-sm font-semibold text-error'>
             -{amountText}
@@ -55,13 +56,19 @@ export default function ExpenseLogRow({
         </button>
         {isExpanded && (
           <div className='border-t border-base-content/10 bg-base-100 p-4 text-sm text-base-content/70'>
-            <div className='grid gap-3 md:grid-cols-4 items-center'>
+            <div className='grid gap-3 md:grid-cols-5 items-center'>
               <div>
                 <p className='text-xs uppercase text-base-content/60'>
                   Vehicle
                 </p>
                 <p className='text-sm text-base-content'>
                   {entry.vehicle?.label ?? '—'}
+                </p>
+              </div>
+              <div>
+                <p className='text-xs uppercase text-base-content/60'>Type</p>
+                <p className='text-sm text-base-content'>
+                  {expenseTypeLabel}
                 </p>
               </div>
               <div>

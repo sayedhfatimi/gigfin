@@ -89,7 +89,7 @@ export function ExpenseOverviewPanel({
 
   return (
     <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm'>
-      <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
+      <div className='flex gap-3 flex-row items-center justify-between'>
         <div>
           <h2 className='text-lg font-semibold text-base-content'>
             Spend overview
