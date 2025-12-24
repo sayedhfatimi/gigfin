@@ -79,6 +79,11 @@ const EntryModal = ({
   const [expenseMode, setExpenseMode] = useState<'fuel' | 'charging'>('fuel');
   const [formError, setFormError] = useState('');
 
+  const defaultVehicleProfileId = useMemo(
+    () => vehicleProfiles.find((profile) => profile.isDefault)?.id ?? '',
+    [vehicleProfiles],
+  );
+
   const selectedVehicle = useMemo(
     () => vehicleProfiles.find((profile) => profile.id === vehicleProfileId),
     [vehicleProfileId, vehicleProfiles],
@@ -121,11 +126,11 @@ const EntryModal = ({
       setExpenseType(expenseTypeOptions[0].value);
       setExpenseAmount('');
       setExpenseNotes('');
-      setVehicleProfileId('');
+      setVehicleProfileId(defaultVehicleProfileId);
       setExpenseRate('');
       setExpenseMode('fuel');
     }
-  }, [editingExpense, isOpen]);
+  }, [editingExpense, isOpen, defaultVehicleProfileId]);
 
   useEffect(() => {
     if (!selectedVehicle) {
