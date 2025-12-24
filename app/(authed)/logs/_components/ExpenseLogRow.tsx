@@ -67,9 +67,7 @@ export default function ExpenseLogRow({
               </div>
               <div>
                 <p className='text-xs uppercase text-base-content/60'>Type</p>
-                <p className='text-sm text-base-content'>
-                  {expenseTypeLabel}
-                </p>
+                <p className='text-sm text-base-content'>{expenseTypeLabel}</p>
               </div>
               <div>
                 <p className='text-xs uppercase text-base-content/60'>Rate</p>

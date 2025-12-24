@@ -1,6 +1,7 @@
 'use client';
 
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import type { ChargingVendor } from '@/lib/charging-vendor';
 import type { CurrencyCode } from '@/lib/currency';
 import { getCurrencyIcon } from '@/lib/currency';
 import type { ExpenseEntry, UnitRateUnit } from '@/lib/expenses';
@@ -26,6 +27,11 @@ const expenseModeOptions = [
   { value: 'charging', label: 'Charging' },
 ] as const;
 
+const getVendorRateLabel = (vendor: ChargingVendor) =>
+  `${vendor.unitRateMinor}p per ${
+    vendor.unitRateUnit === 'kwh' ? 'kWh' : vendor.unitRateUnit
+  }`;
+
 type EntryTab = 'income' | 'expense';
 
 type EntryModalProps = {
@@ -37,6 +43,7 @@ type EntryModalProps = {
   volumeUnit: UnitRateUnit;
   editingIncome: IncomeEntry | null;
   editingExpense: ExpenseEntry | null;
+  chargingVendors: ChargingVendor[];
   onSubmitIncome: (payload: {
     id?: string;
     date: string;
@@ -58,6 +65,7 @@ const EntryModal = ({
   volumeUnit,
   editingIncome,
   editingExpense,
+  chargingVendors,
   onSubmitIncome,
   onSubmitExpense,
   isSubmittingIncome,
@@ -78,6 +86,8 @@ const EntryModal = ({
   const [expenseRate, setExpenseRate] = useState('');
   const [expenseMode, setExpenseMode] = useState<'fuel' | 'charging'>('fuel');
   const [formError, setFormError] = useState('');
+  const [selectedVendorId, setSelectedVendorId] = useState('');
+  const [vendorNotesPrefill, setVendorNotesPrefill] = useState('');
 
   const defaultVehicleProfileId = useMemo(
     () => vehicleProfiles.find((profile) => profile.isDefault)?.id ?? '',
@@ -121,6 +131,8 @@ const EntryModal = ({
       } else {
         setExpenseMode('fuel');
       }
+      setSelectedVendorId('');
+      setVendorNotesPrefill('');
     } else {
       setExpenseDate(getTodayIso());
       setExpenseType(expenseTypeOptions[0].value);
@@ -129,6 +141,8 @@ const EntryModal = ({
       setVehicleProfileId(defaultVehicleProfileId);
       setExpenseRate('');
       setExpenseMode('fuel');
+      setSelectedVendorId('');
+      setVendorNotesPrefill('');
     }
   }, [editingExpense, isOpen, defaultVehicleProfileId]);
 
@@ -145,10 +159,6 @@ const EntryModal = ({
       setExpenseMode('fuel');
     }
   }, [selectedVehicle]);
-
-  if (!isOpen) {
-    return null;
-  }
 
   const isFuelExpense = expenseType === 'fuel_charging';
   const isRateBasedExpense = isFuelExpense;
@@ -168,6 +178,42 @@ const EntryModal = ({
     }
     return volumeUnit;
   })();
+
+  useEffect(() => {
+    if (isFuelExpense && rateUnit === 'kwh') {
+      return;
+    }
+    if (selectedVendorId) {
+      setSelectedVendorId('');
+    }
+    setVendorNotesPrefill('');
+  }, [isFuelExpense, rateUnit, selectedVendorId]);
+
+  useEffect(() => {
+    if (!isFuelExpense || rateUnit !== 'kwh' || !selectedVendorId) {
+      return;
+    }
+    const vendor = chargingVendors.find((item) => item.id === selectedVendorId);
+    if (!vendor) {
+      return;
+    }
+    const rateString = vendor.unitRateMinor.toString();
+    if (expenseRate !== rateString) {
+      setExpenseRate(rateString);
+    }
+    if (!expenseNotes || expenseNotes === vendorNotesPrefill) {
+      setExpenseNotes(vendor.label);
+      setVendorNotesPrefill(vendor.label);
+    }
+  }, [
+    selectedVendorId,
+    chargingVendors,
+    isFuelExpense,
+    rateUnit,
+    expenseRate,
+    expenseNotes,
+    vendorNotesPrefill,
+  ]);
 
   const rateLabel =
     rateUnit === 'kwh'
@@ -262,6 +308,10 @@ const EntryModal = ({
       : editingExpense
         ? 'Update expense entry'
         : 'Log new expense';
+
+  if (!isOpen) {
+    return null;
+  }
 
   return (
     <div className='modal modal-open'>
@@ -424,6 +474,28 @@ const EntryModal = ({
                 ))}
               </select>
             </label>
+            {isFuelExpense &&
+              rateUnit === 'kwh' &&
+              chargingVendors.length > 0 && (
+                <label className='select w-full'>
+                  <span className='label text-xs uppercase text-base-content/50'>
+                    Charging vendor (optional)
+                  </span>
+                  <select
+                    value={selectedVendorId}
+                    onChange={(event) =>
+                      setSelectedVendorId(event.target.value)
+                    }
+                  >
+                    <option value=''>Choose vendor</option>
+                    {chargingVendors.map((vendor) => (
+                      <option key={vendor.id} value={vendor.id}>
+                        {vendor.label} · {getVendorRateLabel(vendor)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
             {isFuelExpense && selectedVehicle?.vehicleType === 'HYBRID' && (
               <div className='flex items-center gap-2 text-xs uppercase text-base-content/60'>
                 {expenseModeOptions.map((option) => (

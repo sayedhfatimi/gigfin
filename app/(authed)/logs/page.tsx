@@ -27,6 +27,7 @@ import {
   getEntryMonth,
   type IncomeEntry,
 } from '@/lib/income';
+import { useChargingVendors } from '@/lib/queries/chargingVendors';
 import type { ExpensePayload } from '@/lib/queries/expenses';
 import {
   useAddExpense,
@@ -153,6 +154,7 @@ export default function LogsPage() {
 
   const { data: vehicleProfiles = [], isLoading: isLoadingVehicleProfiles } =
     useVehicleProfiles();
+  const { data: chargingVendors = [] } = useChargingVendors();
 
   const [selectedMonth, setSelectedMonth] = useState('');
   const [platformFilter, setPlatformFilter] = useState<string[]>([]);
@@ -816,6 +818,7 @@ export default function LogsPage() {
         volumeUnit={volumeUnit}
         editingIncome={editingIncome}
         editingExpense={editingExpense}
+        chargingVendors={chargingVendors}
         onSubmitIncome={(payload) => {
           if (payload.id) {
             return handleUpdateIncome(

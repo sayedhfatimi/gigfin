@@ -1,6 +1,7 @@
 import { relations } from 'drizzle-orm';
 
 import { account, session, twoFactor, user, verification } from './auth-schema';
+import { chargingVendor } from './charging-vendor-schema';
 import { expense } from './expense-schema';
 import { income } from './income-schema';
 import { vehicleProfile } from './vehicle-profile-schema';
@@ -14,6 +15,7 @@ export {
   user,
   verification,
   vehicleProfile,
+  chargingVendor,
 };
 
 export const userRelations = relations(user, ({ many }) => ({
@@ -61,5 +63,12 @@ export const expenseRelations = relations(expense, ({ one }) => ({
   vehicleProfile: one(vehicleProfile, {
     fields: [expense.vehicleProfileId],
     references: [vehicleProfile.id],
+  }),
+}));
+
+export const chargingVendorRelations = relations(chargingVendor, ({ one }) => ({
+  user: one(user, {
+    fields: [chargingVendor.userId],
+    references: [user.id],
   }),
 }));

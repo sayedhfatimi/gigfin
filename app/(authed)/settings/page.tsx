@@ -10,8 +10,16 @@ import {
 import { UAParser } from 'ua-parser-js';
 import { type ToastMessage, ToastStack } from '@/components/ToastStack';
 import { authClient, useSession } from '@/lib/auth-client';
+import type { ChargingVendor } from '@/lib/charging-vendor';
 import type { CurrencyCode } from '@/lib/currency';
 import { currencyOptions, resolveCurrency } from '@/lib/currency';
+import type { UnitRateUnit } from '@/lib/expenses';
+import {
+  useChargingVendors,
+  useCreateChargingVendor,
+  useDeleteChargingVendor,
+  useUpdateChargingVendor,
+} from '@/lib/queries/chargingVendors';
 import {
   useCreateVehicleProfile,
   useDeleteVehicleProfile,
@@ -21,6 +29,7 @@ import {
 import { getSessionUser } from '@/lib/session';
 import { type VehicleProfile, vehicleTypeOptions } from '@/lib/vehicle';
 import { ChangePasswordModal } from './_components/ChangePasswordModal';
+import ChargingVendorModal from './_components/ChargingVendorModal';
 import { TwoFactorModal } from './_components/TwoFactorModal';
 import VehicleProfileModal from './_components/VehicleProfileModal';
 
@@ -38,6 +47,12 @@ const VOLUME_UNIT_OPTIONS = [
 const vehicleTypeLabelByValue = new Map(
   vehicleTypeOptions.map((option) => [option.value, option.label]),
 );
+
+const getRateUnitLabel = (unit: ChargingVendor['unitRateUnit']) =>
+  unit === 'kwh' ? 'kWh' : unit;
+
+const formatChargingVendorRate = (vendor: ChargingVendor) =>
+  `${vendor.unitRateMinor}p per ${getRateUnitLabel(vendor.unitRateUnit)}`;
 
 type ParsedUserAgent = {
   browserLabel: string;
@@ -156,9 +171,22 @@ export default function SettingsPage() {
   const [editingVehicleProfile, setEditingVehicleProfile] =
     useState<VehicleProfile | null>(null);
 
+  const { data: chargingVendors = [], isLoading: isLoadingChargingVendors } =
+    useChargingVendors();
+  const createChargingVendorMutation = useCreateChargingVendor();
+  const updateChargingVendorMutation = useUpdateChargingVendor();
+  const deleteChargingVendorMutation = useDeleteChargingVendor();
+  const [isChargingVendorModalOpen, setIsChargingVendorModalOpen] =
+    useState(false);
+  const [editingChargingVendor, setEditingChargingVendor] =
+    useState<ChargingVendor | null>(null);
+
   const isVehicleProfileSaving =
     createVehicleProfileMutation.isPending ||
     updateVehicleProfileMutation.isPending;
+  const isChargingVendorSaving =
+    createChargingVendorMutation.isPending ||
+    updateChargingVendorMutation.isPending;
 
   useEffect(() => {
     setSelectedCurrency(sessionCurrency);
@@ -478,6 +506,84 @@ export default function SettingsPage() {
             text: 'Unable to delete vehicle profile. Try again shortly.',
           });
         },
+      },
+    );
+  };
+
+  const handleOpenChargingVendorModal = (vendor?: ChargingVendor) => {
+    setEditingChargingVendor(vendor ?? null);
+    setIsChargingVendorModalOpen(true);
+  };
+
+  const handleCloseChargingVendorModal = () => {
+    setIsChargingVendorModalOpen(false);
+    setEditingChargingVendor(null);
+  };
+
+  const handleChargingVendorSubmit = (payload: {
+    label: string;
+    unitRateMinor: number;
+    unitRateUnit: UnitRateUnit;
+  }) => {
+    setStatusMessage(null);
+    if (editingChargingVendor) {
+      updateChargingVendorMutation.mutate(
+        { id: editingChargingVendor.id, ...payload },
+        {
+          onSuccess: () => {
+            handleCloseChargingVendorModal();
+            setStatusMessage({
+              type: 'success',
+              text: 'Charging vendor updated.',
+            });
+          },
+          onError: () =>
+            setStatusMessage({
+              type: 'error',
+              text: 'Unable to save charging vendor. Try again shortly.',
+            }),
+        },
+      );
+      return;
+    }
+    createChargingVendorMutation.mutate(payload, {
+      onSuccess: () => {
+        handleCloseChargingVendorModal();
+        setStatusMessage({
+          type: 'success',
+          text: 'Charging vendor created.',
+        });
+      },
+      onError: () =>
+        setStatusMessage({
+          type: 'error',
+          text: 'Unable to save charging vendor. Try again shortly.',
+        }),
+    });
+  };
+
+  const handleDeleteChargingVendor = (vendor: ChargingVendor) => {
+    const confirmed = window.confirm(
+      `Remove ${vendor.label}? Existing expenses aren’t linked to this vendor.`,
+    );
+    if (!confirmed) {
+      return;
+    }
+    setStatusMessage(null);
+    deleteChargingVendorMutation.mutate(
+      { id: vendor.id },
+      {
+        onSuccess: () => {
+          setStatusMessage({
+            type: 'success',
+            text: 'Charging vendor removed.',
+          });
+        },
+        onError: () =>
+          setStatusMessage({
+            type: 'error',
+            text: 'Unable to remove charging vendor right now.',
+          }),
       },
     );
   };
@@ -1060,6 +1166,83 @@ export default function SettingsPage() {
           <div className='flex items-center justify-between gap-4'>
             <div>
               <p className='text-xs uppercase text-base-content/50'>
+                EV charging vendors
+              </p>
+              <h2 className='text-sm text-base-content/60'>
+                Store vendor names and default charging rates for quick logging.
+              </h2>
+            </div>
+            <button
+              type='button'
+              className='btn btn-primary text-sm font-semibold'
+              onClick={() => handleOpenChargingVendorModal()}
+              disabled={isChargingVendorSaving}
+            >
+              Add charging vendor
+            </button>
+          </div>
+          <div className='mt-6 space-y-4'>
+            {isLoadingChargingVendors ? (
+              <p className='text-sm text-base-content/60'>
+                Loading charging vendors…
+              </p>
+            ) : chargingVendors.length === 0 ? (
+              <div className='flex flex-col gap-3 border border-base-content/10 px-4 py-5 text-sm text-base-content/60'>
+                <p>No charging vendors yet.</p>
+                <button
+                  type='button'
+                  className='btn btn-sm btn-outline text-xs normal-case'
+                  onClick={() => handleOpenChargingVendorModal()}
+                >
+                  Create vendor
+                </button>
+              </div>
+            ) : (
+              <div className='space-y-3'>
+                {chargingVendors.map((vendor) => (
+                  <div
+                    key={vendor.id}
+                    className='border border-base-content/10 bg-base-200 p-4 shadow-sm'
+                  >
+                    <div className='flex items-center justify-between gap-4'>
+                      <div>
+                        <p className='text-sm font-semibold text-base-content'>
+                          {vendor.label}
+                        </p>
+                        <p className='text-xs uppercase text-base-content/60'>
+                          {formatChargingVendorRate(vendor)}
+                        </p>
+                      </div>
+                      <div className='flex flex-wrap gap-2'>
+                        <button
+                          type='button'
+                          className='btn btn-xs btn-outline'
+                          disabled={isChargingVendorSaving}
+                          onClick={() => handleOpenChargingVendorModal(vendor)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type='button'
+                          className='btn btn-xs btn-outline btn-error'
+                          disabled={deleteChargingVendorMutation.isPending}
+                          onClick={() => handleDeleteChargingVendor(vendor)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+          <div className='flex items-center justify-between gap-4'>
+            <div>
+              <p className='text-xs uppercase text-base-content/50'>
                 Export data
               </p>
               <h2 className='text-sm text-base-content/60'>
@@ -1143,6 +1326,13 @@ export default function SettingsPage() {
           isSubmitting={isVehicleProfileSaving}
           onClose={handleCloseVehicleModal}
           onSubmit={handleVehicleProfileSubmit}
+        />
+        <ChargingVendorModal
+          isOpen={isChargingVendorModalOpen}
+          vendor={editingChargingVendor}
+          isSubmitting={isChargingVendorSaving}
+          onClose={handleCloseChargingVendorModal}
+          onSubmit={handleChargingVendorSubmit}
         />
       </div>
       <ToastStack
