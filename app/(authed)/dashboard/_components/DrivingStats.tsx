@@ -77,6 +77,13 @@ export function DrivingStats({
       ),
     [currentMonthExpenseEntries],
   );
+  const fuelExpenseTotal = useMemo(
+    () =>
+      currentMonthExpenseEntries
+        .filter((entry) => entry.expenseType === 'fuel_charging')
+        .reduce((acc, entry) => acc + entry.amountMinor / 100, 0),
+    [currentMonthExpenseEntries],
+  );
 
   const referenceDate = new Date();
   const currentYear = referenceDate.getFullYear();
@@ -116,6 +123,9 @@ export function DrivingStats({
 
   const costPerUnit = distanceThisMonth
     ? currentMonthExpenseTotal / distanceThisMonth
+    : null;
+  const fuelCostPerUnit = distanceThisMonth
+    ? fuelExpenseTotal / distanceThisMonth
     : null;
   const profitPerUnit = distanceThisMonth
     ? netProfit / distanceThisMonth
@@ -196,7 +206,7 @@ export function DrivingStats({
           </p>
         </article>
       </div>
-      <div className='mt-4 grid gap-4 sm:grid-cols-3'>
+      <div className='mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
         <article className='rounded-lg border border-base-content/10 bg-base-200/50 p-4'>
           <p className='text-xs uppercase text-base-content/60'>
             Average cost / {odometerUnitLabel}
@@ -206,6 +216,17 @@ export function DrivingStats({
           </p>
           <p className='text-xs text-base-content/50'>
             Based on current month spend
+          </p>
+        </article>
+        <article className='rounded-lg border border-base-content/10 bg-base-200/50 p-4'>
+          <p className='text-xs uppercase text-base-content/60'>
+            Fuel / charging cost / {odometerUnitLabel}
+          </p>
+          <p className='text-3xl font-semibold text-base-content'>
+            {formatPerUnit(fuelCostPerUnit, currency, odometerUnitLabel)}
+          </p>
+          <p className='text-xs text-base-content/50'>
+            Based on fuel & charging spend
           </p>
         </article>
         <article className='rounded-lg border border-base-content/10 bg-base-200/50 p-4'>
