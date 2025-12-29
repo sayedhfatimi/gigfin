@@ -30,11 +30,13 @@ import {
   getCurrentMonthEntries,
   getPlatformDistribution,
 } from '@/lib/income';
+import type { OdometerUnit } from '@/lib/odometer';
 import { useExpenseLogs } from '@/lib/queries/expenses';
 import { useIncomeLogs } from '@/lib/queries/income';
 import { getSessionUser } from '@/lib/session';
 import { DailyCadencePanel } from './_components/DailyCadencePanel';
 import { DashboardStats } from './_components/DashboardStats';
+import { DrivingStats } from './_components/DrivingStats';
 import { ExpenseCategoryBreakdownPanel } from './_components/ExpenseCategoryBreakdownPanel';
 import { ExpenseOverviewPanel } from './_components/ExpenseOverviewPanel';
 import { FuelConsumptionPanel } from './_components/FuelConsumptionPanel';
@@ -52,6 +54,7 @@ const VISIBILITY_STORAGE_KEY = 'dashboard-widget-visibility';
 
 type WidgetId =
   | 'stats'
+  | 'drivingStats'
   | 'profitability'
   | 'expenseOverview'
   | 'expenseCategoryBreakdown'
@@ -99,6 +102,7 @@ const buildDefaultOrder = (definitions: DashboardWidgetDefinition[]) =>
   definitions.map((widget) => widget.id);
 
 const DEFAULT_WIDGET_VISIBILITY: Partial<Record<WidgetId, boolean>> = {
+  drivingStats: false,
   platformBreakdownBarChart: false,
   platformConcentration: false,
   dailyCadence: false,
@@ -153,6 +157,9 @@ export default function DashboardPage() {
   const { data: sessionData, isPending } = useSession();
   const sessionUser = getSessionUser(sessionData);
   const currency = resolveCurrency(sessionUser?.currency);
+  const odometerUnit = (
+    sessionUser?.odometerUnit === 'miles' ? 'miles' : 'km'
+  ) as OdometerUnit;
   const { data: incomes = [] } = useIncomeLogs();
   const { data: expenses = [] } = useExpenseLogs();
 
@@ -242,6 +249,20 @@ export default function DashboardPage() {
         description: 'Income overview',
         widthClass: 'md:col-span-2',
         component: <DashboardStats stats={stats} />,
+      },
+      {
+        id: 'drivingStats',
+        label: 'Driving stats',
+        description: 'Distance-based KPIs',
+        widthClass: 'md:col-span-2',
+        component: (
+          <DrivingStats
+            expenses={expenses}
+            incomes={incomes}
+            currency={currency}
+            odometerUnit={odometerUnit}
+          />
+        ),
       },
       {
         id: 'profitability',
@@ -373,7 +394,15 @@ export default function DashboardPage() {
         ),
       },
     ],
-    [stats, dailySummaries, incomes, currency, platformDistribution, expenses],
+    [
+      stats,
+      dailySummaries,
+      incomes,
+      currency,
+      platformDistribution,
+      expenses,
+      odometerUnit,
+    ],
   );
 
   const [widgetOrder, setWidgetOrder] = useState<WidgetId[]>(() =>
