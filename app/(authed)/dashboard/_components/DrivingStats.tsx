@@ -4,9 +4,7 @@ import { useMemo, useState } from 'react';
 import type { CurrencyCode } from '@/lib/currency';
 import { formatCurrency } from '@/lib/currency';
 import type { ExpenseEntry } from '@/lib/expenses';
-import { getCurrentMonthExpenses } from '@/lib/expenses';
 import type { IncomeEntry } from '@/lib/income';
-import { getCurrentMonthEntries } from '@/lib/income';
 import type { OdometerEntry, OdometerUnit } from '@/lib/odometer';
 import { formatOdometerDistance, getOdometerDistance } from '@/lib/odometer';
 import { useOdometerLogs } from '@/lib/queries/odometers';
@@ -16,9 +14,9 @@ const UNIT_LABEL: Record<OdometerUnit, string> = {
   miles: 'mi',
 };
 
-type FuelCostRange = 'today' | 'this_week' | 'this_month' | 'year_to_date';
+type RangeFilter = 'today' | 'this_week' | 'this_month' | 'year_to_date';
 
-const FUEL_COST_RANGE_OPTIONS: { value: FuelCostRange; label: string }[] = [
+const RANGE_FILTER_OPTIONS: { value: RangeFilter; label: string }[] = [
   { value: 'today', label: 'Today' },
   { value: 'this_week', label: 'This week' },
   { value: 'this_month', label: 'This month' },
@@ -52,7 +50,7 @@ const getStartOfWeek = (reference: Date) => {
   return start;
 };
 
-const getRangeStart = (range: FuelCostRange, reference: Date) => {
+const getRangeStart = (range: RangeFilter, reference: Date) => {
   switch (range) {
     case 'today':
       return getStartOfDay(reference);
@@ -73,12 +71,60 @@ const getRangeStart = (range: FuelCostRange, reference: Date) => {
   }
 };
 
-const isDateInRange = (date: Date, range: FuelCostRange, reference: Date) => {
+const isDateInRange = (date: Date, range: RangeFilter, reference: Date) => {
   const start = getRangeStart(range, reference);
   return (
     date.getTime() >= start.getTime() && date.getTime() <= reference.getTime()
   );
 };
+
+type RangeOdometerData = {
+  entries: OdometerEntry[];
+  dayKeys: Set<string>;
+  distance: number;
+};
+
+const buildRangeOdometerData = (
+  range: RangeFilter,
+  reference: Date,
+  datedEntries: { entry: OdometerEntry; date: Date }[],
+): RangeOdometerData => {
+  const entriesInRange = datedEntries.filter(({ date }) =>
+    isDateInRange(date, range, reference),
+  );
+  const dayKeys = new Set<string>();
+  entriesInRange.forEach(({ date }) => {
+    dayKeys.add(getDayKey(date));
+  });
+  const odometerEntries = entriesInRange.map(({ entry }) => entry);
+  const distance = odometerEntries.reduce(
+    (acc, entry) => acc + getOdometerDistance(entry),
+    0,
+  );
+  return { entries: odometerEntries, dayKeys, distance };
+};
+
+const getRangeLabel = (range: RangeFilter) =>
+  RANGE_FILTER_OPTIONS.find((option) => option.value === range)?.label ??
+  'This month';
+
+const filterEntriesByRangeAndOdometer = <T,>(
+  entries: T[],
+  getDateValue: (entry: T) => string,
+  range: RangeFilter,
+  reference: Date,
+  dayKeys: Set<string>,
+) =>
+  entries.filter((entry) => {
+    const parsed = parseDateValue(getDateValue(entry));
+    if (!parsed) {
+      return false;
+    }
+    if (!isDateInRange(parsed, range, reference)) {
+      return false;
+    }
+    return dayKeys.has(getDayKey(parsed));
+  });
 
 type DrivingStatsProps = {
   currency: CurrencyCode;
@@ -107,8 +153,10 @@ export function DrivingStats({
   const odometerUnitLabel = UNIT_LABEL[odometerUnit];
   const { data: odometerEntries = [], isLoading: isLoadingOdometers } =
     useOdometerLogs();
-  const [selectedRange, setSelectedRange] =
-    useState<FuelCostRange>('this_month');
+  const [distanceRange, setDistanceRange] = useState<RangeFilter>('this_month');
+  const [profitRange, setProfitRange] = useState<RangeFilter>('this_month');
+  const [incomeRange, setIncomeRange] = useState<RangeFilter>('this_month');
+  const [fuelRange, setFuelRange] = useState<RangeFilter>('this_month');
   const datedOdometerEntries = useMemo(
     () =>
       odometerEntries
@@ -126,28 +174,6 @@ export function DrivingStats({
     [odometerEntries],
   );
 
-  const currentMonthIncomeEntries = useMemo(
-    () => getCurrentMonthEntries(incomes),
-    [incomes],
-  );
-  const currentMonthExpenseEntries = useMemo(
-    () => getCurrentMonthExpenses(expenses),
-    [expenses],
-  );
-
-  const currentMonthIncomeTotal = useMemo(
-    () =>
-      currentMonthIncomeEntries.reduce((acc, entry) => acc + entry.amount, 0),
-    [currentMonthIncomeEntries],
-  );
-  const currentMonthExpenseTotal = useMemo(
-    () =>
-      currentMonthExpenseEntries.reduce(
-        (acc, entry) => acc + entry.amountMinor / 100,
-        0,
-      ),
-    [currentMonthExpenseEntries],
-  );
   const referenceDate = new Date();
   const currentYear = referenceDate.getFullYear();
   const currentMonth = referenceDate.getMonth();
@@ -182,48 +208,47 @@ export function DrivingStats({
   );
   const entriesThisMonth = currentMonthOdometers.length;
 
-  const odometerEntriesInSelectedRange = useMemo(
+  const distanceRangeData = useMemo(
     () =>
-      datedOdometerEntries.filter(({ date }) =>
-        isDateInRange(date, selectedRange, referenceDate),
+      buildRangeOdometerData(
+        distanceRange,
+        referenceDate,
+        datedOdometerEntries,
       ),
-    [datedOdometerEntries, referenceDate, selectedRange],
+    [datedOdometerEntries, distanceRange, referenceDate],
   );
-  const odometerDayKeysInSelectedRange = useMemo(() => {
-    const set = new Set<string>();
-    odometerEntriesInSelectedRange.forEach(({ date }) => {
-      set.add(getDayKey(date));
-    });
-    return set;
-  }, [odometerEntriesInSelectedRange]);
-  const distanceInSelectedRange = useMemo(
+  const profitRangeData = useMemo(
     () =>
-      odometerEntriesInSelectedRange.reduce(
-        (acc, { entry }) => acc + getOdometerDistance(entry),
-        0,
-      ),
-    [odometerEntriesInSelectedRange],
+      buildRangeOdometerData(profitRange, referenceDate, datedOdometerEntries),
+    [datedOdometerEntries, profitRange, referenceDate],
   );
-  const fuelExpensesInSelectedRange = useMemo(() => {
-    const rangeStart = getRangeStart(selectedRange, referenceDate);
-    const rangeEnd = referenceDate;
-    return expenses.filter((entry) => {
-      if (entry.expenseType !== 'fuel_charging') {
-        return false;
-      }
-      const parsedDate = parseDateValue(entry.paidAt);
-      if (!parsedDate) {
-        return false;
-      }
-      if (parsedDate.getTime() < rangeStart.getTime()) {
-        return false;
-      }
-      if (parsedDate.getTime() > rangeEnd.getTime()) {
-        return false;
-      }
-      return odometerDayKeysInSelectedRange.has(getDayKey(parsedDate));
-    });
-  }, [expenses, odometerDayKeysInSelectedRange, referenceDate, selectedRange]);
+  const incomeRangeData = useMemo(
+    () =>
+      buildRangeOdometerData(incomeRange, referenceDate, datedOdometerEntries),
+    [datedOdometerEntries, incomeRange, referenceDate],
+  );
+  const fuelRangeData = useMemo(
+    () =>
+      buildRangeOdometerData(fuelRange, referenceDate, datedOdometerEntries),
+    [datedOdometerEntries, fuelRange, referenceDate],
+  );
+
+  const distanceRangeLabel = getRangeLabel(distanceRange);
+  const profitRangeLabel = getRangeLabel(profitRange);
+  const incomeRangeLabel = getRangeLabel(incomeRange);
+  const fuelRangeLabel = getRangeLabel(fuelRange);
+
+  const fuelExpensesInSelectedRange = useMemo(
+    () =>
+      filterEntriesByRangeAndOdometer(
+        expenses,
+        (entry) => entry.paidAt,
+        fuelRange,
+        referenceDate,
+        fuelRangeData.dayKeys,
+      ).filter((entry) => entry.expenseType === 'fuel_charging'),
+    [expenses, fuelRange, referenceDate, fuelRangeData.dayKeys],
+  );
   const fuelExpenseTotalInSelectedRange = useMemo(
     () =>
       fuelExpensesInSelectedRange.reduce(
@@ -233,22 +258,72 @@ export function DrivingStats({
     [fuelExpensesInSelectedRange],
   );
 
+  const profitIncomeEntriesInRange = useMemo(
+    () =>
+      filterEntriesByRangeAndOdometer(
+        incomes,
+        (entry) => entry.date,
+        profitRange,
+        referenceDate,
+        profitRangeData.dayKeys,
+      ),
+    [incomes, profitRange, referenceDate, profitRangeData.dayKeys],
+  );
+  const profitExpenseEntriesInRange = useMemo(
+    () =>
+      filterEntriesByRangeAndOdometer(
+        expenses,
+        (entry) => entry.paidAt,
+        profitRange,
+        referenceDate,
+        profitRangeData.dayKeys,
+      ),
+    [expenses, profitRange, referenceDate, profitRangeData.dayKeys],
+  );
+  const totalIncomeInProfitRange = useMemo(
+    () =>
+      profitIncomeEntriesInRange.reduce((acc, entry) => acc + entry.amount, 0),
+    [profitIncomeEntriesInRange],
+  );
+  const totalExpensesInProfitRange = useMemo(
+    () =>
+      profitExpenseEntriesInRange.reduce(
+        (acc, entry) => acc + entry.amountMinor / 100,
+        0,
+      ),
+    [profitExpenseEntriesInRange],
+  );
+
+  const incomeEntriesInRange = useMemo(
+    () =>
+      filterEntriesByRangeAndOdometer(
+        incomes,
+        (entry) => entry.date,
+        incomeRange,
+        referenceDate,
+        incomeRangeData.dayKeys,
+      ),
+    [incomes, incomeRange, referenceDate, incomeRangeData.dayKeys],
+  );
+  const totalIncomeInIncomeRange = useMemo(
+    () => incomeEntriesInRange.reduce((acc, entry) => acc + entry.amount, 0),
+    [incomeEntriesInRange],
+  );
+
   const averageDistancePerLog =
     entriesThisMonth === 0 ? 0 : distanceThisMonth / entriesThisMonth;
-  const netProfit = currentMonthIncomeTotal - currentMonthExpenseTotal;
 
-  const fuelCostPerUnit = distanceInSelectedRange
-    ? fuelExpenseTotalInSelectedRange / distanceInSelectedRange
+  const fuelCostPerUnit = fuelRangeData.distance
+    ? fuelExpenseTotalInSelectedRange / fuelRangeData.distance
     : null;
-  const profitPerUnit = distanceThisMonth
-    ? netProfit / distanceThisMonth
+  const netProfitForRange =
+    totalIncomeInProfitRange - totalExpensesInProfitRange;
+  const profitPerUnit = profitRangeData.distance
+    ? netProfitForRange / profitRangeData.distance
     : null;
-  const incomePerUnit = distanceThisMonth
-    ? currentMonthIncomeTotal / distanceThisMonth
+  const incomePerUnit = incomeRangeData.distance
+    ? totalIncomeInIncomeRange / incomeRangeData.distance
     : null;
-  const selectedRangeLabel =
-    FUEL_COST_RANGE_OPTIONS.find((option) => option.value === selectedRange)
-      ?.label ?? 'Fuel / charging spend';
 
   if (isLoadingOdometers && odometerEntries.length === 0) {
     return (
@@ -296,18 +371,37 @@ export function DrivingStats({
       </div>
       <div className='mt-6 grid gap-4 sm:grid-cols-2'>
         <article className='rounded-lg border border-base-content/10 bg-base-200/50 p-4'>
-          <p className='text-xs uppercase text-base-content/60'>
-            Distance logged
-          </p>
+          <div className='flex items-center justify-between gap-2'>
+            <p className='text-xs uppercase text-base-content/60'>
+              Distance logged
+            </p>
+            <select
+              aria-label='Distance range'
+              className='rounded border border-base-content/20 bg-base-100 px-2 py-1 text-[10px] uppercase tracking-wide focus:border-base-content focus:outline-none'
+              value={distanceRange}
+              onChange={(event) =>
+                setDistanceRange(event.target.value as RangeFilter)
+              }
+            >
+              {RANGE_FILTER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
           <p className='text-3xl font-semibold text-base-content'>
-            {entriesThisMonth === 0
+            {distanceRangeData.entries.length === 0
               ? '—'
-              : formatOdometerDistance(distanceThisMonth, odometerUnit)}
+              : formatOdometerDistance(
+                  distanceRangeData.distance,
+                  odometerUnit,
+                )}
           </p>
           <p className='text-xs text-base-content/50'>
-            {entriesThisMonth === 0
-              ? 'Add an odometer entry to get started'
-              : `${entriesThisMonth} readings this month`}
+            {distanceRangeData.entries.length === 0
+              ? `Add an odometer entry for ${distanceRangeLabel.toLowerCase()}`
+              : `${distanceRangeData.entries.length} readings ${distanceRangeLabel.toLowerCase()}`}
           </p>
         </article>
         <article className='rounded-lg border border-base-content/10 bg-base-200/50 p-4'>
@@ -331,12 +425,12 @@ export function DrivingStats({
             <select
               aria-label='Fuel range'
               className='rounded border border-base-content/20 bg-base-100 px-2 py-1 text-[10px] uppercase tracking-wide focus:border-base-content focus:outline-none'
-              value={selectedRange}
+              value={fuelRange}
               onChange={(event) =>
-                setSelectedRange(event.target.value as FuelCostRange)
+                setFuelRange(event.target.value as RangeFilter)
               }
             >
-              {FUEL_COST_RANGE_OPTIONS.map((option) => (
+              {RANGE_FILTER_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -347,30 +441,63 @@ export function DrivingStats({
             {formatPerUnit(fuelCostPerUnit, currency, odometerUnitLabel)}
           </p>
           <p className='text-xs text-base-content/50'>
-            Based on {selectedRangeLabel.toLowerCase()} fuel & charging spend
-            with odometer logs
+            Based on {fuelRangeLabel.toLowerCase()} fuel & charging spend with
+            odometer logs
           </p>
         </article>
         <article className='rounded-lg border border-base-content/10 bg-base-200/50 p-4'>
-          <p className='text-xs uppercase text-base-content/60'>
-            Average profit / {odometerUnitLabel}
-          </p>
+          <div className='flex items-center justify-between gap-2'>
+            <p className='text-xs uppercase text-base-content/60'>
+              Average profit / {odometerUnitLabel}
+            </p>
+            <select
+              aria-label='Profit range'
+              className='rounded border border-base-content/20 bg-base-100 px-2 py-1 text-[10px] uppercase tracking-wide focus:border-base-content focus:outline-none'
+              value={profitRange}
+              onChange={(event) =>
+                setProfitRange(event.target.value as RangeFilter)
+              }
+            >
+              {RANGE_FILTER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
           <p className='text-3xl font-semibold text-base-content'>
             {formatPerUnit(profitPerUnit, currency, odometerUnitLabel)}
           </p>
           <p className='text-xs text-base-content/50'>
-            Income − expenses for current month
+            Income − expenses for {profitRangeLabel.toLowerCase()} with odometer
+            logs
           </p>
         </article>
         <article className='rounded-lg border border-base-content/10 bg-base-200/50 p-4'>
-          <p className='text-xs uppercase text-base-content/60'>
-            Income / {odometerUnitLabel}
-          </p>
+          <div className='flex items-center justify-between gap-2'>
+            <p className='text-xs uppercase text-base-content/60'>
+              Income / {odometerUnitLabel}
+            </p>
+            <select
+              aria-label='Income range'
+              className='rounded border border-base-content/20 bg-base-100 px-2 py-1 text-[10px] uppercase tracking-wide focus:border-base-content focus:outline-none'
+              value={incomeRange}
+              onChange={(event) =>
+                setIncomeRange(event.target.value as RangeFilter)
+              }
+            >
+              {RANGE_FILTER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
           <p className='text-3xl font-semibold text-base-content'>
             {formatPerUnit(incomePerUnit, currency, odometerUnitLabel)}
           </p>
           <p className='text-xs text-base-content/50'>
-            Revenue per {odometerUnitLabel}
+            Revenue for {incomeRangeLabel.toLowerCase()} with odometer logs
           </p>
         </article>
       </div>
