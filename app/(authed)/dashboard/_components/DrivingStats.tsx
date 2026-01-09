@@ -375,20 +375,21 @@ export function DrivingStats({
             <p className='text-xs uppercase text-base-content/60'>
               Distance logged
             </p>
-            <select
-              aria-label='Distance range'
-              className='rounded border border-base-content/20 bg-base-100 px-2 py-1 text-[10px] uppercase tracking-wide focus:border-base-content focus:outline-none'
-              value={distanceRange}
-              onChange={(event) =>
-                setDistanceRange(event.target.value as RangeFilter)
-              }
-            >
-              {RANGE_FILTER_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <label className='select select-xs max-w-fit'>
+              <select
+                aria-label='Distance range'
+                value={distanceRange}
+                onChange={(event) =>
+                  setDistanceRange(event.target.value as RangeFilter)
+                }
+              >
+                {RANGE_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
           <p className='text-3xl font-semibold text-base-content'>
             {distanceRangeData.entries.length === 0
@@ -422,20 +423,21 @@ export function DrivingStats({
             <p className='text-xs uppercase text-base-content/60'>
               Fuel / charging cost / {odometerUnitLabel}
             </p>
-            <select
-              aria-label='Fuel range'
-              className='rounded border border-base-content/20 bg-base-100 px-2 py-1 text-[10px] uppercase tracking-wide focus:border-base-content focus:outline-none'
-              value={fuelRange}
-              onChange={(event) =>
-                setFuelRange(event.target.value as RangeFilter)
-              }
-            >
-              {RANGE_FILTER_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <label className='select select-xs max-w-fit'>
+              <select
+                aria-label='Fuel range'
+                value={fuelRange}
+                onChange={(event) =>
+                  setFuelRange(event.target.value as RangeFilter)
+                }
+              >
+                {RANGE_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
           <p className='text-3xl font-semibold text-base-content'>
             {formatPerUnit(fuelCostPerUnit, currency, odometerUnitLabel)}
@@ -450,20 +452,21 @@ export function DrivingStats({
             <p className='text-xs uppercase text-base-content/60'>
               Average profit / {odometerUnitLabel}
             </p>
-            <select
-              aria-label='Profit range'
-              className='rounded border border-base-content/20 bg-base-100 px-2 py-1 text-[10px] uppercase tracking-wide focus:border-base-content focus:outline-none'
-              value={profitRange}
-              onChange={(event) =>
-                setProfitRange(event.target.value as RangeFilter)
-              }
-            >
-              {RANGE_FILTER_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <label className='select select-xs max-w-fit'>
+              <select
+                aria-label='Profit range'
+                value={profitRange}
+                onChange={(event) =>
+                  setProfitRange(event.target.value as RangeFilter)
+                }
+              >
+                {RANGE_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
           <p className='text-3xl font-semibold text-base-content'>
             {formatPerUnit(profitPerUnit, currency, odometerUnitLabel)}
@@ -478,20 +481,21 @@ export function DrivingStats({
             <p className='text-xs uppercase text-base-content/60'>
               Income / {odometerUnitLabel}
             </p>
-            <select
-              aria-label='Income range'
-              className='rounded border border-base-content/20 bg-base-100 px-2 py-1 text-[10px] uppercase tracking-wide focus:border-base-content focus:outline-none'
-              value={incomeRange}
-              onChange={(event) =>
-                setIncomeRange(event.target.value as RangeFilter)
-              }
-            >
-              {RANGE_FILTER_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <label className='select select-xs max-w-fit'>
+              <select
+                aria-label='Income range'
+                value={incomeRange}
+                onChange={(event) =>
+                  setIncomeRange(event.target.value as RangeFilter)
+                }
+              >
+                {RANGE_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
           <p className='text-3xl font-semibold text-base-content'>
             {formatPerUnit(incomePerUnit, currency, odometerUnitLabel)}
