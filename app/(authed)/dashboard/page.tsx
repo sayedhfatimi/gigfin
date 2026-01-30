@@ -1,11 +1,11 @@
 'use client';
 
 import {
-  closestCenter,
   DndContext,
   DragOverlay,
   PointerSensor,
   TouchSensor,
+  closestCenter,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -26,9 +26,9 @@ import { useSession } from '@/lib/auth-client';
 import { GlobalTimeframeProvider } from '@/lib/contexts/GlobalTimeframeContext';
 import {
   type DashboardWidgetDefinition,
+  type WidgetId,
   useDashboardData,
   useWidgetConfig,
-  type WidgetId,
 } from '@/lib/hooks';
 import { getSessionUser } from '@/lib/session';
 
@@ -349,72 +349,70 @@ export default function DashboardPage() {
         <div className='drawer-content relative'>
           <div className='space-y-6'>
             {/* Header */}
-            <header className='space-y-1'>
-              <p className='text-xs uppercase text-base-content/60'>
-                Dashboard
-              </p>
-              <div className='flex flex-col lg:flex-row lg:items-center justify-between gap-4'>
-                <div className='text-3xl font-semibold text-base-content flex flex-col gap-1'>
-                  <h1 className='flex flex-col'>
-                    <span>Welcome back,</span>
-                    <span>
-                      {sessionUser?.name ?? sessionUser?.email ?? 'gig worker'}
-                    </span>
+            <header className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
+              <div className='flex items-center gap-4'>
+                <div className='flex h-12 w-12 items-center justify-center rounded-full bg-primary/20'>
+                  <i className='fa-solid fa-chart-line text-xl text-primary' />
+                </div>
+                <div>
+                  <p className='text-xs uppercase text-base-content/60'>
+                    Dashboard
+                  </p>
+                  <h1 className='text-2xl font-semibold text-base-content'>
+                    Welcome back,{' '}
+                    {sessionUser?.name ?? sessionUser?.email ?? 'gig worker'}
                   </h1>
                   <p className='text-sm text-base-content/60'>
                     Track income, spot trends, and level up your earnings.
                   </p>
                 </div>
-                <div className='flex flex-wrap items-center gap-3'>
-                  <GlobalTimeframeFilterCompact />
-                  {!isCustomizing ? (
-                    <button
-                      type='button'
-                      className='btn btn-sm btn-ghost btn-outline gap-2'
-                      onClick={handleStartCustomizing}
-                    >
-                      <span
-                        className='fa-solid fa-sliders'
-                        aria-hidden='true'
-                      />
-                      Customize
-                    </button>
-                  ) : (
-                    !isMobileView && (
-                      <>
-                        <button
-                          type='button'
-                          className='btn btn-sm btn-primary gap-2'
-                          onClick={handleFinishCustomizing}
-                        >
-                          <span
-                            className='fa-solid fa-check'
-                            aria-hidden='true'
-                          />
-                          Done
-                        </button>
-                        <button
-                          type='button'
-                          className='btn btn-sm btn-ghost gap-2'
-                          onClick={handleResetToDefaults}
-                        >
-                          <span
-                            className='fa-solid fa-rotate-left'
-                            aria-hidden='true'
-                          />
-                          Reset
-                        </button>
-                        <button
-                          type='button'
-                          className='btn btn-sm btn-ghost'
-                          onClick={handleCancelCustomizing}
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    )
-                  )}
-                </div>
+              </div>
+              <div className='flex flex-wrap items-center gap-3'>
+                <GlobalTimeframeFilterCompact />
+                {!isCustomizing ? (
+                  <button
+                    type='button'
+                    className='btn btn-sm btn-ghost btn-outline gap-2'
+                    onClick={handleStartCustomizing}
+                  >
+                    <span className='fa-solid fa-sliders' aria-hidden='true' />
+                    Customize
+                  </button>
+                ) : (
+                  !isMobileView && (
+                    <>
+                      <button
+                        type='button'
+                        className='btn btn-sm btn-primary gap-2'
+                        onClick={handleFinishCustomizing}
+                      >
+                        <span
+                          className='fa-solid fa-check'
+                          aria-hidden='true'
+                        />
+                        Done
+                      </button>
+                      <button
+                        type='button'
+                        className='btn btn-sm btn-ghost gap-2'
+                        onClick={handleResetToDefaults}
+                      >
+                        <span
+                          className='fa-solid fa-rotate-left'
+                          aria-hidden='true'
+                        />
+                        Reset
+                      </button>
+                      <button
+                        type='button'
+                        className='btn btn-sm btn-ghost'
+                        onClick={handleCancelCustomizing}
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  )
+                )}
               </div>
             </header>
 

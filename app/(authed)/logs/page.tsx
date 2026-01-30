@@ -1,39 +1,29 @@
 'use client';
 
-import type { SortingState } from '@tanstack/react-table';
-import {
-  createColumnHelper,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
 import { useSession } from '@/lib/auth-client';
 import type { CurrencyCode } from '@/lib/currency';
 import { resolveCurrency } from '@/lib/currency';
 import {
-  buildExpenseMonthOptions,
   type ExpenseEntry,
+  type UnitRateUnit,
+  buildExpenseMonthOptions,
   expenseTypeOptions,
   formatExpenseType,
   getExpenseEntryMonth,
-  type UnitRateUnit,
 } from '@/lib/expenses';
 import {
-  aggregateDailyIncomes,
   type DailyIncomeSummary,
+  type IncomeEntry,
+  aggregateDailyIncomes,
   formatCurrency,
   getEntryMonth,
-  type IncomeEntry,
 } from '@/lib/income';
 import {
+  type OdometerEntry,
+  type OdometerUnit,
   formatOdometerDistance,
   formatOdometerReading,
   getOdometerDistance,
-  type OdometerEntry,
-  type OdometerUnit,
 } from '@/lib/odometer';
 import { useChargingVendors } from '@/lib/queries/chargingVendors';
 import type { ExpensePayload } from '@/lib/queries/expenses';
@@ -58,6 +48,16 @@ import {
 } from '@/lib/queries/odometers';
 import { useVehicleProfiles } from '@/lib/queries/vehicleProfiles';
 import { getSessionUser } from '@/lib/session';
+import type { SortingState } from '@tanstack/react-table';
+import {
+  createColumnHelper,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import CombinedTable from './_components/CombinedTable';
 import { type DateRange, getPresetDates } from './_components/DateRangeFilter';
 import EntryModal from './_components/EntryModal';
@@ -899,8 +899,8 @@ export default function LogsPage() {
     entryToDelete?.type === 'income'
       ? deleteIncomeMutation.isPending
       : entryToDelete?.type === 'expense'
-        ? deleteExpenseMutation.isPending
-        : deleteOdometerMutation.isPending;
+      ? deleteExpenseMutation.isPending
+      : deleteOdometerMutation.isPending;
 
   const incomeHasEntriesForSelectedMonth = dailySummaries.length > 0;
 
@@ -921,10 +921,10 @@ export default function LogsPage() {
     view === 'income'
       ? 'Tabulate daily totals and expand each row to see platform breakdowns.'
       : view === 'expenses'
-        ? 'Review logged expenses with context around the rate, vehicle, and notes.'
-        : view === 'odometer'
-          ? 'Capture shift start and end odometer readings for each day.'
-          : 'Review every income and expense transaction in one chronological feed.';
+      ? 'Review logged expenses with context around the rate, vehicle, and notes.'
+      : view === 'odometer'
+      ? 'Capture shift start and end odometer readings for each day.'
+      : 'Review every income and expense transaction in one chronological feed.';
 
   // Keyboard shortcuts for navigation and common actions
   useKeyboardShortcuts({
@@ -968,47 +968,50 @@ export default function LogsPage() {
 
   return (
     <div className='space-y-6'>
-      <header className='flex flex-col gap-2'>
-        <div className='flex flex-wrap items-center justify-between gap-3'>
+      <header className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
+        <div className='flex items-center gap-4'>
+          <div className='flex h-12 w-12 items-center justify-center rounded-full bg-secondary/20'>
+            <i className='fa-solid fa-list-check text-xl text-secondary' />
+          </div>
           <div>
             <p className='text-xs uppercase text-base-content/60'>Logs</p>
-            <h1 className='text-3xl font-semibold text-base-content'>
+            <h1 className='text-2xl font-semibold text-base-content'>
               Transaction Logs
             </h1>
-          </div>
-          <div className='flex flex-wrap items-center gap-2'>
-            <div role='tablist' className='tabs tabs-box'>
-              {LOG_TABS.map((tab) => (
-                <input
-                  key={tab.key}
-                  type='radio'
-                  name='logs-view-tabs'
-                  className='tab'
-                  aria-label={tab.label}
-                  checked={view === tab.key}
-                  onChange={() => handleSetView(tab.key)}
-                />
-              ))}
-            </div>
-            <button
-              type='button'
-              className={`btn btn-circle btn-sm md:btn-md ${
-                view === 'income'
-                  ? 'btn-success'
-                  : view === 'expenses'
-                    ? 'btn-error'
-                    : view === 'odometer'
-                      ? 'btn-info'
-                      : 'btn-primary'
-              }`}
-              onClick={handleAddEntry}
-              aria-label='Add entry'
-            >
-              <i className='fa-solid fa-plus' aria-hidden='true' />
-            </button>
+            <p className='text-sm text-base-content/60'>{viewDescription}</p>
           </div>
         </div>
-        <p className='text-sm text-base-content/60'>{viewDescription}</p>
+        <div className='flex flex-wrap items-center gap-2'>
+          <div role='tablist' className='tabs tabs-box'>
+            {LOG_TABS.map((tab) => (
+              <input
+                key={tab.key}
+                type='radio'
+                name='logs-view-tabs'
+                className='tab'
+                aria-label={tab.label}
+                checked={view === tab.key}
+                onChange={() => handleSetView(tab.key)}
+              />
+            ))}
+          </div>
+          <button
+            type='button'
+            className={`btn btn-circle btn-sm md:btn-md ${
+              view === 'income'
+                ? 'btn-success'
+                : view === 'expenses'
+                ? 'btn-error'
+                : view === 'odometer'
+                ? 'btn-info'
+                : 'btn-primary'
+            }`}
+            onClick={handleAddEntry}
+            aria-label='Add entry'
+          >
+            <i className='fa-solid fa-plus' aria-hidden='true' />
+          </button>
+        </div>
       </header>
 
       {/* Unified Filter Toolbar */}
@@ -1038,15 +1041,15 @@ export default function LogsPage() {
           view === 'income'
             ? isIncomeFilterDirty
             : view === 'expenses'
-              ? isExpenseFilterDirty
-              : false
+            ? isExpenseFilterDirty
+            : false
         }
         onResetFilters={
           view === 'income'
             ? handleResetTableControls
             : view === 'expenses'
-              ? handleResetExpenseFilters
-              : undefined
+            ? handleResetExpenseFilters
+            : undefined
         }
         isLoading={isAnyLoading}
       />
@@ -1199,8 +1202,8 @@ export default function LogsPage() {
               {entryToDelete.type === 'income'
                 ? entryToDelete.entry.platform
                 : entryToDelete.type === 'expense'
-                  ? formatExpenseType(entryToDelete.entry.expenseType)
-                  : 'Odometer reading'}
+                ? formatExpenseType(entryToDelete.entry.expenseType)
+                : 'Odometer reading'}
               )? This action cannot be undone.
             </p>
             <div className='modal-action mt-4'>

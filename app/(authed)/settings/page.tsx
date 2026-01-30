@@ -727,15 +727,21 @@ export default function SettingsPage() {
   return (
     <>
       <div className='space-y-6'>
-        <header className='space-y-1'>
-          <p className='text-xs uppercase text-base-content/60'>
-            <i className='fa-solid fa-gear mr-1' />
-            User Preferences
-          </p>
-          <h1 className='text-3xl font-semibold text-base-content'>Settings</h1>
-          <p className='text-sm text-base-content/60'>
-            Keep your login details and preferences tidy.
-          </p>
+        <header className='flex items-center gap-4'>
+          <div className='flex h-12 w-12 items-center justify-center rounded-full bg-accent/20'>
+            <i className='fa-solid fa-gear text-xl text-accent' />
+          </div>
+          <div>
+            <p className='text-xs uppercase text-base-content/60'>
+              User Preferences
+            </p>
+            <h1 className='text-2xl font-semibold text-base-content'>
+              Settings
+            </h1>
+            <p className='text-sm text-base-content/60'>
+              Keep your login details and preferences tidy.
+            </p>
+          </div>
         </header>
         <section className='grid gap-6 lg:grid-cols-2'>
           <div className='rounded-lg border border-base-content/10 bg-base-100 p-6 shadow-sm'>
