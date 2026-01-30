@@ -4,16 +4,9 @@ import type { Row, Table } from '@tanstack/react-table';
 import { flexRender } from '@tanstack/react-table';
 
 import type { CurrencyCode } from '@/lib/currency';
-import type {
-  DailyIncomeSummary,
-  IncomeEntry,
-  MonthOption,
-} from '@/lib/income';
+import type { DailyIncomeSummary, IncomeEntry } from '@/lib/income';
 import { GRID_TEMPLATE_CLASS } from '../_lib/layout';
 
-import FilterPanel from './FilterPanel';
-import FilterRow from './FilterRow';
-import FilterSelect from './FilterSelect';
 import IncomeSummaryRow from './IncomeSummaryRow';
 import LoadingState from './LoadingState';
 import PaginationControls from './PaginationControls';
@@ -23,15 +16,6 @@ export type IncomeTableProps = {
   incomeTable: Table<DailyIncomeSummary>;
   pageRows: Row<DailyIncomeSummary>[];
   currency: CurrencyCode;
-  platformOptions: string[];
-  platformFilter: string[];
-  monthOptions: MonthOption[];
-  selectedMonth: string;
-  onMonthChange: (value: string) => void;
-  togglePlatformSelection: (platform: string) => void;
-  onPlatformFilterReset: () => void;
-  onResetFilters: () => void;
-  isFilterDirty: boolean;
   hasEntriesForSelectedMonth: boolean;
   emptyMonthMessage: string;
   hasAnyIncome: boolean;
@@ -51,15 +35,6 @@ export default function IncomeTable({
   incomeTable,
   pageRows,
   currency,
-  platformOptions,
-  platformFilter,
-  monthOptions,
-  selectedMonth,
-  onMonthChange,
-  togglePlatformSelection,
-  onPlatformFilterReset,
-  onResetFilters,
-  isFilterDirty,
   hasEntriesForSelectedMonth,
   emptyMonthMessage,
   hasAnyIncome,
@@ -73,80 +48,20 @@ export default function IncomeTable({
   expandedRows,
   onToggleRow,
 }: IncomeTableProps) {
-  const hasPlatforms = platformOptions.length > 0;
-
   return (
-    <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm space-y-4'>
-      <FilterPanel
-        title='Filtering Options'
-        onReset={onResetFilters}
-        isResetDisabled={!isFilterDirty}
-      >
-        <FilterSelect
-          label='Month'
-          id='monthly-filter'
-          value={selectedMonth}
-          onChange={(event) => onMonthChange(event.target.value)}
-          disabled={isLoading}
-          ariaBusy={isLoading}
-          rowClassName='gap-1'
-          options={monthOptions.map((option) => ({
-            value: option.key,
-            label: option.label,
-          }))}
-        />
-        {hasPlatforms ? (
-          <FilterRow label='Platforms' className='gap-2'>
-            <div className='flex flex-wrap gap-2 px-1 md:flex-nowrap md:overflow-x-auto'>
-              {platformOptions.map((platform) => {
-                const isChecked = platformFilter.includes(platform);
-                return (
-                  <label
-                    key={platform}
-                    className={`btn btn-xs normal-case ${
-                      isChecked
-                        ? 'btn-primary btn-active text-white'
-                        : 'btn-outline'
-                    }`}
-                  >
-                    <input
-                      type='checkbox'
-                      name='platforms'
-                      value={platform}
-                      aria-label={platform}
-                      checked={isChecked}
-                      onChange={() => togglePlatformSelection(platform)}
-                      className='sr-only'
-                    />
-                    {platform}
-                  </label>
-                );
-              })}
-              <button
-                type='button'
-                className='btn btn-xs btn-square btn-error text-xs hidden md:inline-flex'
-                onClick={onPlatformFilterReset}
-                disabled={!platformFilter.length}
-                aria-label='Clear platform filters'
-              >
-                <i className='fa-solid fa-xmark' aria-hidden='true' />
-              </button>
-            </div>
-          </FilterRow>
-        ) : (
-          <span className='text-xs uppercase text-base-content/60'>
-            No platforms yet
-          </span>
-        )}
-      </FilterPanel>
+    <section className='rounded-lg border border-base-content/10 bg-base-100 p-6 shadow-sm space-y-4'>
       {isLoading ? (
         <LoadingState message='Loading logs…' />
       ) : !hasEntriesForSelectedMonth ? (
         <div className='flex min-h-60 flex-col items-center justify-center gap-3 text-sm text-base-content/60'>
+          <span
+            className='fa-solid fa-coins text-4xl text-base-content/20'
+            aria-hidden='true'
+          />
           <p>{emptyMonthMessage}</p>
           <p className='text-xs text-base-content/60'>
             {hasAnyIncome
-              ? 'Switch months or add an income entry to fill the timeframe.'
+              ? 'Adjust your filters or add an income entry to fill the timeframe.'
               : 'Hit the button above to log your first income.'}
           </p>
           <button
@@ -154,6 +69,7 @@ export default function IncomeTable({
             className='btn btn-sm btn-outline'
             onClick={onCreateEntry}
           >
+            <span className='fa-solid fa-plus mr-2' aria-hidden='true' />
             Create entry
           </button>
         </div>

@@ -34,28 +34,90 @@ export default function PaginationControls({
     onPageChange(clampPage(currentPage + 1, totalPages));
   };
 
+  // Generate visible page numbers with ellipsis
+  const getVisiblePages = () => {
+    const pages: (number | 'ellipsis')[] = [];
+    const maxVisible = 5;
+
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      // Always show first page
+      pages.push(1);
+
+      if (currentPage > 3) {
+        pages.push('ellipsis');
+      }
+
+      // Show pages around current
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+
+      for (let i = start; i <= end; i++) {
+        if (!pages.includes(i)) pages.push(i);
+      }
+
+      if (currentPage < totalPages - 2) {
+        pages.push('ellipsis');
+      }
+
+      // Always show last page
+      if (!pages.includes(totalPages)) pages.push(totalPages);
+    }
+
+    return pages;
+  };
+
   return (
-    <div className='mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-base-content/10 pt-4 text-xs uppercase text-base-content/60'>
-      <span>{`Page ${currentPage} of ${totalPages}`}</span>
-      <div className='flex gap-2'>
+    <div className='mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-base-content/10 pt-4'>
+      <span className='text-xs text-base-content/60'>
+        Page {currentPage} of {totalPages}
+      </span>
+      <div className='join'>
         <button
           type='button'
-          className='btn btn-xs btn-outline gap-1'
+          className='join-item btn btn-sm btn-ghost'
           onClick={handlePrevious}
           disabled={currentPage <= 1}
           aria-label='Previous page'
         >
           <i className='fa-solid fa-chevron-left' aria-hidden='true' />
-          Prev
         </button>
+        {getVisiblePages().map((page, index) => {
+          // Use position-based key for ellipsis (before or after current page)
+          const key =
+            page === 'ellipsis'
+              ? `ellipsis-${index < 2 ? 'start' : 'end'}`
+              : page;
+          return page === 'ellipsis' ? (
+            <span
+              key={key}
+              className='join-item btn btn-sm btn-ghost btn-disabled'
+            >
+              …
+            </span>
+          ) : (
+            <button
+              key={page}
+              type='button'
+              className={`join-item btn btn-sm ${
+                page === currentPage ? 'btn-primary' : 'btn-ghost'
+              }`}
+              onClick={() => onPageChange(page)}
+              aria-label={`Page ${page}`}
+              aria-current={page === currentPage ? 'page' : undefined}
+            >
+              {page}
+            </button>
+          );
+        })}
         <button
           type='button'
-          className='btn btn-xs btn-outline gap-1'
+          className='join-item btn btn-sm btn-ghost'
           onClick={handleNext}
           disabled={currentPage >= totalPages}
           aria-label='Next page'
         >
-          Next
           <i className='fa-solid fa-chevron-right' aria-hidden='true' />
         </button>
       </div>

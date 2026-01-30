@@ -1,6 +1,5 @@
 'use client';
 
-import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import type { ChargingVendor } from '@/lib/charging-vendor';
 import type { CurrencyCode } from '@/lib/currency';
 import { getCurrencyIcon } from '@/lib/currency';
@@ -11,6 +10,7 @@ import type { OdometerEntry } from '@/lib/odometer';
 import type { ExpensePayload } from '@/lib/queries/expenses';
 import type { OdometerPayload } from '@/lib/queries/odometers';
 import type { VehicleProfile } from '@/lib/vehicle';
+import { type FormEvent, useEffect, useMemo, useState } from 'react';
 
 const incomeSources = [
   'Uber Eats',
@@ -252,12 +252,12 @@ const EntryModal = ({
     rateUnit === 'kwh'
       ? 'kWh'
       : rateUnit === 'litre'
-        ? 'litre'
-        : rateUnit === 'gallon_us'
-          ? 'gallon (US)'
-          : rateUnit === 'gallon_imp'
-            ? 'gallon (Imperial)'
-            : 'unit';
+      ? 'litre'
+      : rateUnit === 'gallon_us'
+      ? 'gallon (US)'
+      : rateUnit === 'gallon_imp'
+      ? 'gallon (Imperial)'
+      : 'unit';
 
   const resetModal = () => {
     setFormError('');
@@ -374,14 +374,48 @@ const EntryModal = ({
         ? 'Update income entry'
         : 'Log new income'
       : activeTab === 'expense'
-        ? editingExpense
-          ? 'Update expense entry'
-          : 'Log new expense'
-        : editingOdometer
-          ? 'Update odometer entry'
-          : 'Log new odometer reading';
+      ? editingExpense
+        ? 'Update expense entry'
+        : 'Log new expense'
+      : editingOdometer
+      ? 'Update odometer entry'
+      : 'Log new odometer reading';
+
+  const tabIcon =
+    activeTab === 'income'
+      ? 'fa-coins'
+      : activeTab === 'expense'
+      ? 'fa-receipt'
+      : 'fa-gauge';
+
+  const tabColor =
+    activeTab === 'income'
+      ? 'text-success'
+      : activeTab === 'expense'
+      ? 'text-error'
+      : 'text-info';
 
   const isEditingAny = isEditingIncome || isEditingExpense || isEditingOdometer;
+
+  // Calculate odometer distance for preview
+  const odometerDistance = (() => {
+    const start = Number.parseFloat(odometerStartReading);
+    const end = Number.parseFloat(odometerEndReading);
+    if (Number.isNaN(start) || Number.isNaN(end) || end < start) return null;
+    return (end - start).toFixed(1);
+  })();
+
+  // Handle escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) {
     return null;
@@ -389,38 +423,78 @@ const EntryModal = ({
 
   return (
     <div className='modal modal-open'>
-      <div className='modal-box'>
-        <div className='flex flex-row justify-between items-center gap-2'>
-          <h3 className='text-lg font-semibold text-base-content'>{title}</h3>
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: keyboard handled via escape key effect */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: backdrop is a clickable overlay */}
+      <div
+        className='modal-backdrop bg-base-300/60 backdrop-blur-sm'
+        onClick={handleClose}
+      />
+      <div className='modal-box relative overflow-visible'>
+        {/* Close button */}
+        <button
+          type='button'
+          className='btn btn-sm btn-circle btn-ghost absolute -right-2 -top-2 bg-base-100 shadow-md hover:bg-base-200'
+          onClick={handleClose}
+          aria-label='Close modal'
+        >
+          <i className='fa-solid fa-xmark' />
+        </button>
 
-          <div role='tablist' className='tabs tabs-box'>
+        {/* Header */}
+        <div className='flex flex-col gap-4 pb-4 border-b border-base-content/10'>
+          <div className='flex items-center gap-3'>
+            <span className={`${tabColor} text-xl`}>
+              <i className={`fa-solid ${tabIcon}`} />
+            </span>
+            <h3 className='text-lg font-semibold text-base-content'>{title}</h3>
+          </div>
+
+          {/* Tabs */}
+          <div role='tablist' className='tabs tabs-boxed bg-base-200 p-1'>
             {(['income', 'expense', 'odometer'] as EntryTab[]).map((tab) => {
               const isTabDisabled = isEditingAny && activeTab !== tab;
+              const icon =
+                tab === 'income'
+                  ? 'fa-coins'
+                  : tab === 'expense'
+                  ? 'fa-receipt'
+                  : 'fa-gauge';
+              const color =
+                tab === 'income'
+                  ? 'text-success'
+                  : tab === 'expense'
+                  ? 'text-error'
+                  : 'text-info';
               return (
-                <input
+                <button
                   key={tab}
-                  type='radio'
-                  name='entry-modal-tabs'
-                  className='tab'
-                  aria-label={
-                    tab === 'income'
-                      ? 'Income'
-                      : tab === 'expense'
-                        ? 'Expense'
-                        : 'Odometer'
-                  }
-                  checked={activeTab === tab}
-                  onChange={() => onTabChange(tab)}
+                  type='button'
+                  role='tab'
+                  className={`tab flex-1 gap-2 transition-all ${
+                    activeTab === tab
+                      ? 'tab-active bg-base-100 shadow-sm'
+                      : 'hover:bg-base-100/50'
+                  } ${isTabDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  onClick={() => !isTabDisabled && onTabChange(tab)}
                   disabled={isTabDisabled}
-                />
+                  aria-selected={activeTab === tab}
+                >
+                  <i
+                    className={`fa-solid ${icon} text-xs ${
+                      activeTab === tab ? color : 'text-base-content/60'
+                    }`}
+                  />
+                  <span className='capitalize'>{tab}</span>
+                </button>
               );
             })}
           </div>
         </div>
         {activeTab === 'income' ? (
-          <form className='mt-4 space-y-4' onSubmit={handleIncomeSubmit}>
+          <form className='mt-6 space-y-4' onSubmit={handleIncomeSubmit}>
             <label className='input w-full'>
               <span className='label text-xs uppercase text-base-content/50'>
+                <i className='fa-regular fa-calendar text-base-content/40 mr-1' />
                 Date
               </span>
               <input
@@ -432,6 +506,7 @@ const EntryModal = ({
             </label>
             <label className='select w-full'>
               <span className='label text-xs uppercase text-base-content/50'>
+                <i className='fa-solid fa-store text-base-content/40 mr-1' />
                 Platform
               </span>
               <select
@@ -446,12 +521,12 @@ const EntryModal = ({
             <div className='flex flex-col gap-2'>
               <label className='input validator w-full'>
                 <span className='label text-xs uppercase text-base-content/50'>
-                  Amount Earned{' '}
                   <i
                     className={`fa-solid ${getCurrencyIcon(
                       currency,
-                    )} text-base-content/60`}
+                    )} text-base-content/40 mr-1`}
                   />
+                  Amount Earned
                 </span>
                 <input
                   type='number'
@@ -462,11 +537,17 @@ const EntryModal = ({
                   value={incomeAmount}
                   onChange={(event) => setIncomeAmount(event.target.value)}
                   required
+                  className='text-right font-semibold text-success'
                 />
               </label>
             </div>
-            {formError && <p className='text-sm text-error'>{formError}</p>}
-            <div className='modal-action'>
+            {formError && (
+              <div className='alert alert-error py-2'>
+                <i className='fa-solid fa-circle-exclamation' />
+                <span className='text-sm'>{formError}</span>
+              </div>
+            )}
+            <div className='modal-action pt-2 border-t border-base-content/10'>
               <button
                 type='button'
                 className='btn btn-ghost'
@@ -477,19 +558,23 @@ const EntryModal = ({
               </button>
               <button
                 type='submit'
-                className={`btn btn-primary ${
-                  isSubmittingIncome ? 'loading' : ''
-                }`}
+                className='btn btn-success gap-2'
                 disabled={isSubmittingIncome}
               >
+                {isSubmittingIncome ? (
+                  <span className='loading loading-spinner loading-sm' />
+                ) : (
+                  <i className='fa-solid fa-check' />
+                )}
                 {editingIncome ? 'Save changes' : 'Add income'}
               </button>
             </div>
           </form>
         ) : activeTab === 'expense' ? (
-          <form className='mt-4 space-y-4' onSubmit={handleExpenseSubmit}>
+          <form className='mt-6 space-y-4' onSubmit={handleExpenseSubmit}>
             <label className='input w-full'>
               <span className='label text-xs uppercase text-base-content/50'>
+                <i className='fa-regular fa-calendar text-base-content/40 mr-1' />
                 Date
               </span>
               <input
@@ -501,6 +586,7 @@ const EntryModal = ({
             </label>
             <label className='select w-full'>
               <span className='label text-xs uppercase text-base-content/50'>
+                <i className='fa-solid fa-tag text-base-content/40 mr-1' />
                 Expense type
               </span>
               <select
@@ -517,12 +603,12 @@ const EntryModal = ({
             <div className='flex flex-col gap-2'>
               <label className='input validator w-full'>
                 <span className='label text-xs uppercase text-base-content/50'>
-                  Amount Paid
                   <i
                     className={`fa-solid ${getCurrencyIcon(
                       currency,
-                    )} text-base-content/60`}
+                    )} text-base-content/40 mr-1`}
                   />
+                  Amount Paid
                 </span>
                 <input
                   type='number'
@@ -533,11 +619,13 @@ const EntryModal = ({
                   value={expenseAmount}
                   onChange={(event) => setExpenseAmount(event.target.value)}
                   required
+                  className='text-right font-semibold text-error'
                 />
               </label>
             </div>
             <label className='select w-full'>
               <span className='label text-xs uppercase text-base-content/50'>
+                <i className='fa-solid fa-car text-base-content/40 mr-1' />
                 Vehicle profile
               </span>
               <select
@@ -615,17 +703,25 @@ const EntryModal = ({
             )}
 
             <label className='floating-label'>
-              <span>Additional Notes</span>
+              <span>
+                <i className='fa-solid fa-sticky-note text-base-content/40 mr-1' />
+                Additional Notes
+              </span>
               <textarea
                 rows={3}
                 value={expenseNotes}
                 onChange={(event) => setExpenseNotes(event.target.value)}
                 className='textarea w-full'
-                placeholder='Additional Notes: Optional context, vendor, fees…'
+                placeholder='Optional context, vendor, fees…'
               />
             </label>
-            {formError && <p className='text-sm text-error'>{formError}</p>}
-            <div className='modal-action'>
+            {formError && (
+              <div className='alert alert-error py-2'>
+                <i className='fa-solid fa-circle-exclamation' />
+                <span className='text-sm'>{formError}</span>
+              </div>
+            )}
+            <div className='modal-action pt-2 border-t border-base-content/10'>
               <button
                 type='button'
                 className='btn btn-ghost'
@@ -636,19 +732,23 @@ const EntryModal = ({
               </button>
               <button
                 type='submit'
-                className={`btn btn-primary ${
-                  isSubmittingExpense ? 'loading' : ''
-                }`}
+                className='btn btn-error gap-2'
                 disabled={isSubmittingExpense}
               >
+                {isSubmittingExpense ? (
+                  <span className='loading loading-spinner loading-sm' />
+                ) : (
+                  <i className='fa-solid fa-check' />
+                )}
                 {editingExpense ? 'Save changes' : 'Add expense'}
               </button>
             </div>
           </form>
         ) : (
-          <form className='mt-4 space-y-4' onSubmit={handleOdometerSubmit}>
+          <form className='mt-6 space-y-4' onSubmit={handleOdometerSubmit}>
             <label className='input w-full'>
               <span className='label text-xs uppercase text-base-content/50'>
+                <i className='fa-regular fa-calendar text-base-content/40 mr-1' />
                 Date
               </span>
               <input
@@ -661,6 +761,7 @@ const EntryModal = ({
             <div className='grid gap-2 md:grid-cols-2'>
               <label className='input validator w-full'>
                 <span className='label text-xs uppercase text-base-content/50'>
+                  <i className='fa-solid fa-play text-base-content/40 mr-1' />
                   Start reading
                 </span>
                 <input
@@ -677,6 +778,7 @@ const EntryModal = ({
               </label>
               <label className='input validator w-full'>
                 <span className='label text-xs uppercase text-base-content/50'>
+                  <i className='fa-solid fa-stop text-base-content/40 mr-1' />
                   End reading
                 </span>
                 <input
@@ -692,8 +794,18 @@ const EntryModal = ({
                 />
               </label>
             </div>
+            {/* Distance preview */}
+            {odometerDistance && (
+              <div className='flex items-center justify-center gap-2 py-3 px-4 rounded-lg bg-info/10 border border-info/20'>
+                <i className='fa-solid fa-route text-info' />
+                <span className='text-sm font-semibold text-info'>
+                  Distance: {odometerDistance} miles
+                </span>
+              </div>
+            )}
             <label className='select w-full'>
               <span className='label text-xs uppercase text-base-content/50'>
+                <i className='fa-solid fa-car text-base-content/40 mr-1' />
                 Vehicle profile
               </span>
               <select
@@ -710,8 +822,13 @@ const EntryModal = ({
                 ))}
               </select>
             </label>
-            {formError && <p className='text-sm text-error'>{formError}</p>}
-            <div className='modal-action'>
+            {formError && (
+              <div className='alert alert-error py-2'>
+                <i className='fa-solid fa-circle-exclamation' />
+                <span className='text-sm'>{formError}</span>
+              </div>
+            )}
+            <div className='modal-action pt-2 border-t border-base-content/10'>
               <button
                 type='button'
                 className='btn btn-ghost'
@@ -722,12 +839,15 @@ const EntryModal = ({
               </button>
               <button
                 type='submit'
-                className={`btn btn-primary ${
-                  isSubmittingOdometer ? 'loading' : ''
-                }`}
+                className='btn btn-info gap-2'
                 disabled={isSubmittingOdometer}
               >
-                {editingOdometer ? 'Save changes' : 'Add odometer reading'}
+                {isSubmittingOdometer ? (
+                  <span className='loading loading-spinner loading-sm' />
+                ) : (
+                  <i className='fa-solid fa-check' />
+                )}
+                {editingOdometer ? 'Save changes' : 'Add reading'}
               </button>
             </div>
           </form>

@@ -1,7 +1,5 @@
 'use client';
 
-import type { ReactNode } from 'react';
-
 import type { CurrencyCode } from '@/lib/currency';
 import type { ExpenseEntry } from '@/lib/expenses';
 import { formatExpenseType } from '@/lib/expenses';
@@ -25,7 +23,6 @@ export type CombinedTableProps = {
   currency: CurrencyCode;
   isLoading: boolean;
   transactions: CombinedTransaction[];
-  vehicleFilterControl: ReactNode | null;
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
@@ -40,7 +37,6 @@ export default function CombinedTable({
   currency,
   isLoading,
   transactions,
-  vehicleFilterControl,
   currentPage,
   totalPages,
   onPageChange,
@@ -51,18 +47,19 @@ export default function CombinedTable({
   odometerUnit,
 }: CombinedTableProps) {
   return (
-    <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm space-y-4'>
-      {vehicleFilterControl && (
-        <div className='flex flex-col gap-2 text-sm text-base-content/70 md:flex-row md:items-center md:justify-between'>
-          <span className='text-xs uppercase'>Vehicles</span>
-          <div>{vehicleFilterControl}</div>
-        </div>
-      )}
+    <section className='rounded-lg border border-base-content/10 bg-base-100 p-6 shadow-sm space-y-4'>
       {isLoading ? (
         <LoadingState message='Loading logs…' />
       ) : transactions.length === 0 ? (
-        <div className='flex min-h-40 flex-col items-center justify-center text-sm text-base-content/60'>
-          <p>No transactions yet. Add your first income or expense entry.</p>
+        <div className='flex min-h-40 flex-col items-center justify-center gap-3 text-sm text-base-content/60'>
+          <span
+            className='fa-solid fa-list text-4xl text-base-content/20'
+            aria-hidden='true'
+          />
+          <p>No transactions yet.</p>
+          <p className='text-xs text-base-content/50'>
+            Add your first income or expense entry to get started.
+          </p>
         </div>
       ) : (
         <div className='space-y-3'>

@@ -16,6 +16,7 @@ import { resolveCurrency } from '@/lib/currency';
 import {
   buildExpenseMonthOptions,
   type ExpenseEntry,
+  expenseTypeOptions,
   formatExpenseType,
   getExpenseEntryMonth,
   type UnitRateUnit,
@@ -58,8 +59,10 @@ import {
 import { useVehicleProfiles } from '@/lib/queries/vehicleProfiles';
 import { getSessionUser } from '@/lib/session';
 import CombinedTable from './_components/CombinedTable';
+import { type DateRange, getPresetDates } from './_components/DateRangeFilter';
 import EntryModal from './_components/EntryModal';
 import ExpenseTable from './_components/ExpenseTable';
+import FilterToolbar from './_components/FilterToolbar';
 import IncomeTable from './_components/IncomeTable';
 import OdometerTable from './_components/OdometerTable';
 import VehicleFilterControl from './_components/VehicleFilterControl';
@@ -75,6 +78,10 @@ import type {
   ExpenseSortColumn,
   ExpenseSortState,
 } from './_lib/types';
+import {
+  KeyboardShortcutsHint,
+  useKeyboardShortcuts,
+} from './_lib/useKeyboardShortcuts';
 
 const columnHelper = createColumnHelper<DailyIncomeSummary>();
 const PAGE_SIZE = 10;
@@ -186,6 +193,11 @@ export default function LogsPage() {
   const [selectedMonth, setSelectedMonth] = useState('');
   const [platformFilter, setPlatformFilter] = useState<string[]>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dateRange, setDateRange] = useState<DateRange>(() => ({
+    ...getPresetDates('thisMonth'),
+    preset: 'thisMonth',
+  }));
   const platformFilterKey = platformFilter.join(',');
   const sortingSignature = useMemo(
     () =>
@@ -205,6 +217,10 @@ export default function LogsPage() {
     pageIndex: 0,
     pageSize: PAGE_SIZE,
   });
+  const [odometerPagination, setOdometerPagination] = useState({
+    pageIndex: 0,
+    pageSize: PAGE_SIZE,
+  });
   const [selectedVehicleFilter, setSelectedVehicleFilter] = useState<
     string | null
   >(null);
@@ -220,7 +236,9 @@ export default function LogsPage() {
   const expenseSortSignature = expenseSort
     ? `${expenseSort.column}-${expenseSort.direction}`
     : 'none';
-  const expenseResetSignature = `${selectedExpenseMonth}-${selectedExpenseType}-${selectedVehicleFilter ?? ''}-${expenseSortSignature}`;
+  const expenseResetSignature = `${selectedExpenseMonth}-${selectedExpenseType}-${
+    selectedVehicleFilter ?? ''
+  }-${expenseSortSignature}`;
 
   const [entryModalOpen, setEntryModalOpen] = useState(false);
   const [entryModalTab, setEntryModalTab] = useState<EntryTab>('income');
@@ -460,7 +478,73 @@ export default function LogsPage() {
     }
   }, [expensePagination.pageIndex, expenseTotalPages]);
 
+  // Odometer pagination
+  const odometerTotalPages = Math.ceil(
+    filteredOdometersByVehicle.length / PAGE_SIZE,
+  );
+  const odometerCurrentPage = odometerPagination.pageIndex + 1;
+  const handleOdometerPageChange = (page: number) =>
+    setOdometerPagination((prev) => ({ ...prev, pageIndex: page - 1 }));
+  const paginatedOdometers = filteredOdometersByVehicle.slice(
+    odometerPagination.pageIndex * PAGE_SIZE,
+    (odometerPagination.pageIndex + 1) * PAGE_SIZE,
+  );
+
+  // Reset odometer pagination when filter changes
+  useEffect(() => {
+    const maxPageIndex = Math.max(0, odometerTotalPages - 1);
+    if (odometerPagination.pageIndex > maxPageIndex) {
+      setOdometerPagination((prev) => ({
+        ...prev,
+        pageIndex: maxPageIndex,
+      }));
+    }
+  }, [odometerPagination.pageIndex, odometerTotalPages]);
+
   const combinedTransactions = useMemo(() => {
+    const searchLower = searchQuery.toLowerCase().trim();
+
+    // Helper to check if entry matches search
+    const matchesSearch = (item: CombinedTransaction): boolean => {
+      if (!searchLower) return true;
+      if (item.type === 'income') {
+        return (
+          item.entry.platform.toLowerCase().includes(searchLower) ||
+          item.entry.amount.toString().includes(searchLower)
+        );
+      }
+      if (item.type === 'expense') {
+        return (
+          formatExpenseType(item.entry.expenseType)
+            .toLowerCase()
+            .includes(searchLower) ||
+          (item.entry.amountMinor / 100).toString().includes(searchLower) ||
+          (item.entry.notes?.toLowerCase().includes(searchLower) ?? false) ||
+          (item.entry.vehicle?.label?.toLowerCase().includes(searchLower) ??
+            false)
+        );
+      }
+      if (item.type === 'odometer') {
+        return (
+          (item.entry.vehicle?.label?.toLowerCase().includes(searchLower) ??
+            false) ||
+          item.entry.startReading.toString().includes(searchLower) ||
+          item.entry.endReading.toString().includes(searchLower)
+        );
+      }
+      return false;
+    };
+
+    // Helper to check if entry is in date range
+    const isInDateRange = (dateStr: string): boolean => {
+      if (!dateRange.start && !dateRange.end) return true;
+      const entryDate = new Date(dateStr);
+      if (Number.isNaN(entryDate.getTime())) return true;
+      if (dateRange.start && entryDate < dateRange.start) return false;
+      if (dateRange.end && entryDate > dateRange.end) return false;
+      return true;
+    };
+
     const data: CombinedTransaction[] = [
       ...incomes.map((entry) => ({
         type: 'income' as const,
@@ -478,14 +562,26 @@ export default function LogsPage() {
         date: entry.date,
       })),
     ];
-    return data.sort((a, b) => {
-      const aTimestamp = new Date(a.date).getTime();
-      const bTimestamp = new Date(b.date).getTime();
-      return bTimestamp - aTimestamp;
-    });
-  }, [incomes, filteredExpensesByVehicle, filteredOdometersByVehicle]);
 
-  const combinedResetSignature = `${selectedVehicleFilter ?? ''}-${combinedTransactions.length}`;
+    return data
+      .filter((item) => isInDateRange(item.date))
+      .filter(matchesSearch)
+      .sort((a, b) => {
+        const aTimestamp = new Date(a.date).getTime();
+        const bTimestamp = new Date(b.date).getTime();
+        return bTimestamp - aTimestamp;
+      });
+  }, [
+    incomes,
+    filteredExpensesByVehicle,
+    filteredOdometersByVehicle,
+    searchQuery,
+    dateRange,
+  ]);
+
+  const combinedResetSignature = `${selectedVehicleFilter ?? ''}-${
+    combinedTransactions.length
+  }`;
 
   useEffect(() => {
     void combinedResetSignature;
@@ -531,6 +627,15 @@ export default function LogsPage() {
     );
     return platforms.sort();
   }, [incomes]);
+
+  const expenseTypeLabels = useMemo(
+    () =>
+      expenseTypeOptions.map((option) => ({
+        value: option.value,
+        label: option.label,
+      })),
+    [],
+  );
 
   const incomeTable = useReactTable({
     data: dailySummaries,
@@ -788,6 +893,33 @@ export default function LogsPage() {
           ? 'Capture shift start and end odometer readings for each day.'
           : 'Review every income and expense transaction in one chronological feed.';
 
+  // Keyboard shortcuts for navigation and common actions
+  useKeyboardShortcuts({
+    onNew: handleAddEntry,
+    onEscape: closeEntryModal,
+    onNextPage: () => {
+      if (view === 'all' && combinedCurrentPage < combinedTotalPages) {
+        handleCombinedPageChange(combinedCurrentPage + 1);
+      } else if (view === 'income' && incomeCurrentPage < incomeTotalPages) {
+        handleIncomePageChange(incomeCurrentPage + 1);
+      } else if (
+        view === 'expenses' &&
+        expenseCurrentPage < expenseTotalPages
+      ) {
+        handleExpensePageChange(expenseCurrentPage + 1);
+      }
+    },
+    onPrevPage: () => {
+      if (view === 'all' && combinedCurrentPage > 1) {
+        handleCombinedPageChange(combinedCurrentPage - 1);
+      } else if (view === 'income' && incomeCurrentPage > 1) {
+        handleIncomePageChange(incomeCurrentPage - 1);
+      } else if (view === 'expenses' && expenseCurrentPage > 1) {
+        handleExpensePageChange(expenseCurrentPage - 1);
+      }
+    },
+  });
+
   const handleVehicleFilterClear = () => {
     setSelectedVehicleFilter(null);
   };
@@ -838,12 +970,51 @@ export default function LogsPage() {
         <p className='text-sm text-base-content/60'>{viewDescription}</p>
       </header>
 
+      {/* Unified Filter Toolbar */}
+      <FilterToolbar
+        view={view}
+        currency={currency}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        dateRange={dateRange}
+        onDateRangeChange={setDateRange}
+        monthOptions={monthOptions}
+        selectedMonth={selectedMonth}
+        onMonthChange={setSelectedMonth}
+        platformOptions={platformOptions}
+        platformFilter={platformFilter}
+        onPlatformToggle={togglePlatformSelection}
+        onPlatformReset={handlePlatformFilterReset}
+        expenseMonthOptions={expenseMonthOptions}
+        selectedExpenseMonth={selectedExpenseMonth}
+        onExpenseMonthChange={setSelectedExpenseMonth}
+        selectedExpenseType={selectedExpenseType}
+        onExpenseTypeChange={setSelectedExpenseType}
+        expenseTypeOptions={expenseTypeLabels}
+        vehicleFilterControl={vehicleFilterControl}
+        transactions={combinedTransactions}
+        isFilterDirty={
+          view === 'income'
+            ? isIncomeFilterDirty
+            : view === 'expenses'
+              ? isExpenseFilterDirty
+              : false
+        }
+        onResetFilters={
+          view === 'income'
+            ? handleResetTableControls
+            : view === 'expenses'
+              ? handleResetExpenseFilters
+              : undefined
+        }
+        isLoading={isAnyLoading}
+      />
+
       {view === 'all' && (
         <CombinedTable
           currency={currency}
           isLoading={isAnyLoading}
           transactions={combinedPageTransactions}
-          vehicleFilterControl={vehicleFilterControl}
           currentPage={combinedCurrentPage}
           totalPages={combinedTotalPages}
           onPageChange={handleCombinedPageChange}
@@ -861,15 +1032,6 @@ export default function LogsPage() {
           incomeTable={incomeTable}
           pageRows={incomePageRows}
           currency={currency}
-          platformOptions={platformOptions}
-          platformFilter={platformFilter}
-          monthOptions={monthOptions}
-          selectedMonth={selectedMonth}
-          onMonthChange={setSelectedMonth}
-          togglePlatformSelection={togglePlatformSelection}
-          onPlatformFilterReset={handlePlatformFilterReset}
-          onResetFilters={handleResetTableControls}
-          isFilterDirty={isIncomeFilterDirty}
           hasEntriesForSelectedMonth={incomeHasEntriesForSelectedMonth}
           emptyMonthMessage={emptyMonthMessage}
           hasAnyIncome={hasAnyIncome}
@@ -893,20 +1055,13 @@ export default function LogsPage() {
           expenseSort={expenseSort}
           toggleExpenseSort={toggleExpenseSort}
           getExpenseSortIcon={getExpenseSortIcon}
-          selectedExpenseMonth={selectedExpenseMonth}
-          expenseMonthOptions={expenseMonthOptions}
-          selectedExpenseType={selectedExpenseType}
-          onMonthChange={setSelectedExpenseMonth}
-          onTypeChange={setSelectedExpenseType}
-          isExpenseFilterDirty={isExpenseFilterDirty}
-          onResetFilters={handleResetExpenseFilters}
-          vehicleFilterControl={vehicleFilterControl}
           expenseEmptyMessage={expenseEmptyMessage}
           expandedExpenseRows={expandedExpenseRows}
           onToggleExpenseRow={toggleExpenseRow}
           onEditExpense={handleEditExpense}
           onDeleteExpense={handleDeleteExpenseEntry}
           deleteDisabled={deleteExpenseMutation.isPending}
+          onCreateEntry={() => openEntryModal('expense')}
           currentPage={expenseCurrentPage}
           totalPages={expenseTotalPages}
           onPageChange={handleExpensePageChange}
@@ -915,14 +1070,16 @@ export default function LogsPage() {
 
       {view === 'odometer' && (
         <OdometerTable
-          entries={filteredOdometersByVehicle}
+          entries={paginatedOdometers}
           isLoading={isLoadingOdometers}
           onCreateEntry={() => openEntryModal('odometer')}
           onEditEntry={handleEditOdometer}
           onDeleteEntry={handleDeleteOdometerEntry}
           deleteDisabled={deleteOdometerMutation.isPending}
-          vehicleFilterControl={vehicleFilterControl}
           odometerUnit={odometerUnit}
+          currentPage={odometerCurrentPage}
+          totalPages={odometerTotalPages}
+          onPageChange={handleOdometerPageChange}
         />
       )}
 
@@ -1025,6 +1182,9 @@ export default function LogsPage() {
           </div>
         </div>
       )}
+
+      {/* Keyboard shortcuts hint - desktop only */}
+      <KeyboardShortcutsHint />
     </div>
   );
 }

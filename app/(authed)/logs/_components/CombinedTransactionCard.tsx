@@ -36,29 +36,40 @@ export default function CombinedTransactionCard({
       ? 'text-success'
       : variant === 'expense'
         ? 'text-error'
-        : 'text-base-content';
+        : 'text-info';
+  const borderColor =
+    variant === 'income'
+      ? 'border-l-success'
+      : variant === 'expense'
+        ? 'border-l-error'
+        : 'border-l-info';
   const icon =
     variant === 'income'
-      ? 'arrow-right'
+      ? 'arrow-trend-up'
       : variant === 'expense'
-        ? 'arrow-left'
+        ? 'arrow-trend-down'
         : 'route';
   const prefix = variant === 'income' ? '+' : variant === 'expense' ? '-' : '';
 
   return (
-    <div className='border border-base-content/10 bg-base-200 p-4 shadow-sm space-y-2'>
+    <div
+      className={`rounded-lg border border-base-content/10 border-l-4 ${borderColor} bg-base-200 p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:bg-base-200/80 space-y-2`}
+    >
       <div className='flex flex-col gap-2 md:flex-row md:items-center md:justify-between'>
         <div className='space-y-1'>
           <div className='flex items-center gap-2'>
+            <span className={`badge ${badgeVariant} badge-xs gap-1`}>
+              <i className={`fa-solid fa-${icon} text-[0.6rem]`} />
+            </span>
             <p className='text-sm font-semibold text-base-content'>{label}</p>
           </div>
-          <p className='text-xs uppercase text-base-content/60'>
+          <p className='text-xs text-base-content/60'>
             {dateLabel}
             {vehicleLabel ? <> · {vehicleLabel}</> : null}
           </p>
         </div>
         <div className='text-right'>
-          <p className={`text-sm font-semibold ${textColor}`}>
+          <p className={`text-base font-bold ${textColor}`}>
             {prefix}
             {primaryText}
           </p>
@@ -67,15 +78,12 @@ export default function CombinedTransactionCard({
           )}
         </div>
       </div>
-      <div className='flex flex-row items-center justify-between'>
+      <div className='flex flex-row items-center justify-end gap-2 pt-1 border-t border-base-content/5'>
         <EntryActions
           onEdit={onEdit}
           onDelete={onDelete}
           deleteDisabled={deleteDisabled}
         />
-        <span className={`badge ${badgeVariant} badge-sm`}>
-          <i className={`fa-solid fa-${icon}`} />
-        </span>
       </div>
     </div>
   );

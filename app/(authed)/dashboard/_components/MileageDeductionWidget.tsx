@@ -211,20 +211,15 @@ export function MileageDeductionWidget({
             {odometerUnit === 'miles' ? (
               <div className='grid grid-cols-2 gap-3'>
                 <div>
-                  <label
-                    className='label label-text text-xs'
-                    htmlFor='rateFirst10k'
-                  >
+                  <span className='label label-text text-xs'>
                     First 10,000 miles
-                  </label>
-                  <div className='relative'>
-                    <span className='absolute left-3 top-1/2 -translate-y-1/2 text-base-content/60'>
-                      £
-                    </span>
+                  </span>
+                  <label className='input input-sm input-bordered flex items-center gap-2 w-full'>
+                    <span className='text-base-content/60'>£</span>
                     <input
                       id='rateFirst10k'
                       type='number'
-                      className='input input-sm input-bordered w-full pl-7'
+                      className='grow bg-transparent outline-none'
                       value={settings.rateFirst10k}
                       onChange={(e) =>
                         setSettings({
@@ -235,23 +230,18 @@ export function MileageDeductionWidget({
                       step='0.01'
                       min='0'
                     />
-                  </div>
+                  </label>
                 </div>
                 <div>
-                  <label
-                    className='label label-text text-xs'
-                    htmlFor='rateOver10k'
-                  >
+                  <span className='label label-text text-xs'>
                     Over 10,000 miles
-                  </label>
-                  <div className='relative'>
-                    <span className='absolute left-3 top-1/2 -translate-y-1/2 text-base-content/60'>
-                      £
-                    </span>
+                  </span>
+                  <label className='input input-sm input-bordered flex items-center gap-2 w-full'>
+                    <span className='text-base-content/60'>£</span>
                     <input
                       id='rateOver10k'
                       type='number'
-                      className='input input-sm input-bordered w-full pl-7'
+                      className='grow bg-transparent outline-none'
                       value={settings.rateOver10k}
                       onChange={(e) =>
                         setSettings({
@@ -262,22 +252,18 @@ export function MileageDeductionWidget({
                       step='0.01'
                       min='0'
                     />
-                  </div>
+                  </label>
                 </div>
               </div>
             ) : (
               <div>
-                <label className='label label-text text-xs' htmlFor='ratePerKm'>
-                  Rate per km
-                </label>
-                <div className='relative'>
-                  <span className='absolute left-3 top-1/2 -translate-y-1/2 text-base-content/60'>
-                    £
-                  </span>
+                <span className='label label-text text-xs'>Rate per km</span>
+                <label className='input input-sm input-bordered flex items-center gap-2 w-full'>
+                  <span className='text-base-content/60'>£</span>
                   <input
                     id='ratePerKm'
                     type='number'
-                    className='input input-sm input-bordered w-full pl-7'
+                    className='grow bg-transparent outline-none'
                     value={settings.ratePerKm}
                     onChange={(e) =>
                       setSettings({
@@ -288,7 +274,7 @@ export function MileageDeductionWidget({
                     step='0.01'
                     min='0'
                   />
-                </div>
+                </label>
               </div>
             )}
             <div>

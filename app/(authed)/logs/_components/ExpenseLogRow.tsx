@@ -30,10 +30,10 @@ export default function ExpenseLogRow({
 
   return (
     <div className='space-y-0.5'>
-      <div className='border border-base-content/10 bg-base-200/80 shadow-sm'>
+      <div className='rounded-lg border border-base-content/10 border-l-4 border-l-error bg-base-200/80 shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md'>
         <button
           type='button'
-          className='flex w-full flex-wrap items-center gap-4 p-4 text-left transition hover:bg-base-100 md:grid md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center'
+          className='flex w-full flex-wrap items-center gap-4 p-4 text-left transition-colors hover:bg-base-100 md:grid md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center'
           onClick={onToggle}
           aria-expanded={isExpanded}
         >
@@ -51,7 +51,9 @@ export default function ExpenseLogRow({
           </span>
           <span
             aria-hidden='true'
-            className={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'} ml-auto text-xs text-base-content/60`}
+            className={`fa-solid fa-chevron-${
+              isExpanded ? 'up' : 'down'
+            } ml-auto text-xs text-base-content/60`}
           />
         </button>
         {isExpanded && (

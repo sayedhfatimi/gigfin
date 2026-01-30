@@ -1,19 +1,12 @@
 'use client';
 
-import type { ReactNode } from 'react';
-
 import type { CurrencyCode } from '@/lib/currency';
 import type { ExpenseEntry } from '@/lib/expenses';
-import { expenseTypeOptions } from '@/lib/expenses';
-import type { MonthOption } from '@/lib/income';
 
 import { GRID_TEMPLATE_CLASS } from '../_lib/layout';
 import type { ExpenseSortColumn, ExpenseSortState } from '../_lib/types';
 
 import ExpenseLogRow from './ExpenseLogRow';
-import FilterPanel from './FilterPanel';
-import FilterRow from './FilterRow';
-import FilterSelect from './FilterSelect';
 import LoadingState from './LoadingState';
 import PaginationControls from './PaginationControls';
 
@@ -24,20 +17,13 @@ export type ExpenseTableProps = {
   expenseSort: ExpenseSortState;
   toggleExpenseSort: (column: ExpenseSortColumn) => void;
   getExpenseSortIcon: (column: ExpenseSortColumn) => string;
-  selectedExpenseMonth: string;
-  expenseMonthOptions: MonthOption[];
-  selectedExpenseType: string;
-  onMonthChange: (value: string) => void;
-  onTypeChange: (value: string) => void;
-  isExpenseFilterDirty: boolean;
-  onResetFilters: () => void;
-  vehicleFilterControl: ReactNode | null;
   expenseEmptyMessage: string;
   expandedExpenseRows: Set<string>;
   onToggleExpenseRow: (id: string) => void;
   onEditExpense: (entry: ExpenseEntry) => void;
   onDeleteExpense: (entry: ExpenseEntry) => void;
   deleteDisabled: boolean;
+  onCreateEntry: () => void;
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
@@ -50,20 +36,13 @@ export default function ExpenseTable({
   expenseSort,
   toggleExpenseSort,
   getExpenseSortIcon,
-  selectedExpenseMonth,
-  expenseMonthOptions,
-  selectedExpenseType,
-  onMonthChange,
-  onTypeChange,
-  isExpenseFilterDirty,
-  onResetFilters,
-  vehicleFilterControl,
   expenseEmptyMessage,
   expandedExpenseRows,
   onToggleExpenseRow,
   onEditExpense,
   onDeleteExpense,
   deleteDisabled,
+  onCreateEntry,
   currentPage,
   totalPages,
   onPageChange,
@@ -99,53 +78,24 @@ export default function ExpenseTable({
   };
 
   return (
-    <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm space-y-4'>
-      <FilterPanel
-        title='Filtering Options'
-        onReset={onResetFilters}
-        isResetDisabled={!isExpenseFilterDirty}
-      >
-        <FilterSelect
-          label='Month'
-          id='expenses-month-filter'
-          value={selectedExpenseMonth}
-          onChange={(event) => onMonthChange(event.target.value)}
-          disabled={isLoading}
-          ariaBusy={isLoading}
-          options={expenseMonthOptions.map((option) => ({
-            value: option.key,
-            label: option.label,
-          }))}
-        />
-        <FilterSelect
-          label='Type'
-          value={selectedExpenseType}
-          onChange={(event) => onTypeChange(event.target.value)}
-          disabled={isLoading}
-          ariaBusy={isLoading}
-          options={[
-            { value: 'all', label: 'All types' },
-            ...expenseTypeOptions.map((option) => ({
-              value: option.value,
-              label: option.label,
-            })),
-          ]}
-        />
-        <FilterRow label='Vehicles'>
-          <div className='flex flex-wrap justify-end gap-2'>
-            {vehicleFilterControl ?? (
-              <span className='text-xs uppercase text-base-content/60'>
-                Add a vehicle profile to filter expenses.
-              </span>
-            )}
-          </div>
-        </FilterRow>
-      </FilterPanel>
+    <section className='rounded-lg border border-base-content/10 bg-base-100 p-6 shadow-sm space-y-4'>
       {isLoading ? (
         <LoadingState message='Loading expenses…' />
       ) : expensePageEntries.length === 0 ? (
-        <div className='flex min-h-40 flex-col items-center justify-center text-sm text-base-content/60'>
+        <div className='flex min-h-40 flex-col items-center justify-center gap-3 text-sm text-base-content/60'>
+          <span
+            className='fa-solid fa-receipt text-4xl text-base-content/20'
+            aria-hidden='true'
+          />
           <p>{expenseEmptyMessage}</p>
+          <button
+            type='button'
+            className='btn btn-sm btn-outline'
+            onClick={onCreateEntry}
+          >
+            <span className='fa-solid fa-plus mr-2' aria-hidden='true' />
+            Add expense
+          </button>
         </div>
       ) : (
         <div className='space-y-3'>
