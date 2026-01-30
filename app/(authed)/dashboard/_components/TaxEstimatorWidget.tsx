@@ -1,8 +1,8 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import type { Expense } from '@/lib/expenses';
 import type { IncomeEntry } from '@/lib/income';
-import { useMemo, useState } from 'react';
 
 interface TaxEstimatorWidgetProps {
   incomes: IncomeEntry[];

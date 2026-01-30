@@ -1,9 +1,9 @@
-import { db } from '@/db';
-import { expense, income } from '@/db/schema';
-import { auth } from '@/lib/auth';
 import { and, eq, gte, lte, sql } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { db } from '@/db';
+import { expense, income } from '@/db/schema';
+import { auth } from '@/lib/auth';
 
 export async function GET(request: Request) {
   const session = await auth.api.getSession({

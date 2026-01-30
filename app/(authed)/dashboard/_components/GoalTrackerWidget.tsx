@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CurrencyCode } from '@/lib/currency';
 import { formatCurrency } from '@/lib/currency';
 import {
@@ -12,7 +13,6 @@ import {
   startOfWeek,
 } from '@/lib/dates';
 import type { IncomeEntry } from '@/lib/income';
-import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type GoalType = 'weekly' | 'monthly';
 

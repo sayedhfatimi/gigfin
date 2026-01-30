@@ -125,13 +125,13 @@ const aggregateBetween = (
   getKey: (entryDate: Date) => string,
 ) => {
   const totals = new Map<string, number>();
-  entries.forEach((entry) => {
+  for (const entry of entries) {
     if (entry.date < start || entry.date > end) {
-      return;
+      continue;
     }
     const key = getKey(entry.date);
     totals.set(key, (totals.get(key) ?? 0) + entry.amount);
-  });
+  }
   return totals;
 };
 
@@ -218,10 +218,10 @@ const buildMonthlyTotals = (
 ) => {
   const incomeSummaries = getMonthlyTotals(incomeEntries, 6);
   const expenseTotals = new Map<string, number>();
-  expenseEntries.forEach((entry) => {
+  for (const entry of expenseEntries) {
     const key = `${entry.date.getFullYear()}-${entry.date.getMonth()}`;
     expenseTotals.set(key, (expenseTotals.get(key) ?? 0) + entry.amount);
-  });
+  }
 
   return incomeSummaries.map((summary) => {
     const key = `${summary.year}-${summary.month}`;

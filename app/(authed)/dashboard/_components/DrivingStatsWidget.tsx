@@ -94,9 +94,9 @@ const buildRangeOdometerData = (
     isDateInRange(date, range, reference),
   );
   const dayKeys = new Set<string>();
-  entriesInRange.forEach(({ date }) => {
+  for (const { date } of entriesInRange) {
     dayKeys.add(getDayKey(date));
-  });
+  }
   const odometerEntries = entriesInRange.map(({ entry }) => entry);
   const distance = odometerEntries.reduce(
     (acc, entry) => acc + getOdometerDistance(entry),

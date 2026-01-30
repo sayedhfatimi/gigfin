@@ -1,11 +1,11 @@
 'use client';
 
 import {
+  closestCenter,
   DndContext,
   DragOverlay,
   PointerSensor,
   TouchSensor,
-  closestCenter,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -26,9 +26,9 @@ import { useSession } from '@/lib/auth-client';
 import { GlobalTimeframeProvider } from '@/lib/contexts/GlobalTimeframeContext';
 import {
   type DashboardWidgetDefinition,
-  type WidgetId,
   useDashboardData,
   useWidgetConfig,
+  type WidgetId,
 } from '@/lib/hooks';
 import { getSessionUser } from '@/lib/session';
 

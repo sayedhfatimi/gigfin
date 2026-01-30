@@ -1,8 +1,8 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import type { OdometerEntry, OdometerUnit } from '@/lib/odometer';
 import { getOdometerDistance } from '@/lib/odometer';
-import { useMemo, useState } from 'react';
 
 interface MileageDeductionWidgetProps {
   odometerEntries: OdometerEntry[];

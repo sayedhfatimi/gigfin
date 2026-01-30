@@ -68,14 +68,14 @@ export function ExpenseCategoryBreakdownWidget({
   const categoryDistribution = useMemo(() => {
     const totals = new Map<string, number>();
     let total = 0;
-    filteredEntries.forEach((entry) => {
+    for (const entry of filteredEntries) {
       const amount = entry.amountMinor / 100;
       total += amount;
       totals.set(
         entry.expenseType,
         (totals.get(entry.expenseType) ?? 0) + amount,
       );
-    });
+    }
     return Array.from(totals.entries())
       .map(([expenseType, amount]) => ({
         expenseType,

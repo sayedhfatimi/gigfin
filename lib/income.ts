@@ -22,10 +22,10 @@ export type DailyIncomeSummary = {
 
 const sumByPlatform = (entries: IncomeEntry[]) => {
   const aggregator = new Map<string, number>();
-  entries.forEach((entry) => {
+  for (const entry of entries) {
     const current = aggregator.get(entry.platform) ?? 0;
     aggregator.set(entry.platform, current + entry.amount);
-  });
+  }
   return Array.from(aggregator.entries()).map(([platform, amount]) => ({
     platform,
     amount,
@@ -36,11 +36,11 @@ export const aggregateDailyIncomes = (
   entries: IncomeEntry[],
 ): DailyIncomeSummary[] => {
   const byDay = new Map<string, IncomeEntry[]>();
-  entries.forEach((entry) => {
+  for (const entry of entries) {
     const day = entry.date;
     const bucket = byDay.get(day) ?? [];
     byDay.set(day, [...bucket, entry]);
-  });
+  }
   return Array.from(byDay.entries())
     .map(([date, rows]) => {
       const breakdown = sumByPlatform(rows);
@@ -113,14 +113,14 @@ export const getMonthlyTotals = (
   reference = new Date(),
 ): MonthlyIncomeSummary[] => {
   const totals = new Map<string, number>();
-  entries.forEach((entry) => {
+  for (const entry of entries) {
     const parsed = getEntryMonth(entry);
     if (!parsed) {
-      return;
+      continue;
     }
     const key = `${parsed.year}-${parsed.month}`;
     totals.set(key, (totals.get(key) ?? 0) + entry.amount);
-  });
+  }
 
   const result: MonthlyIncomeSummary[] = [];
   for (let offset = 0; offset < months; offset += 1) {
@@ -146,13 +146,13 @@ export const getYearlyMonthlyTotals = (
 ): MonthlyIncomeSummary[] => {
   const year = reference.getFullYear();
   const totals = new Map<number, number>();
-  entries.forEach((entry) => {
+  for (const entry of entries) {
     const parsed = getEntryMonth(entry);
     if (!parsed || parsed.year !== year) {
-      return;
+      continue;
     }
     totals.set(parsed.month, (totals.get(parsed.month) ?? 0) + entry.amount);
-  });
+  }
 
   const result: MonthlyIncomeSummary[] = [];
   for (let month = 0; month < 12; month += 1) {
@@ -198,13 +198,13 @@ export const getMonthOptions = (
       month,
     });
   };
-  entries.forEach((entry) => {
+  for (const entry of entries) {
     const parsed = getEntryMonth(entry);
     if (!parsed) {
-      return;
+      continue;
     }
     addOption(parsed.year, parsed.month);
-  });
+  }
   for (let offset = 0; offset < span; offset += 1) {
     const date = new Date(
       reference.getFullYear(),

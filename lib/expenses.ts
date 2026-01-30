@@ -83,14 +83,14 @@ export const buildExpenseMonthOptions = (
   entries: ExpenseEntry[],
 ): MonthOption[] => {
   const map = new Map<string, MonthOption>();
-  entries.forEach((entry) => {
+  for (const entry of entries) {
     const parsed = getExpenseEntryMonth(entry);
     if (!parsed) {
-      return;
+      continue;
     }
     const key = `${parsed.year}-${parsed.month}`;
     if (map.has(key)) {
-      return;
+      continue;
     }
     map.set(key, {
       key,
@@ -98,7 +98,7 @@ export const buildExpenseMonthOptions = (
       year: parsed.year,
       month: parsed.month,
     });
-  });
+  }
   return Array.from(map.values()).sort((a, b) => {
     if (a.year !== b.year) {
       return b.year - a.year;
@@ -128,16 +128,16 @@ export const getYearlyMonthlyExpenseTotals = (
 ): MonthlyIncomeSummary[] => {
   const year = reference.getFullYear();
   const totals = new Map<number, number>();
-  entries.forEach((entry) => {
+  for (const entry of entries) {
     const parsed = getExpenseEntryMonth(entry);
     if (!parsed || parsed.year !== year) {
-      return;
+      continue;
     }
     totals.set(
       parsed.month,
       (totals.get(parsed.month) ?? 0) + entry.amountMinor / 100,
     );
-  });
+  }
 
   const result: MonthlyIncomeSummary[] = [];
   for (let month = 0; month < 12; month += 1) {

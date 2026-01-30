@@ -1,7 +1,7 @@
 'use client';
+import Link from 'next/link';
 import ThemeToggle from '@/components/theme/ThemeToggle';
 import { useOptionalSidebar } from '@/lib/contexts/SidebarContext';
-import Link from 'next/link';
 
 type NavItem = {
   label: string;

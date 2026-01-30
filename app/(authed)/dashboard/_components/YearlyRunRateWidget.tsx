@@ -68,14 +68,14 @@ export function YearlyRunRateWidget({
       return 0;
     }
     let max = 0;
-    combinedChartData.forEach((row) => {
+    for (const row of combinedChartData) {
       if (isIncomeVisible) {
         max = Math.max(max, row.income);
       }
       if (isExpenseVisible) {
         max = Math.max(max, row.expense);
       }
-    });
+    }
     return max;
   }, [combinedChartData, isIncomeVisible, isExpenseVisible]);
 

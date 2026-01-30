@@ -113,13 +113,13 @@ const buildTotalsMapInRange = (
   end: Date,
 ) => {
   const totals = new Map<string, number>();
-  entries.forEach((entry) => {
+  for (const entry of entries) {
     if (entry.date < start || entry.date > end) {
-      return;
+      continue;
     }
     const key = formatDateKey(entry.date);
     totals.set(key, (totals.get(key) ?? 0) + entry.amount);
-  });
+  }
   return totals;
 };
 
@@ -155,10 +155,10 @@ const buildDailyCombinedTotals = (
 
 const buildMonthlyTotalsMap = (entries: NormalizedEntry[]) => {
   const totals = new Map<string, number>();
-  entries.forEach((entry) => {
+  for (const entry of entries) {
     const key = `${entry.date.getFullYear()}-${entry.date.getMonth()}`;
     totals.set(key, (totals.get(key) ?? 0) + entry.amount);
-  });
+  }
   return totals;
 };
 
@@ -298,14 +298,14 @@ export function LineChartWidget({
       return 0;
     }
     let max = 0;
-    lineChartData.forEach((row) => {
+    for (const row of lineChartData) {
       if (isIncomeVisible) {
         max = Math.max(max, row.income);
       }
       if (isExpenseVisible) {
         max = Math.max(max, row.expense);
       }
-    });
+    }
     return max;
   }, [lineChartData, isIncomeVisible, isExpenseVisible]);
 

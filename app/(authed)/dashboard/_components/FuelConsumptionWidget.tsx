@@ -73,18 +73,18 @@ export function FuelConsumptionWidget({ expenses }: FuelConsumptionPanelProps) {
       gallon_imp: 0,
     };
     let rateCount = 0;
-    filteredEntries.forEach((entry) => {
+    for (const entry of filteredEntries) {
       if (
         !entry.unitRateMinor ||
         entry.unitRateMinor <= 0 ||
         !entry.unitRateUnit
       ) {
-        return;
+        continue;
       }
       const quantity = entry.amountMinor / entry.unitRateMinor;
       unitTotals[entry.unitRateUnit] += quantity;
       rateCount += 1;
-    });
+    }
     return { totals: unitTotals, entriesWithRate: rateCount };
   }, [filteredEntries]);
 

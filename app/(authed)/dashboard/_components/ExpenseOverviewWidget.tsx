@@ -43,13 +43,13 @@ export function ExpenseOverviewWidget({
 
   const categoryDistribution = useMemo(() => {
     const totals = new Map<string, number>();
-    timeframeExpenses.forEach((entry) => {
+    for (const entry of timeframeExpenses) {
       const amount = entry.amountMinor / 100;
       totals.set(
         entry.expenseType,
         (totals.get(entry.expenseType) ?? 0) + amount,
       );
-    });
+    }
     return Array.from(totals.entries())
       .map(([expenseType, amount]) => ({
         expenseType,

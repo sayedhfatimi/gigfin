@@ -26,14 +26,14 @@ export function DailyCadenceWidget({ dailySummaries }: DailyCadencePanelProps) {
       .sort((a, b) => a.getTime() - b.getTime());
     const seen = new Set<string>();
     const filtered: Date[] = [];
-    dates.forEach((date) => {
+    for (const date of dates) {
       const key = date.toISOString();
       if (seen.has(key)) {
-        return;
+        continue;
       }
       seen.add(key);
       filtered.push(date);
-    });
+    }
     return filtered;
   }, [dailySummaries]);
 
@@ -41,7 +41,7 @@ export function DailyCadenceWidget({ dailySummaries }: DailyCadencePanelProps) {
     let streak = 0;
     let best = 0;
     let previous: Date | null = null;
-    uniqueDates.forEach((date) => {
+    for (const date of uniqueDates) {
       if (previous) {
         const diff = Math.round(
           (date.getTime() - previous.getTime()) / ONE_DAY_MS,
@@ -52,7 +52,7 @@ export function DailyCadenceWidget({ dailySummaries }: DailyCadencePanelProps) {
       }
       previous = date;
       best = Math.max(best, streak);
-    });
+    }
     return best;
   }, [uniqueDates]);
 
