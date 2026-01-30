@@ -1,6 +1,6 @@
 'use client';
 import { useRouter } from 'next/navigation';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import QRCode from 'react-qr-code';
 import { authClient } from '@/lib/auth-client';
 import { StatusAlerts } from './StatusAlerts';
@@ -35,6 +35,17 @@ export function TwoFactorModal({
   const [showTwoFactorPassword, setShowTwoFactorPassword] = useState(false);
   const [showDisableTwoFactorPassword, setShowDisableTwoFactorPassword] =
     useState(false);
+
+  // Handle escape key
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   const copyToClipboard = async (value: string) => {
     if (typeof navigator === 'undefined' || !navigator.clipboard) {
@@ -142,114 +153,96 @@ export function TwoFactorModal({
 
   return (
     <div className='modal modal-open'>
-      <div className='modal-box max-w-3xl relative'>
-        <div>
-          <h3 className='text-lg font-semibold text-base-content'>
-            Two-factor authentication
-          </h3>
-          <p className='text-sm text-base-content/60'>
-            Protect your account with an extra verification step.
-          </p>
-        </div>
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: keyboard handled via escape key effect */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: backdrop is a clickable overlay */}
+      <div
+        className='modal-backdrop bg-base-300/60 backdrop-blur-sm'
+        onClick={onClose}
+      />
+      <div className='modal-box max-w-lg relative overflow-visible'>
+        {/* Close button */}
         <button
           type='button'
-          aria-label='Close modal'
-          className='btn btn-ghost btn-square absolute top-3 right-3 text-base-content/70'
+          className='btn btn-sm btn-circle btn-ghost absolute -right-2 -top-2 bg-base-100 shadow-md hover:bg-base-200'
           onClick={onClose}
+          aria-label='Close modal'
         >
-          <i className='fa-solid fa-xmark' aria-hidden='true' />
+          <i className='fa-solid fa-xmark' />
         </button>
-        <section className='mt-6 rounded border border-base-content/10 p-4 bg-base-300'>
-          <div className='flex items-start justify-between gap-3'>
-            <div>
-              <p className='text-xs uppercase text-base-content/50'>
-                Setup status
-              </p>
-              <p className='text-sm text-base-content/60'>
-                {isTwoFactorEnabled
-                  ? 'Two-factor authentication is protecting your account.'
-                  : 'Two-factor authentication is currently off.'}
-              </p>
-            </div>
-            <span className='text-xs font-semibold uppercase text-base-content/50'>
-              {isTwoFactorEnabled ? 'Protected' : 'Off'}
+
+        {/* Header */}
+        <div className='flex items-center gap-3 pb-4 border-b border-base-content/10'>
+          <span
+            className={`text-xl ${
+              isTwoFactorEnabled ? 'text-success' : 'text-warning'
+            }`}
+          >
+            <i className='fa-solid fa-shield-halved' />
+          </span>
+          <div>
+            <h3 className='text-lg font-semibold text-base-content'>
+              Two-factor authentication
+            </h3>
+            <p className='text-sm text-base-content/60'>
+              Protect your account with an extra verification step.
+            </p>
+          </div>
+        </div>
+
+        {/* Status badge */}
+        <div className='mt-4 flex items-center justify-between rounded-lg border border-base-content/10 bg-base-200 p-3'>
+          <div className='flex items-center gap-2'>
+            <i
+              className={`fa-solid ${
+                isTwoFactorEnabled
+                  ? 'fa-lock text-success'
+                  : 'fa-lock-open text-warning'
+              }`}
+            />
+            <span className='text-sm text-base-content/70'>
+              {isTwoFactorEnabled
+                ? 'Two-factor authentication is protecting your account.'
+                : 'Two-factor authentication is currently off.'}
             </span>
           </div>
-          <div className='mt-4 space-y-4'>
-            <div className='space-y-2'>
-              <StatusAlerts message={statusMessage} error={statusError} />
-            </div>
-            {!isTwoFactorEnabled ? (
-              !twoFactorSetup && (
-                <form className='space-y-3' onSubmit={handleStartTwoFactor}>
-                  <div className='grid gap-2'>
-                    <label className='input w-full validator'>
-                      <input
-                        id='twoFactorPassword'
-                        type={showTwoFactorPassword ? 'text' : 'password'}
-                        placeholder='Confirm password'
-                        autoComplete='current-password'
-                        required
-                        value={twoFactorPassword}
-                        onChange={(event) =>
-                          setTwoFactorPassword(event.target.value)
-                        }
-                      />
-                      <button
-                        type='button'
-                        aria-pressed={showTwoFactorPassword}
-                        onClick={() =>
-                          setShowTwoFactorPassword((prev) => !prev)
-                        }
-                        className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
-                          showTwoFactorPassword ? 'swap-active' : ''
-                        }`}
-                      >
-                        <i
-                          className='fa-solid fa-eye-slash swap-on'
-                          aria-hidden='true'
-                        />
-                        <i
-                          className='fa-solid fa-eye swap-off'
-                          aria-hidden='true'
-                        />
-                      </button>
-                    </label>
-                  </div>
-                  <button
-                    type='submit'
-                    className={`btn btn-primary w-full text-sm font-semibold ${
-                      isRequestingTwoFactor ? 'loading' : ''
-                    }`}
-                    disabled={isRequestingTwoFactor}
-                  >
-                    Enable two-factor
-                  </button>
-                </form>
-              )
-            ) : (
-              <form className='space-y-3' onSubmit={handleDisableTwoFactor}>
+          <span
+            className={`badge badge-sm ${
+              isTwoFactorEnabled ? 'badge-success' : 'badge-warning'
+            } gap-1`}
+          >
+            <i
+              className={`fa-solid ${
+                isTwoFactorEnabled ? 'fa-check' : 'fa-exclamation'
+              } text-xs`}
+            />
+            {isTwoFactorEnabled ? 'Protected' : 'Off'}
+          </span>
+        </div>
+
+        <div className='mt-4 space-y-4'>
+          <StatusAlerts message={statusMessage} error={statusError} />
+          {!isTwoFactorEnabled ? (
+            !twoFactorSetup && (
+              <form className='space-y-3' onSubmit={handleStartTwoFactor}>
                 <div className='grid gap-2'>
                   <label className='input w-full validator'>
                     <input
-                      id='disableTwoFactorPassword'
-                      type={showDisableTwoFactorPassword ? 'text' : 'password'}
+                      id='twoFactorPassword'
+                      type={showTwoFactorPassword ? 'text' : 'password'}
                       placeholder='Confirm password'
                       autoComplete='current-password'
                       required
-                      value={disableTwoFactorPassword}
+                      value={twoFactorPassword}
                       onChange={(event) =>
-                        setDisableTwoFactorPassword(event.target.value)
+                        setTwoFactorPassword(event.target.value)
                       }
                     />
                     <button
                       type='button'
-                      aria-pressed={showDisableTwoFactorPassword}
-                      onClick={() =>
-                        setShowDisableTwoFactorPassword((prev) => !prev)
-                      }
+                      aria-pressed={showTwoFactorPassword}
+                      onClick={() => setShowTwoFactorPassword((prev) => !prev)}
                       className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
-                        showDisableTwoFactorPassword ? 'swap-active' : ''
+                        showTwoFactorPassword ? 'swap-active' : ''
                       }`}
                     >
                       <i
@@ -265,97 +258,139 @@ export function TwoFactorModal({
                 </div>
                 <button
                   type='submit'
-                  className={`btn btn-error w-full text-sm font-semibold ${
-                    isDisablingTwoFactor ? 'loading' : ''
+                  className={`btn btn-primary w-full text-sm font-semibold ${
+                    isRequestingTwoFactor ? 'loading' : ''
                   }`}
-                  disabled={isDisablingTwoFactor}
+                  disabled={isRequestingTwoFactor}
                 >
-                  Disable two-factor
+                  Enable two-factor
                 </button>
               </form>
-            )}
-            {twoFactorSetup && (
-              <div className='space-y-4 rounded border border-base-content/10 p-4'>
-                <p className='text-xs uppercase text-base-content/50'>
-                  Complete setup
-                </p>
-                <div className='flex flex-col items-center gap-3'>
-                  <div className='rounded-md border border-base-content/20 bg-base-100 p-4 text-base-content'>
-                    <QRCode
-                      value={twoFactorSetup.totpURI}
-                      size={200}
-                      bgColor='transparent'
-                      fgColor='currentColor'
-                      className='h-40 w-40'
-                    />
-                  </div>
-                  <div className='flex w-full items-center justify-between gap-2 rounded bg-base-200 px-3 py-2 text-[11px] uppercase text-base-content/60'>
-                    <span className='truncate'>{twoFactorSetup.totpURI}</span>
-                    <button
-                      type='button'
-                      className='text-xs font-semibold text-primary underline-offset-4 hover:underline'
-                      onClick={() => copyToClipboard(twoFactorSetup.totpURI)}
-                    >
-                      Copy
-                    </button>
-                  </div>
-                </div>
-                <form className='space-y-3' onSubmit={handleVerifyTwoFactor}>
-                  <div className='grid gap-2'>
-                    <label className='input w-full'>
-                      <span className='label'>TOTP</span>
-                      <input
-                        id='twoFactorOtp'
-                        type='text'
-                        inputMode='numeric'
-                        pattern='[0-9]*'
-                        minLength={6}
-                        maxLength={10}
-                        required
-                        value={twoFactorOtp}
-                        onChange={(event) =>
-                          setTwoFactorOtp(event.target.value)
-                        }
-                      />
-                    </label>
-                  </div>
-                  <button
-                    type='submit'
-                    className={`btn btn-secondary w-full text-sm font-semibold ${
-                      isVerifyingTwoFactor ? 'loading' : ''
-                    }`}
-                    disabled={isVerifyingTwoFactor}
-                  >
-                    Confirm code
-                  </button>
-                </form>
-              </div>
-            )}
-            {pendingBackupCodes.length > 0 && (
-              <div className='space-y-2 rounded border border-base-content/10 p-3 text-xs uppercase text-base-content/60'>
-                <div className='flex items-center justify-between'>
-                  <span>Backup codes</span>
+            )
+          ) : (
+            <form className='space-y-3' onSubmit={handleDisableTwoFactor}>
+              <div className='grid gap-2'>
+                <label className='input w-full validator'>
+                  <input
+                    id='disableTwoFactorPassword'
+                    type={showDisableTwoFactorPassword ? 'text' : 'password'}
+                    placeholder='Confirm password'
+                    autoComplete='current-password'
+                    required
+                    value={disableTwoFactorPassword}
+                    onChange={(event) =>
+                      setDisableTwoFactorPassword(event.target.value)
+                    }
+                  />
                   <button
                     type='button'
-                    className='text-primary underline-offset-4 hover:underline'
+                    aria-pressed={showDisableTwoFactorPassword}
                     onClick={() =>
-                      copyToClipboard(pendingBackupCodes.join('\n'))
+                      setShowDisableTwoFactorPassword((prev) => !prev)
                     }
+                    className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
+                      showDisableTwoFactorPassword ? 'swap-active' : ''
+                    }`}
                   >
-                    Copy all
+                    <i
+                      className='fa-solid fa-eye-slash swap-on'
+                      aria-hidden='true'
+                    />
+                    <i
+                      className='fa-solid fa-eye swap-off'
+                      aria-hidden='true'
+                    />
+                  </button>
+                </label>
+              </div>
+              <button
+                type='submit'
+                className={`btn btn-error w-full text-sm font-semibold ${
+                  isDisablingTwoFactor ? 'loading' : ''
+                }`}
+                disabled={isDisablingTwoFactor}
+              >
+                Disable two-factor
+              </button>
+            </form>
+          )}
+          {twoFactorSetup && (
+            <div className='space-y-4 rounded border border-base-content/10 p-4'>
+              <p className='text-xs uppercase text-base-content/50'>
+                Complete setup
+              </p>
+              <div className='flex flex-col items-center gap-3'>
+                <div className='rounded-md border border-base-content/20 bg-base-100 p-4 text-base-content'>
+                  <QRCode
+                    value={twoFactorSetup.totpURI}
+                    size={200}
+                    bgColor='transparent'
+                    fgColor='currentColor'
+                    className='h-40 w-40'
+                  />
+                </div>
+                <div className='flex w-full items-center justify-between gap-2 rounded bg-base-200 px-3 py-2 text-[11px] uppercase text-base-content/60'>
+                  <span className='truncate'>{twoFactorSetup.totpURI}</span>
+                  <button
+                    type='button'
+                    className='text-xs font-semibold text-primary underline-offset-4 hover:underline'
+                    onClick={() => copyToClipboard(twoFactorSetup.totpURI)}
+                  >
+                    Copy
                   </button>
                 </div>
-                <div className='grid grid-cols-1 gap-2 text-xs font-mono md:grid-cols-2'>
-                  {pendingBackupCodes.map((code) => (
-                    <span key={code} className='bg-base-200 px-2 py-1'>
-                      {code}
-                    </span>
-                  ))}
-                </div>
               </div>
-            )}
-          </div>
-        </section>
+              <form className='space-y-3' onSubmit={handleVerifyTwoFactor}>
+                <div className='grid gap-2'>
+                  <label className='input w-full'>
+                    <span className='label'>TOTP</span>
+                    <input
+                      id='twoFactorOtp'
+                      type='text'
+                      inputMode='numeric'
+                      pattern='[0-9]*'
+                      minLength={6}
+                      maxLength={10}
+                      required
+                      value={twoFactorOtp}
+                      onChange={(event) => setTwoFactorOtp(event.target.value)}
+                    />
+                  </label>
+                </div>
+                <button
+                  type='submit'
+                  className={`btn btn-secondary w-full text-sm font-semibold ${
+                    isVerifyingTwoFactor ? 'loading' : ''
+                  }`}
+                  disabled={isVerifyingTwoFactor}
+                >
+                  Confirm code
+                </button>
+              </form>
+            </div>
+          )}
+          {pendingBackupCodes.length > 0 && (
+            <div className='space-y-2 rounded border border-base-content/10 p-3 text-xs uppercase text-base-content/60'>
+              <div className='flex items-center justify-between'>
+                <span>Backup codes</span>
+                <button
+                  type='button'
+                  className='text-primary underline-offset-4 hover:underline'
+                  onClick={() => copyToClipboard(pendingBackupCodes.join('\n'))}
+                >
+                  Copy all
+                </button>
+              </div>
+              <div className='grid grid-cols-1 gap-2 text-xs font-mono md:grid-cols-2'>
+                {pendingBackupCodes.map((code) => (
+                  <span key={code} className='bg-base-200 px-2 py-1'>
+                    {code}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

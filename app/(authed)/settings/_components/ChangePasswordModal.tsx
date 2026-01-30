@@ -1,5 +1,5 @@
 'use client';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import { changePassword } from '@/lib/auth-client';
 import { StatusAlerts } from './StatusAlerts';
 
@@ -17,6 +17,17 @@ export function ChangePasswordModal({ onClose }: ChangePasswordModalProps) {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Handle escape key
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   const handleChangePassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -50,133 +61,151 @@ export function ChangePasswordModal({ onClose }: ChangePasswordModalProps) {
 
   return (
     <div className='modal modal-open'>
-      <div className='modal-box max-w-3xl relative'>
-        <div>
-          <h3 className='text-lg font-semibold text-base-content'>
-            Change password
-          </h3>
-          <p className='text-sm text-base-content/60'>
-            Strengthen access by rotating your password regularly.
-          </p>
-        </div>
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: keyboard handled via escape key effect */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: backdrop is a clickable overlay */}
+      <div
+        className='modal-backdrop bg-base-300/60 backdrop-blur-sm'
+        onClick={onClose}
+      />
+      <div className='modal-box max-w-md relative overflow-visible'>
+        {/* Close button */}
         <button
           type='button'
-          aria-label='Close modal'
-          className='btn btn-ghost btn-square absolute top-3 right-3 text-base-content/70'
+          className='btn btn-sm btn-circle btn-ghost absolute -right-2 -top-2 bg-base-100 shadow-md hover:bg-base-200'
           onClick={onClose}
+          aria-label='Close modal'
         >
-          <i className='fa-solid fa-xmark' aria-hidden='true' />
+          <i className='fa-solid fa-xmark' />
         </button>
-        <section className='mt-6 rounded border border-base-content/10 p-4 bg-base-300'>
-          <div className='space-y-2'>
-            <p className='text-xs uppercase text-base-content/50'>
-              Update credentials
+
+        {/* Header */}
+        <div className='flex items-center gap-3 pb-4 border-b border-base-content/10'>
+          <span className='text-xl text-warning'>
+            <i className='fa-solid fa-lock' />
+          </span>
+          <div>
+            <h3 className='text-lg font-semibold text-base-content'>
+              Change password
+            </h3>
+            <p className='text-sm text-base-content/60'>
+              Strengthen access by rotating your password regularly.
             </p>
-            <h4 className='text-sm font-semibold text-base-content'>
-              Change it safely
-            </h4>
           </div>
-          <form className='mt-3 space-y-4' onSubmit={handleChangePassword}>
-            <div className='grid gap-2'>
-              <label className='input w-full'>
-                <input
-                  id='currentPassword'
-                  type={showCurrentPassword ? 'text' : 'password'}
-                  placeholder='Current password'
-                  autoComplete='current-password'
-                  required
-                  value={currentPassword}
-                  onChange={(event) => setCurrentPassword(event.target.value)}
-                />
-                <button
-                  type='button'
-                  aria-pressed={showCurrentPassword}
-                  onClick={() => setShowCurrentPassword((prev) => !prev)}
-                  className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
-                    showCurrentPassword ? 'swap-active' : ''
-                  }`}
-                >
-                  <i
-                    className='fa-solid fa-eye-slash swap-on'
-                    aria-hidden='true'
-                  />
-                  <i className='fa-solid fa-eye swap-off' aria-hidden='true' />
-                </button>
-              </label>
-            </div>
-            <div className='grid gap-2'>
-              <label className='input w-full'>
-                <input
-                  id='newPassword'
-                  type={showNewPassword ? 'text' : 'password'}
-                  placeholder='New password'
-                  autoComplete='new-password'
-                  minLength={8}
-                  required
-                  value={newPassword}
-                  onChange={(event) => setNewPassword(event.target.value)}
-                />
-                <button
-                  type='button'
-                  aria-pressed={showNewPassword}
-                  onClick={() => setShowNewPassword((prev) => !prev)}
-                  className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
-                    showNewPassword ? 'swap-active' : ''
-                  }`}
-                >
-                  <i
-                    className='fa-solid fa-eye-slash swap-on'
-                    aria-hidden='true'
-                  />
-                  <i className='fa-solid fa-eye swap-off' aria-hidden='true' />
-                </button>
-              </label>
-            </div>
-            <div className='grid gap-2'>
-              <label className='input w-full'>
-                <input
-                  id='confirmPassword'
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder='Confirm new password'
-                  autoComplete='new-password'
-                  minLength={8}
-                  required
-                  value={confirmPassword}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
-                />
-                <button
-                  type='button'
-                  aria-pressed={showConfirmPassword}
-                  onClick={() => setShowConfirmPassword((prev) => !prev)}
-                  className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
-                    showConfirmPassword ? 'swap-active' : ''
-                  }`}
-                >
-                  <i
-                    className='fa-solid fa-eye-slash swap-on'
-                    aria-hidden='true'
-                  />
-                  <i className='fa-solid fa-eye swap-off' aria-hidden='true' />
-                </button>
-              </label>
-            </div>
-            <StatusAlerts
-              message={passwordChangeMessage}
-              error={passwordChangeError}
+        </div>
+
+        <form className='mt-6 space-y-4' onSubmit={handleChangePassword}>
+          <label className='input w-full'>
+            <span className='label text-xs uppercase text-base-content/50'>
+              <i className='fa-solid fa-key text-base-content/40 mr-1' />
+              Current password
+            </span>
+            <input
+              id='currentPassword'
+              type={showCurrentPassword ? 'text' : 'password'}
+              placeholder='Enter current password'
+              autoComplete='current-password'
+              required
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
             />
-            <div className='flex justify-end'>
-              <button
-                type='submit'
-                className={`btn btn-primary text-sm font-semibold ${
-                  isChangingPassword ? 'loading' : ''
-                }`}
-                disabled={isChangingPassword}
-              >
-                Update password
-              </button>
-            </div>
-          </form>
-        </section>
+            <button
+              type='button'
+              aria-pressed={showCurrentPassword}
+              onClick={() => setShowCurrentPassword((prev) => !prev)}
+              className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
+                showCurrentPassword ? 'swap-active' : ''
+              }`}
+            >
+              <i className='fa-solid fa-eye-slash swap-on' aria-hidden='true' />
+              <i className='fa-solid fa-eye swap-off' aria-hidden='true' />
+            </button>
+          </label>
+
+          <label className='input w-full'>
+            <span className='label text-xs uppercase text-base-content/50'>
+              <i className='fa-solid fa-lock text-base-content/40 mr-1' />
+              New password
+            </span>
+            <input
+              id='newPassword'
+              type={showNewPassword ? 'text' : 'password'}
+              placeholder='Enter new password'
+              autoComplete='new-password'
+              minLength={8}
+              required
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+            />
+            <button
+              type='button'
+              aria-pressed={showNewPassword}
+              onClick={() => setShowNewPassword((prev) => !prev)}
+              className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
+                showNewPassword ? 'swap-active' : ''
+              }`}
+            >
+              <i className='fa-solid fa-eye-slash swap-on' aria-hidden='true' />
+              <i className='fa-solid fa-eye swap-off' aria-hidden='true' />
+            </button>
+          </label>
+
+          <label className='input w-full'>
+            <span className='label text-xs uppercase text-base-content/50'>
+              <i className='fa-solid fa-check-double text-base-content/40 mr-1' />
+              Confirm password
+            </span>
+            <input
+              id='confirmPassword'
+              type={showConfirmPassword ? 'text' : 'password'}
+              placeholder='Confirm new password'
+              autoComplete='new-password'
+              minLength={8}
+              required
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+            />
+            <button
+              type='button'
+              aria-pressed={showConfirmPassword}
+              onClick={() => setShowConfirmPassword((prev) => !prev)}
+              className={`btn btn-ghost btn-xs btn-square text-xs text-base-content/70 swap swap-rotate p-0 ${
+                showConfirmPassword ? 'swap-active' : ''
+              }`}
+            >
+              <i className='fa-solid fa-eye-slash swap-on' aria-hidden='true' />
+              <i className='fa-solid fa-eye swap-off' aria-hidden='true' />
+            </button>
+          </label>
+
+          <StatusAlerts
+            message={passwordChangeMessage}
+            error={passwordChangeError}
+          />
+
+          <div className='modal-action pt-4 border-t border-base-content/10'>
+            <button
+              type='button'
+              className='btn btn-ghost gap-2'
+              onClick={onClose}
+              disabled={isChangingPassword}
+            >
+              <i className='fa-solid fa-xmark' />
+              Cancel
+            </button>
+            <button
+              type='submit'
+              className='btn btn-warning gap-2'
+              disabled={isChangingPassword}
+            >
+              {isChangingPassword ? (
+                <span className='loading loading-spinner loading-sm' />
+              ) : (
+                <i className='fa-solid fa-check' />
+              )}
+              Update password
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

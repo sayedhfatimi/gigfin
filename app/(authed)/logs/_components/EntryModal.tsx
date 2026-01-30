@@ -1,5 +1,6 @@
 'use client';
 
+import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import type { ChargingVendor } from '@/lib/charging-vendor';
 import type { CurrencyCode } from '@/lib/currency';
 import { getCurrencyIcon } from '@/lib/currency';
@@ -10,7 +11,6 @@ import type { OdometerEntry } from '@/lib/odometer';
 import type { ExpensePayload } from '@/lib/queries/expenses';
 import type { OdometerPayload } from '@/lib/queries/odometers';
 import type { VehicleProfile } from '@/lib/vehicle';
-import { type FormEvent, useEffect, useMemo, useState } from 'react';
 
 const incomeSources = [
   'Uber Eats',
@@ -252,12 +252,12 @@ const EntryModal = ({
     rateUnit === 'kwh'
       ? 'kWh'
       : rateUnit === 'litre'
-      ? 'litre'
-      : rateUnit === 'gallon_us'
-      ? 'gallon (US)'
-      : rateUnit === 'gallon_imp'
-      ? 'gallon (Imperial)'
-      : 'unit';
+        ? 'litre'
+        : rateUnit === 'gallon_us'
+          ? 'gallon (US)'
+          : rateUnit === 'gallon_imp'
+            ? 'gallon (Imperial)'
+            : 'unit';
 
   const resetModal = () => {
     setFormError('');
@@ -374,26 +374,26 @@ const EntryModal = ({
         ? 'Update income entry'
         : 'Log new income'
       : activeTab === 'expense'
-      ? editingExpense
-        ? 'Update expense entry'
-        : 'Log new expense'
-      : editingOdometer
-      ? 'Update odometer entry'
-      : 'Log new odometer reading';
+        ? editingExpense
+          ? 'Update expense entry'
+          : 'Log new expense'
+        : editingOdometer
+          ? 'Update odometer entry'
+          : 'Log new odometer reading';
 
   const tabIcon =
     activeTab === 'income'
       ? 'fa-coins'
       : activeTab === 'expense'
-      ? 'fa-receipt'
-      : 'fa-gauge';
+        ? 'fa-receipt'
+        : 'fa-gauge';
 
   const tabColor =
     activeTab === 'income'
       ? 'text-success'
       : activeTab === 'expense'
-      ? 'text-error'
-      : 'text-info';
+        ? 'text-error'
+        : 'text-info';
 
   const isEditingAny = isEditingIncome || isEditingExpense || isEditingOdometer;
 
@@ -457,14 +457,14 @@ const EntryModal = ({
                 tab === 'income'
                   ? 'fa-coins'
                   : tab === 'expense'
-                  ? 'fa-receipt'
-                  : 'fa-gauge';
+                    ? 'fa-receipt'
+                    : 'fa-gauge';
               const color =
                 tab === 'income'
                   ? 'text-success'
                   : tab === 'expense'
-                  ? 'text-error'
-                  : 'text-info';
+                    ? 'text-error'
+                    : 'text-info';
               return (
                 <button
                   key={tab}
