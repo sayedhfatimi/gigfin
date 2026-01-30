@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {
   Bar,
   CartesianGrid,
@@ -11,24 +11,19 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { useGlobalTimeframe } from '@/lib/contexts/GlobalTimeframeContext';
 import type { CurrencyCode } from '@/lib/currency';
 import {
   formatCurrency,
   getPlatformDistribution,
   type IncomeEntry,
 } from '@/lib/income';
-import {
-  getEntriesForTimeframe,
-  type TimeframeKey,
-  timeframeOptions,
-} from '../_lib/platformBreakdownTimeframes';
+import { getEntriesForTimeframe } from '../_lib/platformBreakdownTimeframes';
 
 type PlatformBreakdownBarChartProps = {
   incomes: IncomeEntry[];
   currency: CurrencyCode;
 };
-
-const TIMEFRAME_STORAGE_KEY = 'dashboard-bar-chart-timeframe';
 
 const palette = [
   '#6366F1',
@@ -43,28 +38,7 @@ export function PlatformBreakdownBarChart({
   incomes,
   currency,
 }: PlatformBreakdownBarChartProps) {
-  const [timeframe, setTimeframe] = useState<TimeframeKey>('monthly');
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    const stored = window.localStorage.getItem(TIMEFRAME_STORAGE_KEY);
-    if (stored && timeframeOptions.some((option) => option.value === stored)) {
-      setTimeframe(stored as TimeframeKey);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    window.localStorage.setItem(TIMEFRAME_STORAGE_KEY, timeframe);
-  }, [timeframe]);
-
-  const selectedOption =
-    timeframeOptions.find((option) => option.value === timeframe) ??
-    timeframeOptions[1];
+  const { timeframe, selectedOption } = useGlobalTimeframe();
 
   const filteredEntries = useMemo(
     () => getEntriesForTimeframe(incomes, timeframe),
@@ -87,7 +61,7 @@ export function PlatformBreakdownBarChart({
   const hasPlatformData = barChartData.length > 0;
 
   return (
-    <section className=' border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+    <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm overflow-hidden'>
       <div className='flex items-center justify-between gap-4'>
         <div>
           <h2 className='text-lg font-semibold text-base-content'>
@@ -96,24 +70,6 @@ export function PlatformBreakdownBarChart({
           <p className='text-xs uppercase text-base-content/60'>
             Bar · {selectedOption.label}
           </p>
-        </div>
-        <div className='flex items-end gap-2'>
-          <label className='select select-xs'>
-            <span className='label hidden md:block'>Timeframe</span>
-            <select
-              id='platform-breakdown-bar-timeframe'
-              value={timeframe}
-              onChange={(event) =>
-                setTimeframe(event.target.value as TimeframeKey)
-              }
-            >
-              {timeframeOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
         </div>
       </div>
       <div className='mt-6 grid gap-6 lg:grid-cols-[1fr_1.2fr] lg:items-center'>

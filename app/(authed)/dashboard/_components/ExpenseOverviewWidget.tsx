@@ -1,48 +1,22 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useGlobalTimeframe } from '@/lib/contexts/GlobalTimeframeContext';
 import type { CurrencyCode } from '@/lib/currency';
 import { formatCurrency } from '@/lib/currency';
 import { type ExpenseEntry, formatExpenseType } from '@/lib/expenses';
 import { getExpenseEntriesForTimeframe } from '../_lib/expenseBreakdownTimeframes';
-import {
-  type TimeframeKey,
-  timeframeOptions,
-} from '../_lib/platformBreakdownTimeframes';
 
 type ExpenseOverviewPanelProps = {
   expenses: ExpenseEntry[];
   currency: CurrencyCode;
 };
 
-const TIMEFRAME_STORAGE_KEY = 'expense-overview-timeframe';
-
-export function ExpenseOverviewPanel({
+export function ExpenseOverviewWidget({
   expenses,
   currency,
 }: ExpenseOverviewPanelProps) {
-  const [timeframe, setTimeframe] = useState<TimeframeKey>('monthly');
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    const stored = window.localStorage.getItem(TIMEFRAME_STORAGE_KEY);
-    if (stored && timeframeOptions.some((option) => option.value === stored)) {
-      setTimeframe(stored as TimeframeKey);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    window.localStorage.setItem(TIMEFRAME_STORAGE_KEY, timeframe);
-  }, [timeframe]);
-
-  const selectedOption =
-    timeframeOptions.find((option) => option.value === timeframe) ??
-    timeframeOptions[1];
+  const { timeframe, selectedOption } = useGlobalTimeframe();
 
   const timeframeExpenses = useMemo(
     () => getExpenseEntriesForTimeframe(expenses, timeframe),
@@ -88,7 +62,7 @@ export function ExpenseOverviewPanel({
   const hasExpenses = timeframeExpenses.length > 0;
 
   return (
-    <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+    <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm overflow-hidden'>
       <div className='flex gap-3 flex-row items-center justify-between'>
         <div>
           <h2 className='text-lg font-semibold text-base-content'>
@@ -98,22 +72,6 @@ export function ExpenseOverviewPanel({
             {selectedOption.label} · {selectedOption.description}
           </p>
         </div>
-        <label className='select select-xs max-w-fit'>
-          <span className='label hidden md:block'>Timeframe</span>
-          <select
-            id='expense-overview-timeframe'
-            value={timeframe}
-            onChange={(event) =>
-              setTimeframe(event.target.value as TimeframeKey)
-            }
-          >
-            {timeframeOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
       </div>
       {hasExpenses ? (
         <div className='mt-6 space-y-6'>

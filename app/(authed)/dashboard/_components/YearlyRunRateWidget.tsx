@@ -33,7 +33,7 @@ const viewOptions: { value: ChartView; label: string }[] = [
   { value: 'both', label: 'Income + Expenses' },
 ];
 
-export function YearlyRunRateChart({
+export function YearlyRunRateWidget({
   incomes,
   expenses,
   currency,
@@ -80,7 +80,7 @@ export function YearlyRunRateChart({
   }, [combinedChartData, isIncomeVisible, isExpenseVisible]);
 
   return (
-    <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+    <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm overflow-hidden'>
       <div className='flex items-center justify-between gap-4'>
         <div>
           <h2 className='text-lg font-semibold text-base-content'>

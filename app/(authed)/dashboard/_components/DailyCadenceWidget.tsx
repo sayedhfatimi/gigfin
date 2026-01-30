@@ -18,7 +18,7 @@ const normalizeDate = (value: string) => {
   return parsed;
 };
 
-export function DailyCadencePanel({ dailySummaries }: DailyCadencePanelProps) {
+export function DailyCadenceWidget({ dailySummaries }: DailyCadencePanelProps) {
   const uniqueDates = useMemo(() => {
     const dates = dailySummaries
       .map((summary) => normalizeDate(summary.date))
@@ -71,7 +71,7 @@ export function DailyCadencePanel({ dailySummaries }: DailyCadencePanelProps) {
   const totalLoggedDays = uniqueDates.length;
 
   return (
-    <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+    <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm overflow-hidden'>
       <div className='flex items-center justify-between gap-4'>
         <div>
           <h2 className='text-lg font-semibold text-base-content'>

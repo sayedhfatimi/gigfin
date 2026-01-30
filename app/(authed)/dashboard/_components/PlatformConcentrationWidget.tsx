@@ -19,7 +19,7 @@ const percentFormatter = new Intl.NumberFormat('en-GB', {
   maximumFractionDigits: 1,
 });
 
-export function PlatformConcentrationPanel({
+export function PlatformConcentrationWidget({
   platformDistribution,
   currency,
 }: PlatformConcentrationPanelProps) {
@@ -31,7 +31,7 @@ export function PlatformConcentrationPanel({
     : 'Top platforms';
 
   return (
-    <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+    <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm overflow-hidden'>
       <div className='flex flex-wrap items-center justify-between gap-4'>
         <div>
           <h2 className='text-lg font-semibold text-base-content'>

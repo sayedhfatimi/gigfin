@@ -29,6 +29,9 @@ export type ExpenseEntry = {
   updatedAt: string;
 };
 
+// Alias for convenience
+export type Expense = ExpenseEntry;
+
 export const expenseTypeOptions = [
   { value: 'fuel_charging', label: 'Fuel / Charging' },
   { value: 'maintenance', label: 'Maintenance / Servicing' },

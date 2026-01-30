@@ -7,6 +7,9 @@ export type IncomeEntry = {
   createdAt: string;
 };
 
+// Alias for backwards compatibility
+export type Income = IncomeEntry;
+
 export type DailyIncomeSummary = {
   date: string;
   total: number;

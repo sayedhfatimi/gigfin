@@ -191,7 +191,11 @@ const buildMonthlyCombinedTotals = (
   return data;
 };
 
-export function LineChart({ incomes, expenses, currency }: LineChartProps) {
+export function LineChartWidget({
+  incomes,
+  expenses,
+  currency,
+}: LineChartProps) {
   const [timeframe, setTimeframe] = useState<LineGraphTimeframe>('year');
   const [view, setView] = useState<LineChartView>('both');
 
@@ -306,7 +310,7 @@ export function LineChart({ incomes, expenses, currency }: LineChartProps) {
   }, [lineChartData, isIncomeVisible, isExpenseVisible]);
 
   return (
-    <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+    <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm overflow-hidden'>
       <div className='flex items-center justify-between gap-4'>
         <div>
           <h2 className='text-lg font-semibold text-base-content'>

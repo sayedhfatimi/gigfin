@@ -8,14 +8,14 @@ type RecentDaysPanelProps = {
   currency: CurrencyCode;
 };
 
-export function RecentDaysPanel({
+export function RecentDaysWidget({
   dailySummaries,
   currency,
 }: RecentDaysPanelProps) {
   const recentDays = dailySummaries.slice(0, 3);
 
   return (
-    <section className='space-y-4  border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+    <section className='space-y-4 border border-base-content/10 bg-base-100 p-6 shadow-sm overflow-hidden'>
       <div className='flex items-center justify-between'>
         <h2 className='text-lg font-semibold text-base-content'>Recent days</h2>
         <p className='text-xs uppercase  text-base-content/50'>totals</p>

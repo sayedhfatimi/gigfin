@@ -251,7 +251,11 @@ const getTotalsForTimeframe = (
   }
 };
 
-export function TotalsTable({ incomes, expenses, currency }: TotalsTableProps) {
+export function TotalsTableWidget({
+  incomes,
+  expenses,
+  currency,
+}: TotalsTableProps) {
   const [timeframe, setTimeframe] = useState<TotalsTimeframe>('months');
 
   useEffect(() => {
@@ -281,7 +285,7 @@ export function TotalsTable({ incomes, expenses, currency }: TotalsTableProps) {
   );
 
   return (
-    <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+    <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm overflow-hidden'>
       <div className='flex items-center justify-between'>
         <div>
           <h2 className='text-lg font-semibold text-base-content'>Totals</h2>

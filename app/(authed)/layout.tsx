@@ -3,6 +3,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import ReactQueryProvider from '@/components/providers/ReactQueryProvider';
 import { signOut, useSession } from '@/lib/auth-client';
+import { SidebarProvider } from '@/lib/contexts/SidebarContext';
 import { getSessionUser } from '@/lib/session';
 import Nav from './_components/Nav';
 
@@ -46,30 +47,32 @@ export default function AuthedLayout({
 
   return (
     <ReactQueryProvider>
-      <div className='flex min-h-screen bg-base-200 text-base-content'>
-        <Nav
-          sessionUser={sessionUser}
-          isSigningOut={isSigningOut}
-          onSignOut={handleSignOut}
-          isActive={isActive}
-        />
-        <div className='flex flex-1 flex-col'>
-          <div className='flex-1 overflow-hidden'>
-            <main className='h-full overflow-y-auto px-4 pb-24 pt-6 lg:px-10'>
-              {children}
-            </main>
-          </div>
-          <div className='lg:hidden'>
-            <Nav
-              variant='mobile'
-              sessionUser={sessionUser}
-              isSigningOut={isSigningOut}
-              onSignOut={handleSignOut}
-              isActive={isActive}
-            />
+      <SidebarProvider>
+        <div className='flex min-h-screen bg-base-200 text-base-content'>
+          <Nav
+            sessionUser={sessionUser}
+            isSigningOut={isSigningOut}
+            onSignOut={handleSignOut}
+            isActive={isActive}
+          />
+          <div className='flex flex-1 flex-col min-w-0 overflow-x-hidden'>
+            <div className='flex-1 overflow-hidden'>
+              <main className='h-full overflow-y-auto overflow-x-hidden px-4 pb-24 pt-6 lg:px-10'>
+                {children}
+              </main>
+            </div>
+            <div className='lg:hidden'>
+              <Nav
+                variant='mobile'
+                sessionUser={sessionUser}
+                isSigningOut={isSigningOut}
+                onSignOut={handleSignOut}
+                isActive={isActive}
+              />
+            </div>
           </div>
         </div>
-      </div>
+      </SidebarProvider>
     </ReactQueryProvider>
   );
 }

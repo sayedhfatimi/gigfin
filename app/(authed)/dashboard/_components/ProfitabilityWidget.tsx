@@ -1,23 +1,19 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useGlobalTimeframe } from '@/lib/contexts/GlobalTimeframeContext';
 import type { CurrencyCode } from '@/lib/currency';
 import { formatCurrency } from '@/lib/currency';
 import type { ExpenseEntry } from '@/lib/expenses';
 import type { IncomeEntry } from '@/lib/income';
 import { getExpenseEntriesForTimeframe } from '../_lib/expenseBreakdownTimeframes';
-import {
-  getEntriesForTimeframe,
-  timeframeOptions,
-} from '../_lib/platformBreakdownTimeframes';
+import { getEntriesForTimeframe } from '../_lib/platformBreakdownTimeframes';
 
 type ProfitabilityPanelProps = {
   incomes: IncomeEntry[];
   expenses: ExpenseEntry[];
   currency: CurrencyCode;
 };
-
-type TimeframeKey = 'weekly' | 'monthly' | 'yearToDate' | 'last12Months';
 
 const formatPercent = (value: number | null) => {
   if (value === null || Number.isNaN(value)) {
@@ -26,15 +22,12 @@ const formatPercent = (value: number | null) => {
   return `${(value * 100).toFixed(1)}%`;
 };
 
-export function ProfitabilityPanel({
+export function ProfitabilityWidget({
   incomes,
   expenses,
   currency,
 }: ProfitabilityPanelProps) {
-  const [timeframe, setTimeframe] = useState<TimeframeKey>('monthly');
-  const selectedOption =
-    timeframeOptions.find((option) => option.value === timeframe) ??
-    timeframeOptions[1];
+  const { timeframe, selectedOption } = useGlobalTimeframe();
 
   const timeframeIncomes = useMemo(
     () => getEntriesForTimeframe(incomes, timeframe),
@@ -63,7 +56,7 @@ export function ProfitabilityPanel({
   const statusIcon = netProfit >= 0 ? 'arrow-trend-up' : 'arrow-trend-down';
 
   return (
-    <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+    <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm overflow-hidden'>
       <div className='flex gap-2 flex-row items-center justify-between'>
         <div>
           <h2 className='text-lg font-semibold text-base-content'>
@@ -74,22 +67,6 @@ export function ProfitabilityPanel({
           </p>
         </div>
         <div className='flex flex-col md:flex-row md:items-center items-end gap-4'>
-          <label className='select select-xs max-w-fit'>
-            <span className='label hidden md:block'>Timeframe</span>
-            <select
-              id='profitability-timeframe'
-              value={timeframe}
-              onChange={(event) =>
-                setTimeframe(event.target.value as TimeframeKey)
-              }
-            >
-              {timeframeOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
           <span
             className={`badge badge-sm ${
               netProfit >= 0

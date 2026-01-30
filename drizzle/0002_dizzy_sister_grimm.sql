@@ -1,0 +1,1 @@
+ALTER TABLE `income` DROP COLUMN `hours_worked`;

@@ -1,18 +1,16 @@
 'use client';
 
-import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import {
-  closestCenter,
   DndContext,
   DragOverlay,
   PointerSensor,
   TouchSensor,
+  closestCenter,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
 import { createSnapModifier, restrictToWindowEdges } from '@dnd-kit/modifiers';
 import {
-  arrayMove,
   SortableContext,
   useSortable,
   verticalListSortingStrategy,
@@ -21,76 +19,37 @@ import { CSS } from '@dnd-kit/utilities';
 import type { ReactNode } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { QuickAddFAB } from '@/components/actions/QuickAddFAB';
+import { GlobalTimeframeFilterCompact } from '@/components/filters/GlobalTimeframeFilter';
+import { DashboardSkeleton } from '@/components/skeletons/DashboardSkeletons';
 import { useSession } from '@/lib/auth-client';
-import { resolveCurrency } from '@/lib/currency';
-import { getCurrentMonthExpenses } from '@/lib/expenses';
+import { GlobalTimeframeProvider } from '@/lib/contexts/GlobalTimeframeContext';
 import {
-  aggregateDailyIncomes,
-  formatCurrency,
-  getCurrentMonthEntries,
-  getPlatformDistribution,
-} from '@/lib/income';
-import type { OdometerUnit } from '@/lib/odometer';
-import { useExpenseLogs } from '@/lib/queries/expenses';
-import { useIncomeLogs } from '@/lib/queries/income';
+  type DashboardWidgetDefinition,
+  type WidgetId,
+  useDashboardData,
+  useWidgetConfig,
+} from '@/lib/hooks';
 import { getSessionUser } from '@/lib/session';
-import { DailyCadencePanel } from './_components/DailyCadencePanel';
-import { DashboardStats } from './_components/DashboardStats';
-import { DrivingStats } from './_components/DrivingStats';
-import { ExpenseCategoryBreakdownPanel } from './_components/ExpenseCategoryBreakdownPanel';
-import { ExpenseOverviewPanel } from './_components/ExpenseOverviewPanel';
-import { FuelConsumptionPanel } from './_components/FuelConsumptionPanel';
-import { LineChart } from './_components/LineChart';
-import { PlatformBreakdownBarChart } from './_components/PlatformBreakdownBarChart';
-import { PlatformBreakdownPieChart } from './_components/PlatformBreakdownPieChart';
-import { PlatformConcentrationPanel } from './_components/PlatformConcentrationPanel';
-import { ProfitabilityPanel } from './_components/ProfitabilityPanel';
-import { RecentDaysPanel } from './_components/RecentDaysPanel';
-import { TotalsTable } from './_components/TotalsTable';
-import { YearlyRunRateChart } from './_components/YearlyRunRateChart';
 
-const ORDER_STORAGE_KEY = 'dashboard-widget-order';
-const VISIBILITY_STORAGE_KEY = 'dashboard-widget-visibility';
-
-type WidgetId =
-  | 'stats'
-  | 'drivingStats'
-  | 'profitability'
-  | 'expenseOverview'
-  | 'expenseCategoryBreakdown'
-  | 'fuelConsumption'
-  | 'recentDays'
-  | 'dailyCadence'
-  | 'platformBreakdownPieChart'
-  | 'platformBreakdownBarChart'
-  | 'platformConcentration'
-  | 'lineChart'
-  | 'yearlyRunRate'
-  | 'totalsTable';
-
-type DashboardWidgetDefinition = {
-  id: WidgetId;
-  label: string;
-  description: string;
-  component: ReactNode;
-  widthClass?: string;
-};
-
-type PersistedWidgetConfig = {
-  order: WidgetId[];
-  enabled: Record<WidgetId, boolean>;
-};
-
-const parseJson = <T,>(value: string | null): T | null => {
-  if (!value) {
-    return null;
-  }
-  try {
-    return JSON.parse(value) as T;
-  } catch {
-    return null;
-  }
-};
+import { DailyCadenceWidget } from './_components/DailyCadenceWidget';
+import { DashboardStatsWidget } from './_components/DashboardStatsWidget';
+import { DrivingStatsWidget } from './_components/DrivingStatsWidget';
+import { ExpenseCategoryBreakdownWidget } from './_components/ExpenseCategoryBreakdownWidget';
+import { ExpenseOverviewWidget } from './_components/ExpenseOverviewWidget';
+import { FuelConsumptionWidget } from './_components/FuelConsumptionWidget';
+import { GoalTrackerWidget } from './_components/GoalTrackerWidget';
+import { LineChartWidget } from './_components/LineChartWidget';
+import { MileageDeductionWidget } from './_components/MileageDeductionWidget';
+import { PlatformBreakdownWidget } from './_components/PlatformBreakdownWidget';
+import { PlatformConcentrationWidget } from './_components/PlatformConcentrationWidget';
+import { ProfitabilityWidget } from './_components/ProfitabilityWidget';
+import { RecentDaysWidget } from './_components/RecentDaysWidget';
+import { TaxEstimatorWidget } from './_components/TaxEstimatorWidget';
+// Widgets
+import { TodaySnapshotWidget } from './_components/TodaySnapshotWidget';
+import { TotalsTableWidget } from './_components/TotalsTableWidget';
+import { YearlyRunRateWidget } from './_components/YearlyRunRateWidget';
 
 const combineClasses = (...classes: Array<string | undefined>) =>
   classes.filter(Boolean).join(' ');
@@ -98,165 +57,72 @@ const combineClasses = (...classes: Array<string | undefined>) =>
 const GRID_SIZE = 16;
 const snapModifier = createSnapModifier(GRID_SIZE);
 
-const buildDefaultOrder = (definitions: DashboardWidgetDefinition[]) =>
-  definitions.map((widget) => widget.id);
-
-const DEFAULT_WIDGET_VISIBILITY: Partial<Record<WidgetId, boolean>> = {
-  drivingStats: false,
-  platformBreakdownBarChart: false,
-  platformConcentration: false,
-  dailyCadence: false,
-  recentDays: false,
-  fuelConsumption: false,
-};
-
-const buildDefaultVisibility = (definitions: DashboardWidgetDefinition[]) =>
-  definitions.reduce<Record<WidgetId, boolean>>(
-    (state, widget) => {
-      state[widget.id] = DEFAULT_WIDGET_VISIBILITY[widget.id] ?? true;
-      return state;
-    },
-    {} as Record<WidgetId, boolean>,
-  );
-
-const normalizeStoredOrder = (
-  stored: unknown,
-  definitions: DashboardWidgetDefinition[],
-): WidgetId[] => {
-  const defaults = buildDefaultOrder(definitions);
-  if (!Array.isArray(stored)) {
-    return defaults;
-  }
-  const availableIds = new Set(defaults);
-  const filtered = stored.filter((value): value is WidgetId => {
-    if (typeof value !== 'string') {
-      return false;
-    }
-    return availableIds.has(value as WidgetId);
-  });
-  const missing = defaults.filter((id) => !filtered.includes(id));
-  return [...filtered, ...missing];
-};
-
-const hydrateVisibility = (
-  stored: unknown,
-  fallback: Record<WidgetId, boolean>,
-): Record<WidgetId, boolean> => {
-  const result = { ...fallback };
-  if (stored && typeof stored === 'object' && !Array.isArray(stored)) {
-    Object.entries(stored).forEach(([key, value]) => {
-      if (key in result) {
-        result[key as WidgetId] = Boolean(value);
-      }
-    });
-  }
-  return result;
-};
-
 export default function DashboardPage() {
-  const { data: sessionData, isPending } = useSession();
+  const { data: sessionData, isPending: isSessionPending } = useSession();
   const sessionUser = getSessionUser(sessionData);
-  const currency = resolveCurrency(sessionUser?.currency);
-  const odometerUnit = (
-    sessionUser?.odometerUnit === 'miles' ? 'miles' : 'km'
-  ) as OdometerUnit;
-  const { data: incomes = [] } = useIncomeLogs();
-  const { data: expenses = [] } = useExpenseLogs();
 
-  const dailySummaries = useMemo(
-    () => aggregateDailyIncomes(incomes),
-    [incomes],
-  );
-  const totalIncome = useMemo(
-    () => incomes.reduce((acc, row) => acc + row.amount, 0),
-    [incomes],
-  );
-  const currentMonthEntries = useMemo(
-    () => getCurrentMonthEntries(incomes),
-    [incomes],
-  );
-  const platformDistribution = useMemo(
-    () => getPlatformDistribution(currentMonthEntries),
-    [currentMonthEntries],
-  );
-  const currentMonthTotal = useMemo(
-    () => currentMonthEntries.reduce((acc, row) => acc + row.amount, 0),
-    [currentMonthEntries],
-  );
-  const trackedDaysCount = dailySummaries.length;
-  const averagePerDay = trackedDaysCount ? totalIncome / trackedDaysCount : 0;
-  const currentMonthEntriesCount = currentMonthEntries.length;
-  const currentMonthExpenses = useMemo(
-    () => getCurrentMonthExpenses(expenses),
-    [expenses],
-  );
-  const currentMonthExpenseTotal = useMemo(
-    () =>
-      currentMonthExpenses.reduce(
-        (acc, entry) => acc + entry.amountMinor / 100,
-        0,
-      ),
-    [currentMonthExpenses],
-  );
-  const currentMonthExpenseCount = currentMonthExpenses.length;
-  const stats = useMemo(() => {
-    const trackedDaysLabel = `Across ${trackedDaysCount} ${
-      trackedDaysCount === 1 ? 'day' : 'days'
-    } tracked`;
+  const dashboardData = useDashboardData({ sessionUser });
 
-    return [
-      {
-        title: 'Total income',
-        value: formatCurrency(totalIncome, currency),
-        desc: trackedDaysLabel,
-        valueClass: 'text-primary',
-      },
-      {
-        title: 'Average / day',
-        value: formatCurrency(averagePerDay, currency),
-        desc: 'Consistent hustle',
-        valueClass: 'text-secondary',
-      },
-      {
-        title: 'Total expenses',
-        value: formatCurrency(currentMonthExpenseTotal, currency),
-        desc: `${currentMonthExpenseCount} entries logged`,
-        valueClass: 'text-error',
-      },
-      {
-        title: 'Current month',
-        value: formatCurrency(currentMonthTotal, currency),
-        desc: `${currentMonthEntriesCount} entries logged`,
-        valueClass: 'text-accent',
-      },
-    ];
-  }, [
-    totalIncome,
-    averagePerDay,
-    currentMonthTotal,
-    currentMonthEntriesCount,
-    trackedDaysCount,
+  const {
+    incomes,
+    expenses,
+    odometerEntries,
+    isLoading,
     currency,
-    currentMonthExpenseTotal,
-    currentMonthExpenseCount,
-  ]);
+    odometerUnit,
+    dailySummaries,
+    platformDistribution,
+    stats,
+    todayIncome,
+    todayExpenses,
+    todayNet,
+    yesterdayNet,
+    todayIncomeCount,
+    todayExpenseCount,
+  } = dashboardData;
 
+  // Build widget definitions with current data
   const widgetDefinitions = useMemo<DashboardWidgetDefinition[]>(
     () => [
       {
-        id: 'stats',
-        label: 'Stats',
-        description: 'Income overview',
+        id: 'todaySnapshot',
+        label: "Today's Snapshot",
+        description: 'Real-time daily performance',
         widthClass: 'md:col-span-2',
-        component: <DashboardStats stats={stats} />,
+        pinned: true,
+        component: (
+          <TodaySnapshotWidget
+            todayIncome={todayIncome}
+            todayExpenses={todayExpenses}
+            todayNet={todayNet}
+            yesterdayNet={yesterdayNet}
+            todayIncomeCount={todayIncomeCount}
+            todayExpenseCount={todayExpenseCount}
+            currency={currency}
+          />
+        ),
+      },
+      {
+        id: 'goalTracker',
+        label: 'Goal Tracker',
+        description: 'Weekly/monthly income targets',
+        widthClass: 'md:col-span-1',
+        component: <GoalTrackerWidget incomes={incomes} currency={currency} />,
+      },
+      {
+        id: 'stats',
+        label: 'Stats Overview',
+        description: 'Key income metrics',
+        widthClass: 'md:col-span-2',
+        component: <DashboardStatsWidget stats={stats} />,
       },
       {
         id: 'drivingStats',
-        label: 'Driving stats',
+        label: 'Driving Stats',
         description: 'Distance-based KPIs',
         widthClass: 'md:col-span-2',
         component: (
-          <DrivingStats
+          <DrivingStatsWidget
             expenses={expenses}
             incomes={incomes}
             currency={currency}
@@ -267,10 +133,10 @@ export default function DashboardPage() {
       {
         id: 'profitability',
         label: 'Profitability',
-        description: 'Net profit and KPIs',
+        description: 'Net profit and margins',
         widthClass: 'md:col-span-1',
         component: (
-          <ProfitabilityPanel
+          <ProfitabilityWidget
             incomes={incomes}
             expenses={expenses}
             currency={currency}
@@ -279,20 +145,20 @@ export default function DashboardPage() {
       },
       {
         id: 'expenseOverview',
-        label: 'Spend overview',
-        description: 'Current month spend at a glance',
+        label: 'Spend Overview',
+        description: 'Current spend at a glance',
         widthClass: 'md:col-span-1',
         component: (
-          <ExpenseOverviewPanel expenses={expenses} currency={currency} />
+          <ExpenseOverviewWidget expenses={expenses} currency={currency} />
         ),
       },
       {
         id: 'expenseCategoryBreakdown',
-        label: 'Expense breakdown',
-        description: 'Spend by category & timeframe',
+        label: 'Expense Breakdown',
+        description: 'Spend by category',
         widthClass: 'md:col-span-1',
         component: (
-          <ExpenseCategoryBreakdownPanel
+          <ExpenseCategoryBreakdownWidget
             expenses={expenses}
             currency={currency}
           />
@@ -300,25 +166,25 @@ export default function DashboardPage() {
       },
       {
         id: 'fuelConsumption',
-        label: 'Fuel & energy usage',
-        description: 'Track volume consumed by vehicle and timeframe',
+        label: 'Fuel & Energy',
+        description: 'Track consumption by vehicle',
         widthClass: 'md:col-span-1',
-        component: <FuelConsumptionPanel expenses={expenses} />,
+        component: <FuelConsumptionWidget expenses={expenses} />,
       },
       {
         id: 'dailyCadence',
-        label: 'Daily cadence',
-        description: 'Logging streak and weekly coverage',
+        label: 'Daily Cadence',
+        description: 'Logging streak and coverage',
         widthClass: 'md:col-span-1',
-        component: <DailyCadencePanel dailySummaries={dailySummaries} />,
+        component: <DailyCadenceWidget dailySummaries={dailySummaries} />,
       },
       {
         id: 'recentDays',
-        label: 'Recent days',
+        label: 'Recent Days',
         description: 'Most recent daily totals',
         widthClass: 'md:col-span-1',
         component: (
-          <RecentDaysPanel
+          <RecentDaysWidget
             dailySummaries={dailySummaries}
             currency={currency}
           />
@@ -326,41 +192,32 @@ export default function DashboardPage() {
       },
       {
         id: 'platformConcentration',
-        label: 'Platform concentration',
-        description: 'Top-earning platforms this month',
+        label: 'Platform Focus',
+        description: 'Top-earning platforms',
         widthClass: 'md:col-span-1',
         component: (
-          <PlatformConcentrationPanel
+          <PlatformConcentrationWidget
             platformDistribution={platformDistribution}
             currency={currency}
           />
         ),
       },
       {
-        id: 'platformBreakdownPieChart',
-        label: 'Platform breakdown (Pie Chart)',
+        id: 'platformBreakdown',
+        label: 'Platform Breakdown',
         description: 'Income share per platform',
         widthClass: 'md:col-span-1',
         component: (
-          <PlatformBreakdownPieChart incomes={incomes} currency={currency} />
-        ),
-      },
-      {
-        id: 'platformBreakdownBarChart',
-        label: 'Platform breakdown (Bar Chart)',
-        description: 'Alternative view of platform share',
-        widthClass: 'md:col-span-1',
-        component: (
-          <PlatformBreakdownBarChart incomes={incomes} currency={currency} />
+          <PlatformBreakdownWidget incomes={incomes} currency={currency} />
         ),
       },
       {
         id: 'lineChart',
-        label: 'Income trend',
+        label: 'Income Trend',
         description: 'Track time-based momentum',
         widthClass: 'md:col-span-2',
         component: (
-          <LineChart
+          <LineChartWidget
             incomes={incomes}
             expenses={expenses}
             currency={currency}
@@ -369,11 +226,11 @@ export default function DashboardPage() {
       },
       {
         id: 'yearlyRunRate',
-        label: 'Yearly run rate',
-        description: 'Monthly totals for the current year',
+        label: 'Yearly Run Rate',
+        description: 'Monthly totals this year',
         widthClass: 'md:col-span-2',
         component: (
-          <YearlyRunRateChart
+          <YearlyRunRateWidget
             incomes={incomes}
             expenses={expenses}
             currency={currency}
@@ -382,13 +239,39 @@ export default function DashboardPage() {
       },
       {
         id: 'totalsTable',
-        label: 'Totals',
+        label: 'Totals Table',
         description: 'Rolling performance tables',
         widthClass: 'md:col-span-2',
         component: (
-          <TotalsTable
+          <TotalsTableWidget
             incomes={incomes}
             expenses={expenses}
+            currency={currency}
+          />
+        ),
+      },
+      {
+        id: 'taxEstimator',
+        label: 'Tax Estimator',
+        description: 'Estimate self-employment taxes',
+        widthClass: 'md:col-span-1',
+        component: (
+          <TaxEstimatorWidget
+            incomes={incomes}
+            expenses={expenses}
+            currency={currency}
+          />
+        ),
+      },
+      {
+        id: 'mileageDeduction',
+        label: 'Mileage Deduction',
+        description: 'Track IRS mileage deductions',
+        widthClass: 'md:col-span-1',
+        component: (
+          <MileageDeductionWidget
+            odometerEntries={odometerEntries}
+            odometerUnit={odometerUnit}
             currency={currency}
           />
         ),
@@ -402,84 +285,36 @@ export default function DashboardPage() {
       platformDistribution,
       expenses,
       odometerUnit,
+      odometerEntries,
+      todayIncome,
+      todayExpenses,
+      todayNet,
+      yesterdayNet,
+      todayIncomeCount,
+      todayExpenseCount,
     ],
   );
 
-  const [widgetOrder, setWidgetOrder] = useState<WidgetId[]>(() =>
-    buildDefaultOrder(widgetDefinitions),
-  );
-  const [widgetEnabled, setWidgetEnabled] = useState<Record<WidgetId, boolean>>(
-    () => buildDefaultVisibility(widgetDefinitions),
-  );
-  const [persistedConfig, setPersistedConfig] = useState<PersistedWidgetConfig>(
-    () => ({
-      order: buildDefaultOrder(widgetDefinitions),
-      enabled: buildDefaultVisibility(widgetDefinitions),
-    }),
-  );
-  const [isCustomizing, setIsCustomizing] = useState(false);
-  const [isMobileView, setIsMobileView] = useState(false);
-  const [activeWidgetId, setActiveWidgetId] = useState<WidgetId | null>(null);
-  const hasLoadedPersisted = useRef(false);
-
-  useEffect(() => {
-    if (hasLoadedPersisted.current) {
-      return;
-    }
-    hasLoadedPersisted.current = true;
-    if (typeof window === 'undefined') {
-      return;
-    }
-    const storedOrder = parseJson<WidgetId[]>(
-      window.localStorage.getItem(ORDER_STORAGE_KEY),
-    );
-    const storedVisibility = parseJson<Record<string, boolean>>(
-      window.localStorage.getItem(VISIBILITY_STORAGE_KEY),
-    );
-
-    const normalizedOrder = normalizeStoredOrder(
-      storedOrder,
-      widgetDefinitions,
-    );
-    const normalizedVisibility = hydrateVisibility(
-      storedVisibility,
-      buildDefaultVisibility(widgetDefinitions),
-    );
-
-    setWidgetOrder(normalizedOrder);
-    setWidgetEnabled(normalizedVisibility);
-    setPersistedConfig({
-      order: [...normalizedOrder],
-      enabled: { ...normalizedVisibility },
-    });
-  }, [widgetDefinitions]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    const mql = window.matchMedia('(max-width: 767px)');
-    const handleChange = (event: MediaQueryListEvent) => {
-      setIsMobileView(event.matches);
-    };
-    setIsMobileView(mql.matches);
-    mql.addEventListener('change', handleChange);
-    return () => {
-      mql.removeEventListener('change', handleChange);
-    };
-  }, []);
-
-  const widgetDefinitionMap = useMemo(
-    () =>
-      widgetDefinitions.reduce<Record<WidgetId, DashboardWidgetDefinition>>(
-        (state, widget) => {
-          state[widget.id] = widget;
-          return state;
-        },
-        {} as Record<WidgetId, DashboardWidgetDefinition>,
-      ),
-    [widgetDefinitions],
-  );
+  const widgetConfig = useWidgetConfig(widgetDefinitions);
+  const {
+    widgetOrder,
+    widgetEnabled,
+    isCustomizing,
+    isMobileView,
+    pinnedWidgetIds,
+    sortableWidgetIds,
+    widgetDefinitionMap,
+    activeWidgetDefinition,
+    handleDragStart,
+    handleDragEnd,
+    handleDrawerDragEnd,
+    handleDragCancel,
+    handleToggleWidget,
+    handleStartCustomizing,
+    handleFinishCustomizing,
+    handleCancelCustomizing,
+    handleResetToDefaults,
+  } = widgetConfig;
 
   const sensorConfig = {
     activationConstraint: {
@@ -495,373 +330,298 @@ export default function DashboardPage() {
     useSensor(isMobileView ? TouchSensor : PointerSensor, sensorConfig),
   );
 
-  const visibleWidgetIds = useMemo(
-    () => widgetOrder.filter((id) => widgetEnabled[id]),
-    [widgetOrder, widgetEnabled],
-  );
-
-  const activeWidgetDefinition = activeWidgetId
-    ? widgetDefinitionMap[activeWidgetId]
-    : null;
-
-  const persistConfig = (
-    order: WidgetId[],
-    enabled: Record<WidgetId, boolean>,
-  ) => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    window.localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(order));
-    window.localStorage.setItem(
-      VISIBILITY_STORAGE_KEY,
-      JSON.stringify(enabled),
-    );
-    setPersistedConfig({
-      order: [...order],
-      enabled: { ...enabled },
-    });
-  };
-
-  const handleDragStart = ({ active }: DragStartEvent) => {
-    if (!isCustomizing) {
-      return;
-    }
-    setActiveWidgetId(active.id as WidgetId);
-  };
-
-  const handleDragEnd = ({ active, over }: DragEndEvent) => {
-    if (!isCustomizing) {
-      return;
-    }
-    if (!over || active.id === over.id) {
-      return;
-    }
-    setWidgetOrder((currentOrder) => {
-      const oldIndex = currentOrder.indexOf(active.id as WidgetId);
-      const newIndex = currentOrder.indexOf(over.id as WidgetId);
-      if (oldIndex === -1 || newIndex === -1) {
-        return currentOrder;
-      }
-      return arrayMove(currentOrder, oldIndex, newIndex);
-    });
-    setActiveWidgetId(null);
-  };
-
-  const handleDrawerDragEnd = ({ active, over }: DragEndEvent) => {
-    if (!isMobileView) {
-      return;
-    }
-    if (!over || active.id === over.id) {
-      return;
-    }
-    setWidgetOrder((currentOrder) => {
-      const oldIndex = currentOrder.indexOf(active.id as WidgetId);
-      const newIndex = currentOrder.indexOf(over.id as WidgetId);
-      if (oldIndex === -1 || newIndex === -1) {
-        return currentOrder;
-      }
-      return arrayMove(currentOrder, oldIndex, newIndex);
-    });
-  };
-
-  const handleDragCancel = () => {
-    setActiveWidgetId(null);
-  };
-
-  const handleToggleWidget = (widgetId: WidgetId) => {
-    setWidgetEnabled((prev) => ({
-      ...prev,
-      [widgetId]: !prev[widgetId],
-    }));
-  };
-
-  const handleStartCustomizing = () => {
-    setWidgetOrder(persistedConfig.order);
-    setWidgetEnabled(persistedConfig.enabled);
-    setIsCustomizing(true);
-    setActiveWidgetId(null);
-  };
-
-  const handleFinishCustomizing = () => {
-    persistConfig(widgetOrder, widgetEnabled);
-    setIsCustomizing(false);
-    setActiveWidgetId(null);
-  };
-
-  const handleCancelCustomizing = () => {
-    setWidgetOrder(persistedConfig.order);
-    setWidgetEnabled(persistedConfig.enabled);
-    setIsCustomizing(false);
-    setActiveWidgetId(null);
-  };
-
-  const handleResetToDefaults = () => {
-    const defaultOrder = buildDefaultOrder(widgetDefinitions);
-    const defaultVisibility = buildDefaultVisibility(widgetDefinitions);
-
-    if (typeof window !== 'undefined') {
-      window.localStorage.removeItem(ORDER_STORAGE_KEY);
-      window.localStorage.removeItem(VISIBILITY_STORAGE_KEY);
-    }
-
-    setWidgetOrder(defaultOrder);
-    setWidgetEnabled(defaultVisibility);
-    setPersistedConfig({
-      order: [...defaultOrder],
-      enabled: { ...defaultVisibility },
-    });
-    setActiveWidgetId(null);
-  };
-
-  if (isPending) {
-    return (
-      <div className='flex min-h-[60vh] items-center justify-center'>
-        <div className='loading loading-dots loading-lg'>Loading stats…</div>
-      </div>
-    );
+  if (isSessionPending || isLoading) {
+    return <DashboardSkeleton />;
   }
 
   return (
-    <div
-      className={`drawer drawer-bottom ${isCustomizing ? 'drawer-open' : ''}`}
-    >
-      <input
-        id='dashboard-customize-drawer'
-        type='checkbox'
-        className='drawer-toggle'
-        checked={isCustomizing}
-        onChange={() => {}}
-      />
-      <div className='drawer-content relative'>
-        <div className='space-y-6'>
-          <header className='space-y-1'>
-            <p className='text-xs uppercase text-base-content/60'>Dashboard</p>
-            <div className='flex flex-col md:flex-row md:items-center justify-between gap-2'>
-              <div className='text-3xl font-semibold text-base-content flex flex-col gap-1'>
-                <h1 className='flex flex-col'>
-                  <span>Welcome back,</span>
-                  <span>
-                    {sessionUser?.name ?? sessionUser?.email ?? 'gig worker'}
-                  </span>
-                </h1>
-                <p className='text-sm text-base-content/60'>
-                  Track income, spot trends, and level up your earnings.
-                </p>
+    <GlobalTimeframeProvider>
+      <div
+        className={`drawer drawer-bottom ${isCustomizing ? 'drawer-open' : ''}`}
+      >
+        <input
+          id='dashboard-customize-drawer'
+          type='checkbox'
+          className='drawer-toggle'
+          checked={isCustomizing}
+          onChange={() => {}}
+        />
+        <div className='drawer-content relative'>
+          <div className='space-y-6'>
+            {/* Header */}
+            <header className='space-y-1'>
+              <p className='text-xs uppercase text-base-content/60'>
+                Dashboard
+              </p>
+              <div className='flex flex-col lg:flex-row lg:items-center justify-between gap-4'>
+                <div className='text-3xl font-semibold text-base-content flex flex-col gap-1'>
+                  <h1 className='flex flex-col'>
+                    <span>Welcome back,</span>
+                    <span>
+                      {sessionUser?.name ?? sessionUser?.email ?? 'gig worker'}
+                    </span>
+                  </h1>
+                  <p className='text-sm text-base-content/60'>
+                    Track income, spot trends, and level up your earnings.
+                  </p>
+                </div>
+                <div className='flex flex-wrap items-center gap-3'>
+                  <GlobalTimeframeFilterCompact />
+                  {!isCustomizing ? (
+                    <button
+                      type='button'
+                      className='btn btn-sm btn-ghost btn-outline gap-2'
+                      onClick={handleStartCustomizing}
+                    >
+                      <span
+                        className='fa-solid fa-sliders'
+                        aria-hidden='true'
+                      />
+                      Customize
+                    </button>
+                  ) : (
+                    !isMobileView && (
+                      <>
+                        <button
+                          type='button'
+                          className='btn btn-sm btn-primary gap-2'
+                          onClick={handleFinishCustomizing}
+                        >
+                          <span
+                            className='fa-solid fa-check'
+                            aria-hidden='true'
+                          />
+                          Done
+                        </button>
+                        <button
+                          type='button'
+                          className='btn btn-sm btn-ghost gap-2'
+                          onClick={handleResetToDefaults}
+                        >
+                          <span
+                            className='fa-solid fa-rotate-left'
+                            aria-hidden='true'
+                          />
+                          Reset
+                        </button>
+                        <button
+                          type='button'
+                          className='btn btn-sm btn-ghost'
+                          onClick={handleCancelCustomizing}
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    )
+                  )}
+                </div>
               </div>
-              <div className='flex flex-wrap items-center gap-2'>
-                {!isCustomizing ? (
-                  <button
-                    type='button'
-                    className='btn btn-sm btn-primary'
-                    onClick={handleStartCustomizing}
-                  >
-                    Customize dashboard
-                  </button>
-                ) : (
-                  !isMobileView && (
-                    <>
-                      <button
-                        type='button'
-                        className='btn btn-sm btn-primary'
-                        onClick={handleFinishCustomizing}
-                      >
-                        <i className='fa-solid fa-check' aria-hidden='true' />
-                        Finish
-                      </button>
-                      <button
-                        type='button'
-                        className='btn btn-sm btn-error'
-                        onClick={handleResetToDefaults}
-                      >
-                        <i
-                          className='fa-solid fa-rotate-left'
-                          aria-hidden='true'
-                        />
-                        Reset to defaults
-                      </button>
-                      <button
-                        type='button'
-                        className='btn btn-sm btn-ghost btn-outline'
-                        onClick={handleCancelCustomizing}
-                      >
-                        <i className='fa-solid fa-xmark' aria-hidden='true' />
-                        Cancel
-                      </button>
-                    </>
-                  )
-                )}
-              </div>
-            </div>
-          </header>
+            </header>
 
-          <DndContext
-            sensors={sensors}
-            modifiers={[restrictToWindowEdges, snapModifier]}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-            onDragCancel={handleDragCancel}
-            collisionDetection={closestCenter}
-          >
-            <SortableContext
-              items={visibleWidgetIds}
-              strategy={verticalListSortingStrategy}
-            >
+            {/* Pinned Widgets (always at top) */}
+            {pinnedWidgetIds.length > 0 && (
               <div className='grid gap-6 md:grid-cols-2'>
-                {visibleWidgetIds.map((widgetId) => {
+                {pinnedWidgetIds.map((widgetId) => {
                   const definition = widgetDefinitionMap[widgetId];
-                  if (!definition) {
-                    return null;
-                  }
-                  const disabled = !widgetEnabled[widgetId];
+                  if (!definition) return null;
                   return (
-                    <SortableWidget
+                    <div
                       key={widgetId}
-                      id={widgetId}
-                      isCustomizing={isCustomizing}
-                      isDisabled={disabled}
-                      className={definition.widthClass}
-                      disableHandle={isMobileView}
+                      className={combineClasses(
+                        'min-w-0 overflow-hidden',
+                        definition.widthClass,
+                      )}
                     >
                       {definition.component}
-                    </SortableWidget>
+                    </div>
                   );
                 })}
               </div>
-            </SortableContext>
-            <DragOverlay
-              dropAnimation={null}
-              adjustScale={false}
+            )}
+
+            {/* Sortable Widgets */}
+            <DndContext
+              sensors={sensors}
               modifiers={[restrictToWindowEdges, snapModifier]}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+              onDragCancel={handleDragCancel}
+              collisionDetection={closestCenter}
             >
-              {activeWidgetDefinition ? (
-                <div className='pointer-events-none rounded-[inherit] border border-base-content/10 bg-base-100 shadow-2xl'>
-                  {activeWidgetDefinition.component}
+              <SortableContext
+                items={sortableWidgetIds}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className='grid gap-6 md:grid-cols-2'>
+                  {sortableWidgetIds.map((widgetId) => {
+                    const definition = widgetDefinitionMap[widgetId];
+                    if (!definition) return null;
+                    return (
+                      <SortableWidget
+                        key={widgetId}
+                        id={widgetId}
+                        isCustomizing={isCustomizing}
+                        isDisabled={!widgetEnabled[widgetId]}
+                        className={definition.widthClass}
+                        disableHandle={isMobileView}
+                      >
+                        {definition.component}
+                      </SortableWidget>
+                    );
+                  })}
                 </div>
-              ) : null}
-            </DragOverlay>
-          </DndContext>
+              </SortableContext>
+              <DragOverlay
+                dropAnimation={null}
+                adjustScale={false}
+                modifiers={[restrictToWindowEdges, snapModifier]}
+              >
+                {activeWidgetDefinition ? (
+                  <div className='pointer-events-none rounded-[inherit] border border-base-content/10 bg-base-100 shadow-2xl'>
+                    {activeWidgetDefinition.component}
+                  </div>
+                ) : null}
+              </DragOverlay>
+            </DndContext>
+          </div>
         </div>
-      </div>
-      {isCustomizing && (
-        <div className='drawer-side pointer-events-none'>
-          <aside
-            className={`fixed ${
-              isMobileView
-                ? 'inset-0 mx-auto w-full max-w-full border-none'
-                : 'bottom-0 left-0 right-0 mx-auto w-full max-w-3xl'
-            } z-50 bg-base-100/95 p-6 shadow-2xl backdrop-blur-lg pointer-events-auto ${
-              isMobileView
-                ? 'h-screen overflow-y-auto'
-                : 'max-h-[45vh] overflow-y-auto'
-            }`}
-          >
-            <div
-              className={combineClasses(
-                'space-y-4',
-                isMobileView ? 'pb-24' : undefined,
-              )}
+
+        {/* Customize Drawer */}
+        {isCustomizing && (
+          <div className='drawer-side pointer-events-none'>
+            <aside
+              className={`fixed ${
+                isMobileView
+                  ? 'inset-0 mx-auto w-full max-w-full border-none'
+                  : 'bottom-0 left-0 right-0 mx-auto w-full max-w-3xl'
+              } z-50 bg-base-100/95 p-6 shadow-2xl backdrop-blur-lg pointer-events-auto ${
+                isMobileView
+                  ? 'h-screen overflow-y-auto'
+                  : 'max-h-[45vh] overflow-y-auto'
+              }`}
             >
-              <div>
-                <p className='text-sm uppercase text-base-content/60'>
-                  Customize widgets
-                </p>
-                <h2 className='text-lg font-semibold text-base-content'>
-                  Available blocks
-                </h2>
-                <p className='text-xs text-base-content/60'>
-                  Toggle widgets on or off before saving your custom layout.
-                </p>
-              </div>
-              <div className='space-y-3'>
-                {isMobileView ? (
-                  <DndContext
-                    sensors={drawerSensors}
-                    onDragEnd={handleDrawerDragEnd}
-                  >
-                    <SortableContext
-                      items={widgetOrder}
-                      strategy={verticalListSortingStrategy}
+              <div
+                className={combineClasses(
+                  'space-y-4',
+                  isMobileView ? 'pb-24' : undefined,
+                )}
+              >
+                <div>
+                  <p className='text-sm uppercase text-base-content/60'>
+                    Customize widgets
+                  </p>
+                  <h2 className='text-lg font-semibold text-base-content'>
+                    Available blocks
+                  </h2>
+                  <p className='text-xs text-base-content/60'>
+                    Toggle widgets on or off and drag to reorder.
+                  </p>
+                </div>
+                <div className='space-y-3'>
+                  {isMobileView ? (
+                    <DndContext
+                      sensors={drawerSensors}
+                      onDragEnd={handleDrawerDragEnd}
                     >
-                      <div className='space-y-3'>
-                        {widgetOrder.map((widgetId) => {
-                          const definition = widgetDefinitionMap[widgetId];
-                          if (!definition) {
-                            return null;
-                          }
-                          return (
-                            <DrawerSortableItem
-                              key={definition.id}
-                              widget={definition}
-                              isEnabled={Boolean(widgetEnabled[definition.id])}
-                              onToggle={() => handleToggleWidget(definition.id)}
-                            />
-                          );
-                        })}
-                      </div>
-                    </SortableContext>
-                  </DndContext>
-                ) : (
-                  widgetDefinitions.map((widget) => (
-                    <label
-                      key={widget.id}
-                      className='flex items-center justify-between rounded-lg border border-base-content/10 bg-base-200/50 p-3'
+                      <SortableContext
+                        items={widgetOrder}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className='space-y-3'>
+                          {widgetOrder.map((widgetId) => {
+                            const definition = widgetDefinitionMap[widgetId];
+                            if (!definition || definition.pinned) return null;
+                            return (
+                              <DrawerSortableItem
+                                key={definition.id}
+                                widget={definition}
+                                isEnabled={Boolean(
+                                  widgetEnabled[definition.id],
+                                )}
+                                onToggle={() =>
+                                  handleToggleWidget(definition.id)
+                                }
+                              />
+                            );
+                          })}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+                  ) : (
+                    widgetDefinitions
+                      .filter((w) => !w.pinned)
+                      .map((widget) => (
+                        <label
+                          key={widget.id}
+                          className='flex items-center justify-between rounded-lg border border-base-content/10 bg-base-200/50 p-3 cursor-pointer hover:bg-base-200'
+                        >
+                          <div>
+                            <p className='font-semibold text-base-content'>
+                              {widget.label}
+                            </p>
+                            <p className='text-xs text-base-content/60'>
+                              {widget.description}
+                            </p>
+                          </div>
+                          <input
+                            type='checkbox'
+                            className='toggle toggle-primary toggle-sm'
+                            checked={Boolean(widgetEnabled[widget.id])}
+                            onChange={() => handleToggleWidget(widget.id)}
+                          />
+                        </label>
+                      ))
+                  )}
+                </div>
+                {isMobileView && (
+                  <div className='flex flex-wrap justify-end gap-2'>
+                    <button
+                      type='button'
+                      className='btn btn-sm btn-primary'
+                      onClick={handleFinishCustomizing}
                     >
-                      <div>
-                        <p className='font-semibold text-base-content'>
-                          {widget.label}
-                        </p>
-                        <p className='text-xs text-base-content/60'>
-                          {widget.description}
-                        </p>
-                      </div>
-                      <input
-                        type='checkbox'
-                        className='toggle toggle-primary toggle-sm'
-                        checked={Boolean(widgetEnabled[widget.id])}
-                        onChange={() => handleToggleWidget(widget.id)}
+                      <span
+                        className='fa-solid fa-check mr-1'
+                        aria-hidden='true'
                       />
-                    </label>
-                  ))
+                      Finish
+                    </button>
+                    <button
+                      type='button'
+                      className='btn btn-sm btn-error'
+                      onClick={handleResetToDefaults}
+                    >
+                      <span
+                        className='fa-solid fa-rotate-left'
+                        aria-hidden='true'
+                      />
+                      Reset
+                    </button>
+                    <button
+                      type='button'
+                      className='btn btn-sm btn-ghost btn-outline'
+                      onClick={handleCancelCustomizing}
+                    >
+                      <span className='fa-solid fa-xmark' aria-hidden='true' />
+                      Cancel
+                    </button>
+                  </div>
                 )}
               </div>
-              {isMobileView && (
-                <div className='flex flex-wrap justify-end gap-2'>
-                  <button
-                    type='button'
-                    className='btn btn-sm btn-primary'
-                    onClick={handleFinishCustomizing}
-                  >
-                    <span
-                      className='fa-solid fa-check mr-1'
-                      aria-hidden='true'
-                    />
-                    Finish
-                  </button>
-                  <button
-                    type='button'
-                    className='btn btn-sm btn-error'
-                    onClick={handleResetToDefaults}
-                  >
-                    <i className='fa-solid fa-rotate-left' aria-hidden='true' />
-                    Reset
-                  </button>
-                  <button
-                    type='button'
-                    className='btn btn-sm btn-ghost btn-outline'
-                    onClick={handleCancelCustomizing}
-                  >
-                    <i className='fa-solid fa-xmark' aria-hidden='true' />
-                    Cancel
-                  </button>
-                </div>
-              )}
-            </div>
-          </aside>
-        </div>
-      )}
-    </div>
+            </aside>
+          </div>
+        )}
+      </div>
+
+      {/* Quick Add FAB */}
+      <QuickAddFAB />
+    </GlobalTimeframeProvider>
   );
 }
+
+// ============================================================================
+// Sub-components
+// ============================================================================
 
 type SortableWidgetProps = {
   id: WidgetId;
@@ -894,24 +654,17 @@ function SortableWidget({
 
   useEffect(() => {
     const node = contentRef.current;
-    if (!node) {
-      return;
-    }
-    const updateHeight = () => {
+    if (!node) return;
+
+    const updateDimensions = () => {
       setContentHeight(node.offsetHeight);
-    };
-    const updateWidth = () => {
       setContentWidth(node.offsetWidth);
     };
-    updateHeight();
-    updateWidth();
-    if (typeof ResizeObserver === 'undefined') {
-      return;
-    }
-    const resizeObserver = new ResizeObserver(() => {
-      updateHeight();
-      updateWidth();
-    });
+    updateDimensions();
+
+    if (typeof ResizeObserver === 'undefined') return;
+
+    const resizeObserver = new ResizeObserver(updateDimensions);
     resizeObserver.observe(node);
     return () => {
       resizeObserver.disconnect();
@@ -928,7 +681,10 @@ function SortableWidget({
     width: isDragging && contentWidth ? `${contentWidth}px` : undefined,
   };
 
-  const rootClassName = combineClasses('group relative', className);
+  const rootClassName = combineClasses(
+    'group relative min-w-0 overflow-hidden',
+    className,
+  );
 
   return (
     <div ref={setNodeRef} style={style} className={rootClassName}>
@@ -952,7 +708,9 @@ function SortableWidget({
           </span>
         </button>
       )}
-      <div ref={contentRef}>{children}</div>
+      <div ref={contentRef} className='min-w-0 w-full overflow-hidden'>
+        {children}
+      </div>
     </div>
   );
 }

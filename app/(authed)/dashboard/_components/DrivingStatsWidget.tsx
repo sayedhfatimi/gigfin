@@ -32,9 +32,10 @@ const parseDateValue = (value: string) => {
 };
 
 const getDayKey = (date: Date) =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
-    date.getDate(),
-  ).padStart(2, '0')}`;
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+    2,
+    '0',
+  )}-${String(date.getDate()).padStart(2, '0')}`;
 
 const getStartOfDay = (reference: Date) => {
   const start = new Date(reference);
@@ -144,7 +145,7 @@ const formatPerUnit = (
   return `${formatCurrency(value, currency)}/${unitLabel}`;
 };
 
-export function DrivingStats({
+export function DrivingStatsWidget({
   incomes,
   expenses,
   currency,
@@ -327,7 +328,7 @@ export function DrivingStats({
 
   if (isLoadingOdometers && odometerEntries.length === 0) {
     return (
-      <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+      <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm overflow-hidden'>
         <div className='flex items-center justify-between gap-4'>
           <div>
             <h2 className='text-lg font-semibold text-base-content'>
@@ -346,7 +347,7 @@ export function DrivingStats({
   }
 
   return (
-    <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+    <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm overflow-hidden'>
       <div className='flex items-center justify-between gap-4'>
         <div>
           <h2 className='text-lg font-semibold text-base-content'>
@@ -402,7 +403,9 @@ export function DrivingStats({
           <p className='text-xs text-base-content/50'>
             {distanceRangeData.entries.length === 0
               ? `Add an odometer entry for ${distanceRangeLabel.toLowerCase()}`
-              : `${distanceRangeData.entries.length} readings ${distanceRangeLabel.toLowerCase()}`}
+              : `${
+                  distanceRangeData.entries.length
+                } readings ${distanceRangeLabel.toLowerCase()}`}
           </p>
         </article>
         <article className='rounded-lg border border-base-content/10 bg-base-200/50 p-4'>

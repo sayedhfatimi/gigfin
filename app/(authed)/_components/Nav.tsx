@@ -1,6 +1,7 @@
 'use client';
-import Link from 'next/link';
 import ThemeToggle from '@/components/theme/ThemeToggle';
+import { useOptionalSidebar } from '@/lib/contexts/SidebarContext';
+import Link from 'next/link';
 
 type NavItem = {
   label: string;
@@ -31,6 +32,11 @@ export default function Nav({
   onSignOut,
   isActive,
 }: AuthedNavProps) {
+  // Call hooks at top level before any conditional returns
+  const sidebarContext = useOptionalSidebar();
+  const isCollapsed = sidebarContext?.isCollapsed ?? false;
+  const toggleCollapsed = sidebarContext?.toggleCollapsed;
+
   const getDockButtonClasses = (active: boolean) =>
     [
       'flex',
@@ -124,13 +130,95 @@ export default function Nav({
     );
   }
 
+  // Collapsed sidebar (icon-only mode)
+  if (isCollapsed) {
+    return (
+      <aside className='hidden w-16 flex-col items-center gap-4 border-r border-base-content/10 bg-base-100 py-6 shadow-sm lg:flex lg:sticky lg:top-0 lg:h-screen'>
+        {/* Logo */}
+        <div className='mb-2'>
+          <span className='text-xl font-bold text-primary'>GF</span>
+        </div>
+
+        {/* Navigation */}
+        <nav className='flex flex-1 flex-col items-center gap-2'>
+          {navItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`btn btn-square btn-ghost tooltip tooltip-right ${
+                isActive(item.href)
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-base-content/70 hover:bg-base-200'
+              }`}
+              data-tip={item.label}
+            >
+              <span
+                className={`fa-solid ${item.icon} text-lg`}
+                aria-hidden='true'
+              />
+              <span className='sr-only'>{item.label}</span>
+            </Link>
+          ))}
+        </nav>
+
+        {/* Bottom actions */}
+        <div className='flex flex-col items-center gap-2'>
+          <ThemeToggle className='btn-square btn-ghost btn-sm' />
+          <button
+            type='button'
+            aria-label='Sign out'
+            className='btn btn-square btn-ghost btn-sm tooltip tooltip-right'
+            data-tip='Sign out'
+            onClick={onSignOut}
+            disabled={isSigningOut}
+          >
+            <span
+              className='fa-solid fa-arrow-right-from-bracket text-base-content/70'
+              aria-hidden='true'
+            />
+          </button>
+          {toggleCollapsed && (
+            <button
+              type='button'
+              aria-label='Expand sidebar'
+              className='btn btn-square btn-ghost btn-sm tooltip tooltip-right'
+              data-tip='Expand'
+              onClick={toggleCollapsed}
+            >
+              <span
+                className='fa-solid fa-angles-right text-base-content/70'
+                aria-hidden='true'
+              />
+            </button>
+          )}
+        </div>
+      </aside>
+    );
+  }
+
+  // Expanded sidebar (default)
   return (
     <aside className='hidden w-72 flex-col gap-6 border-r border-base-content/10 bg-base-100 p-6 py-10 shadow-sm lg:flex lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto bottom-0'>
-      <div>
-        <p className='text-xs font-semibold uppercase text-base-content/60'>
-          GigFin
-        </p>
-        <p className='text-2xl font-semibold text-base-content'>Workspace</p>
+      <div className='flex items-center justify-between'>
+        <div>
+          <p className='text-xs font-semibold uppercase text-base-content/60'>
+            GigFin
+          </p>
+          <p className='text-2xl font-semibold text-base-content'>Workspace</p>
+        </div>
+        {toggleCollapsed && (
+          <button
+            type='button'
+            aria-label='Collapse sidebar'
+            className='btn btn-square btn-ghost btn-sm'
+            onClick={toggleCollapsed}
+          >
+            <span
+              className='fa-solid fa-angles-left text-base-content/70'
+              aria-hidden='true'
+            />
+          </button>
+        )}
       </div>
       <div className='space-y-1 text-sm text-base-content/70'>
         <p className='font-semibold text-base-content'>

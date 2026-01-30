@@ -1,15 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useGlobalTimeframe } from '@/lib/contexts/GlobalTimeframeContext';
 import type { ExpenseEntry, UnitRateUnit } from '@/lib/expenses';
 import { useVehicleProfiles } from '@/lib/queries/vehicleProfiles';
 import type { VehicleType } from '@/lib/vehicle';
 import { vehicleTypeOptions } from '@/lib/vehicle';
 import { getExpenseEntriesForTimeframe } from '../_lib/expenseBreakdownTimeframes';
-import {
-  type TimeframeKey,
-  timeframeOptions,
-} from '../_lib/platformBreakdownTimeframes';
 
 type FuelConsumptionPanelProps = {
   expenses: ExpenseEntry[];
@@ -38,8 +35,8 @@ const formatQuantity = (value: number) => {
   return value.toLocaleString(undefined, { maximumFractionDigits: decimals });
 };
 
-export function FuelConsumptionPanel({ expenses }: FuelConsumptionPanelProps) {
-  const [timeframe, setTimeframe] = useState<TimeframeKey>('monthly');
+export function FuelConsumptionWidget({ expenses }: FuelConsumptionPanelProps) {
+  const { timeframe, selectedOption } = useGlobalTimeframe();
   const [vehicleFilter, setVehicleFilter] = useState('');
 
   const { data: vehicleProfiles = [], isLoading: areVehiclesLoading } =
@@ -53,10 +50,6 @@ export function FuelConsumptionPanel({ expenses }: FuelConsumptionPanelProps) {
       setVehicleFilter('');
     }
   }, [vehicleFilter, vehicleProfiles]);
-
-  const selectedTimeframeOption =
-    timeframeOptions.find((option) => option.value === timeframe) ??
-    timeframeOptions[1];
 
   const timeframeExpenses = useMemo(
     () => getExpenseEntriesForTimeframe(expenses, timeframe),
@@ -135,35 +128,18 @@ export function FuelConsumptionPanel({ expenses }: FuelConsumptionPanelProps) {
     : 'No fuel logs';
 
   return (
-    <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+    <section className='border border-base-content/10 bg-base-100 p-6 shadow-sm overflow-hidden'>
       <div className='flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between'>
         <div>
           <h2 className='text-lg font-semibold text-base-content'>
             Fuel & energy consumption
           </h2>
           <p className='text-xs text-base-content/60'>
-            {selectedTimeframeOption.label} ·{' '}
-            {selectedTimeframeOption.description}
+            {selectedOption.label} · {selectedOption.description}
           </p>
           <p className='text-xs text-base-content/60'>{selectedVehicleLabel}</p>
         </div>
         <div className='flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-3'>
-          <label className='select select-xs max-w-fit'>
-            <span className='label hidden md:block'>Timeframe</span>
-            <select
-              id='fuel-consumption-timeframe'
-              value={timeframe}
-              onChange={(event) =>
-                setTimeframe(event.target.value as TimeframeKey)
-              }
-            >
-              {timeframeOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
           <label className='select select-xs max-w-fit'>
             <span className='label hidden md:block'>Vehicle</span>
             <select

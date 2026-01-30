@@ -1,7 +1,9 @@
+import type { TimeframeKey } from '@/lib/dates';
 import type { IncomeEntry } from '@/lib/income';
 import { getCurrentMonthEntries } from '@/lib/income';
 
-export type TimeframeKey = 'weekly' | 'monthly' | 'yearToDate' | 'last12Months';
+// Re-export for backwards compatibility
+export type { TimeframeKey };
 
 type TimeframeOption = {
   value: TimeframeKey;
@@ -10,6 +12,12 @@ type TimeframeOption = {
 };
 
 export const timeframeOptions: TimeframeOption[] = [
+  { value: 'today', label: 'Today', description: "Today's activity" },
+  {
+    value: 'yesterday',
+    label: 'Yesterday',
+    description: "Yesterday's activity",
+  },
   { value: 'weekly', label: 'Weekly', description: 'Last 7 days' },
   { value: 'monthly', label: 'Monthly', description: 'Current month' },
   {
@@ -22,6 +30,7 @@ export const timeframeOptions: TimeframeOption[] = [
     label: 'Last 12 months',
     description: 'Rolling year',
   },
+  { value: 'all', label: 'All time', description: 'All recorded data' },
 ];
 
 const normalizeStartOfDay = (date: Date) => {
@@ -89,6 +98,15 @@ export const getEntriesForTimeframe = (
   timeframe: TimeframeKey,
 ) => {
   switch (timeframe) {
+    case 'today':
+      return getRecentDaysEntries(entries, 1);
+    case 'yesterday': {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const start = normalizeStartOfDay(yesterday);
+      const end = normalizeEndOfDay(yesterday);
+      return filterEntriesBetween(entries, start, end);
+    }
     case 'weekly':
       return getRecentDaysEntries(entries, 7);
     case 'monthly':
@@ -97,6 +115,8 @@ export const getEntriesForTimeframe = (
       return getYearToDateEntries(entries);
     case 'last12Months':
       return getLastTwelveMonthsEntries(entries);
+    case 'all':
+      return entries;
     default:
       return entries;
   }
