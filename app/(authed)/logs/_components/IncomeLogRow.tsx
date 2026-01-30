@@ -7,7 +7,7 @@ import { formatCurrency } from '@/lib/income';
 
 import EntryActions from './EntryActions';
 
-type IncomeSummaryRowProps = {
+type IncomeLogRowProps = {
   row: Row<DailyIncomeSummary>;
   currency: CurrencyCode;
   onEditEntry: (entry: IncomeEntry) => void;
@@ -17,7 +17,7 @@ type IncomeSummaryRowProps = {
   onToggle: () => void;
 };
 
-export default function IncomeSummaryRow({
+export default function IncomeLogRow({
   row,
   currency,
   onEditEntry,
@@ -25,7 +25,7 @@ export default function IncomeSummaryRow({
   deleteDisabled,
   isExpanded,
   onToggle,
-}: IncomeSummaryRowProps) {
+}: IncomeLogRowProps) {
   return (
     <div className='space-y-0.5'>
       <div className='rounded-lg border border-base-content/10 border-l-4 border-l-success bg-base-200/80 shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md'>
@@ -91,7 +91,6 @@ export default function IncomeSummaryRow({
                       onEdit={() => onEditEntry(entry)}
                       onDelete={() => onDeleteEntry(entry)}
                       deleteDisabled={deleteDisabled}
-                      editClassName='btn btn-xs btn-outline btn-ghost'
                     />
                   </div>
                 ))

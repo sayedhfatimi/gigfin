@@ -1,3 +1,4 @@
+import { passkey } from '@better-auth/passkey';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { twoFactor as twoFactorPlugin } from 'better-auth/plugins/two-factor';
@@ -5,6 +6,7 @@ import { db } from '@/db';
 import {
   account,
   income,
+  passkey as passkeyTable,
   session,
   twoFactor,
   user,
@@ -15,12 +17,20 @@ export const auth = betterAuth({
   appName: 'GigFin',
   database: drizzleAdapter(db, {
     provider: 'sqlite',
-    schema: { account, income, session, user, verification, twoFactor },
+    schema: {
+      account,
+      income,
+      session,
+      user,
+      verification,
+      twoFactor,
+      passkey: passkeyTable,
+    },
   }),
   emailAndPassword: {
     enabled: true,
   },
-  plugins: [twoFactorPlugin({ issuer: 'GigFin' })],
+  plugins: [twoFactorPlugin({ issuer: 'GigFin' }), passkey()],
   advanced: {
     ipAddress: {
       ipAddressHeaders: ['cf-connecting-ip'],

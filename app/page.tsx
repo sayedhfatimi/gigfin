@@ -122,6 +122,8 @@ function HomeContent() {
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [showSignupConfirm, setShowSignupConfirm] = useState(false);
+  const [isPasskeyLoading, setIsPasskeyLoading] = useState(false);
+  const [passkeyError, setPasskeyError] = useState('');
   const router = useRouter();
   const { data: sessionData, isPending: sessionPending } = useSession();
   const sessionUser = getSessionUser(sessionData);
@@ -279,6 +281,26 @@ function HomeContent() {
     setTwoFactorPrompt(false);
     loginMutation.reset();
     loginMutation.mutate(loginForm);
+  };
+
+  const handlePasskeySignIn = async () => {
+    setPasskeyError('');
+    setIsPasskeyLoading(true);
+    try {
+      const response = await authClient.signIn.passkey();
+      if (response.error) {
+        setPasskeyError(response.error.message || 'Passkey sign-in failed.');
+        return;
+      }
+      rememberReturningUser();
+      router.push('/dashboard');
+    } catch (error) {
+      setPasskeyError(
+        error instanceof Error ? error.message : 'Passkey sign-in failed.',
+      );
+    } finally {
+      setIsPasskeyLoading(false);
+    }
   };
 
   const handleSignup = (event: FormEvent<HTMLFormElement>) => {
@@ -564,6 +586,30 @@ function HomeContent() {
                       {isLoginPending ? 'Signing in…' : 'Sign in'}
                     </button>
                   </form>
+                  <div className='divider text-xs text-base-content/50'>or</div>
+                  <button
+                    type='button'
+                    className='btn btn-outline btn-primary w-full gap-2 py-3 text-sm font-semibold transition hover:-translate-y-0.5'
+                    onClick={handlePasskeySignIn}
+                    disabled={isPasskeyLoading}
+                  >
+                    {isPasskeyLoading ? (
+                      <span className='loading loading-spinner loading-sm' />
+                    ) : (
+                      <i className='fa-solid fa-fingerprint' />
+                    )}
+                    {isPasskeyLoading
+                      ? 'Authenticating…'
+                      : 'Sign in with passkey'}
+                  </button>
+                  {passkeyError && (
+                    <output
+                      aria-live='polite'
+                      className='validator-hint text-sm text-error'
+                    >
+                      {passkeyError}
+                    </output>
+                  )}
                 </div>
                 <div
                   className={

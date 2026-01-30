@@ -88,7 +88,6 @@ export default function ExpenseLogRow({
                   onEdit={() => onEdit(entry)}
                   onDelete={() => onDelete(entry)}
                   deleteDisabled={deleteDisabled}
-                  editClassName='btn btn-xs btn-outline btn-ghost'
                 />
               </div>
             </div>

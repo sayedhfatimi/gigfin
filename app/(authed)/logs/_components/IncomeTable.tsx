@@ -7,7 +7,7 @@ import type { CurrencyCode } from '@/lib/currency';
 import type { DailyIncomeSummary, IncomeEntry } from '@/lib/income';
 import { GRID_TEMPLATE_CLASS } from '../_lib/layout';
 
-import IncomeSummaryRow from './IncomeSummaryRow';
+import IncomeLogRow from './IncomeLogRow';
 import LoadingState from './LoadingState';
 import PaginationControls from './PaginationControls';
 
@@ -97,7 +97,7 @@ export default function IncomeTable({
           ) : null}
           <div className='space-y-3'>
             {pageRows.map((row) => (
-              <IncomeSummaryRow
+              <IncomeLogRow
                 key={row.id}
                 row={row}
                 currency={currency}

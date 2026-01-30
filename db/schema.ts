@@ -5,6 +5,7 @@ import { chargingVendor } from './charging-vendor-schema';
 import { expense } from './expense-schema';
 import { income } from './income-schema';
 import { odometer } from './odometer-schema';
+import { passkey } from './passkey-schema';
 import { vehicleProfile } from './vehicle-profile-schema';
 
 export {
@@ -12,6 +13,7 @@ export {
   expense,
   income,
   odometer,
+  passkey,
   session,
   twoFactor,
   user,
@@ -25,6 +27,7 @@ export const userRelations = relations(user, ({ many }) => ({
   accounts: many(account),
   incomes: many(income),
   twoFactors: many(twoFactor),
+  passkeys: many(passkey),
   vehicleProfiles: many(vehicleProfile),
   expenses: many(expense),
 }));
@@ -46,6 +49,13 @@ export const accountRelations = relations(account, ({ one }) => ({
 export const twoFactorRelations = relations(twoFactor, ({ one }) => ({
   user: one(user, {
     fields: [twoFactor.userId],
+    references: [user.id],
+  }),
+}));
+
+export const passkeyRelations = relations(passkey, ({ one }) => ({
+  user: one(user, {
+    fields: [passkey.userId],
     references: [user.id],
   }),
 }));

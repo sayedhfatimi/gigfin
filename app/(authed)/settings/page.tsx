@@ -31,6 +31,7 @@ import { getSessionUser } from '@/lib/session';
 import { type VehicleProfile, vehicleTypeOptions } from '@/lib/vehicle';
 import { ChangePasswordModal } from './_components/ChangePasswordModal';
 import ChargingVendorModal from './_components/ChargingVendorModal';
+import { PasskeyModal } from './_components/PasskeyModal';
 import { TwoFactorModal } from './_components/TwoFactorModal';
 import VehicleProfileModal from './_components/VehicleProfileModal';
 
@@ -167,6 +168,7 @@ export default function SettingsPage() {
   const [isExportingAll, setIsExportingAll] = useState(false);
   const [isTwoFactorModalOpen, setIsTwoFactorModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isPasskeyModalOpen, setIsPasskeyModalOpen] = useState(false);
   const [activeSessions, setActiveSessions] = useState<SessionListItem[]>([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [sessionsError, setSessionsError] = useState<string | null>(null);
@@ -1027,6 +1029,25 @@ export default function SettingsPage() {
                   Change password
                 </button>
               </div>
+              <div className='flex flex-col gap-3 rounded-lg border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
+                <div className='space-y-1'>
+                  <p className='text-xs uppercase  text-base-content/50'>
+                    <i className='fa-solid fa-fingerprint mr-1' />
+                    Passkeys
+                  </p>
+                  <p className='text-sm text-base-content/60'>
+                    Sign in faster with biometrics or security keys.
+                  </p>
+                </div>
+                <button
+                  type='button'
+                  className='btn btn-primary gap-2 text-sm font-semibold'
+                  onClick={() => setIsPasskeyModalOpen(true)}
+                >
+                  <i className='fa-solid fa-fingerprint' />
+                  Manage passkeys
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -1223,45 +1244,44 @@ export default function SettingsPage() {
                           </p>
                         </div>
                       </div>
-                      {profile.isDefault && (
-                        <span className='badge badge-sm badge-primary gap-1'>
-                          <i className='fa-solid fa-star text-xs' />
-                          Default
-                        </span>
-                      )}
-                    </div>
-                    <div className='mt-3 pt-3 border-t border-base-content/5 flex flex-wrap gap-2'>
-                      <button
-                        type='button'
-                        className='btn btn-xs btn-outline gap-1'
-                        disabled={isVehicleProfileSaving}
-                        onClick={() => handleOpenVehicleModal(profile)}
-                      >
-                        <i className='fa-solid fa-pen text-xs' />
-                        Edit
-                      </button>
-                      {!profile.isDefault && (
-                        <button
-                          type='button'
-                          className='btn btn-xs btn-primary gap-1'
-                          onClick={() =>
-                            handleSetDefaultVehicleProfile(profile)
-                          }
-                          disabled={updateVehicleProfileMutation.isPending}
-                        >
-                          <i className='fa-solid fa-star text-xs' />
-                          Set default
-                        </button>
-                      )}
-                      <button
-                        type='button'
-                        className='btn btn-xs btn-outline btn-error gap-1'
-                        onClick={() => handleDeleteVehicleProfile(profile)}
-                        disabled={deleteVehicleProfileMutation.isPending}
-                      >
-                        <i className='fa-solid fa-trash text-xs' />
-                        Delete
-                      </button>
+                      <div className='flex flex-col items-end gap-4'>
+                        {profile.isDefault && (
+                          <span className='badge badge-sm badge-primary gap-1'>
+                            <i className='fa-solid fa-star text-xs' />
+                            Default
+                          </span>
+                        )}
+                        <div className='flex flex-wrap gap-2'>
+                          <button
+                            type='button'
+                            className='btn btn-xs btn-square btn-ghost text-info'
+                            disabled={isVehicleProfileSaving}
+                            onClick={() => handleOpenVehicleModal(profile)}
+                          >
+                            <i className='fa-solid fa-pen text-xs' />
+                          </button>
+                          {!profile.isDefault && (
+                            <button
+                              type='button'
+                              className='btn btn-xs text-primary btn-square btn-ghost'
+                              onClick={() =>
+                                handleSetDefaultVehicleProfile(profile)
+                              }
+                              disabled={updateVehicleProfileMutation.isPending}
+                            >
+                              <i className='fa-solid fa-star text-xs' />
+                            </button>
+                          )}
+                          <button
+                            type='button'
+                            className='btn btn-xs btn-square btn-ghost text-error'
+                            onClick={() => handleDeleteVehicleProfile(profile)}
+                            disabled={deleteVehicleProfileMutation.isPending}
+                          >
+                            <i className='fa-solid fa-trash text-xs' />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -1331,21 +1351,19 @@ export default function SettingsPage() {
                       <div className='flex flex-wrap gap-2'>
                         <button
                           type='button'
-                          className='btn btn-xs btn-outline gap-1'
+                          className='btn btn-xs btn-square btn-ghost text-info'
                           disabled={isChargingVendorSaving}
                           onClick={() => handleOpenChargingVendorModal(vendor)}
                         >
                           <i className='fa-solid fa-pen text-xs' />
-                          Edit
                         </button>
                         <button
                           type='button'
-                          className='btn btn-xs btn-outline btn-error gap-1'
+                          className='btn btn-xs btn-square btn-ghost text-error'
                           disabled={deleteChargingVendorMutation.isPending}
                           onClick={() => handleDeleteChargingVendor(vendor)}
                         >
                           <i className='fa-solid fa-trash text-xs' />
-                          Delete
                         </button>
                       </div>
                     </div>
@@ -1454,6 +1472,10 @@ export default function SettingsPage() {
 
         {isPasswordModalOpen && (
           <ChangePasswordModal onClose={closePasswordModal} />
+        )}
+
+        {isPasskeyModalOpen && (
+          <PasskeyModal onClose={() => setIsPasskeyModalOpen(false)} />
         )}
 
         <VehicleProfileModal
