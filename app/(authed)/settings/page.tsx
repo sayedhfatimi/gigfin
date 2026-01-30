@@ -1,13 +1,4 @@
 'use client';
-import {
-  type ChangeEvent,
-  type Dispatch,
-  type SetStateAction,
-  useCallback,
-  useEffect,
-  useState,
-} from 'react';
-import { UAParser } from 'ua-parser-js';
 import { type ToastMessage, ToastStack } from '@/components/ToastStack';
 import { authClient, useSession } from '@/lib/auth-client';
 import type { ChargingVendor } from '@/lib/charging-vendor';
@@ -29,6 +20,15 @@ import {
 } from '@/lib/queries/vehicleProfiles';
 import { getSessionUser } from '@/lib/session';
 import { type VehicleProfile, vehicleTypeOptions } from '@/lib/vehicle';
+import {
+  type ChangeEvent,
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
+import { UAParser } from 'ua-parser-js';
 import { ChangePasswordModal } from './_components/ChangePasswordModal';
 import ChargingVendorModal from './_components/ChargingVendorModal';
 import { PasskeyModal } from './_components/PasskeyModal';
@@ -740,29 +740,43 @@ export default function SettingsPage() {
         <section className='grid gap-6 lg:grid-cols-2'>
           <div className='rounded-lg border border-base-content/10 bg-base-100 p-6 shadow-sm'>
             <div className='flex items-start justify-between gap-4'>
-              <div>
-                <p className='text-xs uppercase text-base-content/50'>
-                  <i className='fa-solid fa-desktop mr-1' />
-                  Sessions
-                </p>
-                <p className='text-sm text-base-content/60'>
-                  Keep tabs on every device that has signed in with this
-                  account.
-                </p>
+              <div className='flex items-center gap-3'>
+                <span className='text-xl text-secondary'>
+                  <i className='fa-solid fa-desktop' />
+                </span>
+                <div>
+                  <p className='text-xs uppercase text-base-content/50'>
+                    Sessions
+                  </p>
+                  <p className='text-sm text-base-content/60'>
+                    Devices signed in with this account.
+                  </p>
+                </div>
               </div>
-              <button
-                type='button'
-                className='btn btn-sm btn-secondary gap-2 text-xs font-semibold normal-case'
-                onClick={handleRevokeSessions}
-                disabled={isRevokingSessions}
-              >
-                {isRevokingSessions ? (
-                  <span className='loading loading-spinner loading-xs' />
-                ) : (
-                  <i className='fa-solid fa-right-from-bracket' />
-                )}
-                {isRevokingSessions ? 'Signing out…' : 'Sign out everywhere'}
-              </button>
+              <div className='flex items-center gap-2'>
+                <span className='badge badge-sm badge-secondary gap-1'>
+                  <i className='fa-solid fa-circle text-[6px]' />
+                  {activeSessions.length} active
+                </span>
+                <button
+                  type='button'
+                  className='btn btn-sm btn-error btn-outline gap-2 text-xs font-semibold normal-case'
+                  onClick={handleRevokeSessions}
+                  disabled={isRevokingSessions || activeSessions.length <= 1}
+                  title={
+                    activeSessions.length <= 1
+                      ? 'No other sessions to revoke'
+                      : 'Sign out of all other devices'
+                  }
+                >
+                  {isRevokingSessions ? (
+                    <span className='loading loading-spinner loading-xs' />
+                  ) : (
+                    <i className='fa-solid fa-right-from-bracket' />
+                  )}
+                  {isRevokingSessions ? 'Signing out…' : 'Sign out everywhere'}
+                </button>
+              </div>
             </div>
             <div className='mt-6 grid gap-4 md:grid-cols-2'>
               <div>
@@ -780,12 +794,16 @@ export default function SettingsPage() {
             </div>
             <div className='mt-6 space-y-4'>
               {isLoadingSessions ? (
-                <p className='text-sm text-base-content/60'>
+                <div className='flex items-center gap-2 text-sm text-base-content/60'>
+                  <span className='loading loading-spinner loading-sm' />
                   Loading sessions…
-                </p>
+                </div>
               ) : activeSessions.length === 0 ? (
-                <div className='flex flex-col gap-1 rounded border border-base-content/10 px-4 py-5 text-sm text-base-content/60'>
-                  <p>No active sessions found.</p>
+                <div className='flex flex-col items-center gap-2 rounded-lg border border-base-content/10 px-4 py-8 text-center'>
+                  <i className='fa-solid fa-desktop text-2xl text-base-content/30' />
+                  <p className='text-sm text-base-content/60'>
+                    No active sessions found.
+                  </p>
                   <p className='text-xs text-base-content/50'>
                     Sign in again to refresh this list.
                   </p>
@@ -794,160 +812,152 @@ export default function SettingsPage() {
                 <div className='space-y-4'>
                   {currentSession ? (
                     <div
-                      className='rounded-lg border border-base-content/10 bg-base-200 p-4 shadow-sm'
+                      className='rounded-lg border border-base-content/10 border-l-4 border-l-success bg-base-200 p-4 shadow-sm'
                       key={currentSession.token ?? currentSession.id}
                     >
                       <div className='flex items-start justify-between gap-3'>
-                        <div>
-                          <p className='text-sm font-semibold text-base-content'>
-                            <i className='fa-solid fa-globe mr-2 text-primary' />
-                            {currentSessionAgent?.browserLabel ??
-                              'Unknown browser'}
-                          </p>
-                          <p className='text-xs text-base-content/60'>
-                            {currentSessionAgent?.osLabel ?? 'Unknown OS'}
-                          </p>
-                          <p className='text-xs text-base-content/50'>
-                            {currentSessionAgent?.deviceLabel ??
-                              'Unknown device'}
-                          </p>
-                        </div>
-                        <span className='badge badge-sm badge-primary'>
-                          Current session
-                        </span>
-                      </div>
-                      <div className='mt-3 grid gap-3 text-xs text-base-content/60 md:grid-cols-2'>
-                        <div className='space-y-1'>
-                          <p className='text-xs uppercase text-base-content/50'>
-                            Session timeline
-                          </p>
-                          <p>
-                            {`Created ${formatSessionTimestamp(
-                              currentSession.createdAt,
-                            )}`}
-                          </p>
-                          <p>
-                            {`Last updated ${formatSessionTimestamp(
-                              currentSession.updatedAt,
-                            )}`}
-                          </p>
-                        </div>
-                        <div className='space-y-2 md:text-right'>
-                          <p className='text-xs uppercase text-base-content/50'>
-                            Metadata
-                          </p>
-                          <p>
-                            {`Expires ${formatSessionTimestamp(
-                              currentSession.expiresAt,
-                            )}`}
-                          </p>
+                        <div className='flex items-start gap-3'>
+                          <div className='flex h-10 w-10 items-center justify-center rounded-full bg-success/20'>
+                            <i className='fa-solid fa-check text-success' />
+                          </div>
                           <div>
-                            <p className='text-xs uppercase text-base-content/50'>
-                              IP address
-                            </p>
                             <p className='text-sm font-semibold text-base-content'>
+                              {currentSessionAgent?.browserLabel ??
+                                'Unknown browser'}
+                            </p>
+                            <p className='text-xs text-base-content/60'>
+                              {currentSessionAgent?.osLabel ?? 'Unknown OS'} ·{' '}
+                              {currentSessionAgent?.deviceLabel ??
+                                'Unknown device'}
+                            </p>
+                            <p className='text-xs text-base-content/50 mt-1'>
+                              <i className='fa-solid fa-location-dot mr-1' />
                               {currentSession.ipAddress ?? 'Unknown IP'}
                             </p>
                           </div>
                         </div>
+                        <span className='badge badge-success gap-1'>
+                          <i className='fa-solid fa-circle-check text-xs' />
+                          This device
+                        </span>
+                      </div>
+                      <div className='mt-4 flex flex-wrap gap-4 text-xs text-base-content/60 border-t border-base-content/10 pt-3'>
+                        <div className='flex items-center gap-1'>
+                          <i className='fa-regular fa-calendar-plus text-base-content/40' />
+                          Created{' '}
+                          {formatSessionTimestamp(currentSession.createdAt)}
+                        </div>
+                        <div className='flex items-center gap-1'>
+                          <i className='fa-regular fa-clock text-base-content/40' />
+                          Updated{' '}
+                          {formatSessionTimestamp(currentSession.updatedAt)}
+                        </div>
+                        <div className='flex items-center gap-1'>
+                          <i className='fa-regular fa-hourglass-half text-base-content/40' />
+                          Expires{' '}
+                          {formatSessionTimestamp(currentSession.expiresAt)}
+                        </div>
                       </div>
                     </div>
                   ) : (
-                    <div className='rounded-2xl border border-base-content/10 bg-base-200 p-4 text-sm text-base-content/60 shadow-sm'>
+                    <div className='rounded-lg border border-base-content/10 bg-base-200 p-4 text-sm text-base-content/60 shadow-sm'>
+                      <i className='fa-solid fa-circle-question mr-2 text-warning' />
                       Unable to determine the current session.
                     </div>
                   )}
-                  <div className='space-y-2'>
-                    <p className='text-xs uppercase text-base-content/50'>
-                      Other sessions
-                    </p>
-                    <p className='text-sm text-base-content/60'>
-                      Expand any additional session to view its details.
-                    </p>
-                    {otherSessions.length === 0 ? (
-                      <p className='text-sm text-base-content/70'>
-                        No additional active sessions.
+                  <div className='space-y-3'>
+                    <div className='flex items-center justify-between'>
+                      <p className='text-xs uppercase text-base-content/50'>
+                        <i className='fa-solid fa-laptop mr-1' />
+                        Other devices
                       </p>
+                      {otherSessions.length > 0 && (
+                        <span className='badge badge-ghost badge-sm'>
+                          {otherSessions.length} session
+                          {otherSessions.length !== 1 ? 's' : ''}
+                        </span>
+                      )}
+                    </div>
+                    {otherSessions.length === 0 ? (
+                      <div className='flex items-center gap-2 rounded-lg border border-dashed border-base-content/20 px-4 py-3 text-sm text-base-content/50'>
+                        <i className='fa-regular fa-circle-check' />
+                        No additional active sessions.
+                      </div>
                     ) : (
-                      <div className='space-y-3'>
+                      <div className='space-y-2'>
                         {otherSessions.map((sessionInfo) => {
                           const identifier =
                             sessionInfo.token ?? sessionInfo.id;
                           const parsedAgent = parseUserAgentMetadata(
                             sessionInfo.userAgent,
                           );
+                          const isRevoking = revokingSessionTokens.includes(
+                            sessionInfo.token ?? '',
+                          );
                           return (
                             <div
                               key={identifier}
-                              className='collapse collapse-arrow border border-base-content/10 bg-base-200'
+                              className='collapse collapse-arrow rounded-lg border border-base-content/10 border-l-4 border-l-secondary bg-base-200'
                             >
                               <input type='checkbox' />
-                              <div className='collapse-title flex items-center justify-between gap-3'>
-                                <div>
+                              <div className='collapse-title flex items-center gap-3'>
+                                <div className='flex h-8 w-8 items-center justify-center rounded-full bg-secondary/20'>
+                                  <i className='fa-solid fa-globe text-sm text-secondary' />
+                                </div>
+                                <div className='flex-1'>
                                   <p className='text-sm font-semibold text-base-content'>
                                     {parsedAgent.browserLabel}
                                   </p>
                                   <p className='text-xs text-base-content/60'>
-                                    {parsedAgent.osLabel}
+                                    {parsedAgent.osLabel} ·{' '}
+                                    {parsedAgent.deviceLabel}
                                   </p>
                                 </div>
-                                <p className='text-xs uppercase text-base-content/50'>
-                                  {parsedAgent.deviceLabel}
-                                </p>
                               </div>
                               <div className='collapse-content space-y-4 border-t border-base-content/10 pt-4 text-xs text-base-content/60'>
-                                <div className='grid gap-3 md:grid-cols-2'>
-                                  <div className='space-y-1'>
-                                    <p className='text-xs uppercase text-base-content/50'>
-                                      Session timeline
-                                    </p>
-                                    <p>
-                                      {`Created ${formatSessionTimestamp(
-                                        sessionInfo.createdAt,
-                                      )}`}
-                                    </p>
-                                    <p>
-                                      {`Last updated ${formatSessionTimestamp(
-                                        sessionInfo.updatedAt,
-                                      )}`}
-                                    </p>
+                                <div className='flex flex-wrap gap-4'>
+                                  <div className='flex items-center gap-1'>
+                                    <i className='fa-regular fa-calendar-plus text-base-content/40' />
+                                    Created{' '}
+                                    {formatSessionTimestamp(
+                                      sessionInfo.createdAt,
+                                    )}
                                   </div>
-                                  <div className='space-y-2 md:text-right'>
-                                    <p className='text-xs uppercase text-base-content/50'>
-                                      Metadata
-                                    </p>
-                                    <p>
-                                      {`Expires ${formatSessionTimestamp(
-                                        sessionInfo.expiresAt,
-                                      )}`}
-                                    </p>
-                                    <div>
-                                      <p className='text-xs uppercase text-base-content/50'>
-                                        IP address
-                                      </p>
-                                      <p className='text-sm font-semibold text-base-content'>
-                                        {sessionInfo.ipAddress ?? 'Unknown IP'}
-                                      </p>
-                                    </div>
+                                  <div className='flex items-center gap-1'>
+                                    <i className='fa-regular fa-clock text-base-content/40' />
+                                    Updated{' '}
+                                    {formatSessionTimestamp(
+                                      sessionInfo.updatedAt,
+                                    )}
+                                  </div>
+                                  <div className='flex items-center gap-1'>
+                                    <i className='fa-regular fa-hourglass-half text-base-content/40' />
+                                    Expires{' '}
+                                    {formatSessionTimestamp(
+                                      sessionInfo.expiresAt,
+                                    )}
+                                  </div>
+                                  <div className='flex items-center gap-1'>
+                                    <i className='fa-solid fa-location-dot text-base-content/40' />
+                                    {sessionInfo.ipAddress ?? 'Unknown IP'}
                                   </div>
                                 </div>
                                 {sessionInfo.token && (
                                   <div className='flex justify-end'>
                                     <button
                                       type='button'
-                                      className='btn btn-sm btn-outline text-xs normal-case'
+                                      className='btn btn-sm btn-error btn-outline gap-1 text-xs normal-case'
                                       onClick={() =>
                                         handleRevokeSession(sessionInfo.token)
                                       }
-                                      disabled={revokingSessionTokens.includes(
-                                        sessionInfo.token,
-                                      )}
+                                      disabled={isRevoking}
                                     >
-                                      {revokingSessionTokens.includes(
-                                        sessionInfo.token,
-                                      )
-                                        ? 'Revoking…'
-                                        : 'Revoke session'}
+                                      {isRevoking ? (
+                                        <span className='loading loading-spinner loading-xs' />
+                                      ) : (
+                                        <i className='fa-solid fa-right-from-bracket' />
+                                      )}
+                                      {isRevoking ? 'Revoking…' : 'Revoke'}
                                     </button>
                                   </div>
                                 )}
@@ -966,15 +976,19 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className='rounded-lg border border-base-content/10 bg-base-100 p-6 shadow-sm'>
-            <div className='flex items-center justify-between'>
-              <div>
-                <p className='text-xs uppercase text-base-content/50'>
-                  <i className='fa-solid fa-shield-halved mr-1' />
-                  Security
-                </p>
-                <p className='text-sm text-base-content/60'>
-                  Keep your authentication choices up to date.
-                </p>
+            <div className='flex items-center justify-between gap-4'>
+              <div className='flex items-center gap-3'>
+                <span className='text-xl text-warning'>
+                  <i className='fa-solid fa-shield-halved' />
+                </span>
+                <div>
+                  <p className='text-xs uppercase text-base-content/50'>
+                    Security
+                  </p>
+                  <p className='text-sm text-base-content/60'>
+                    Keep your authentication choices up to date.
+                  </p>
+                </div>
               </div>
               <span
                 className={`badge badge-sm ${
@@ -989,64 +1003,242 @@ export default function SettingsPage() {
                 {isTwoFactorEnabled ? '2FA enabled' : '2FA disabled'}
               </span>
             </div>
-            <div className='mt-6 space-y-4'>
-              <div className='flex flex-col gap-3 rounded-lg border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
-                <div className='space-y-1'>
-                  <p className='text-xs uppercase  text-base-content/50'>
-                    <i className='fa-solid fa-mobile-screen mr-1' />
-                    Two-factor authentication
-                  </p>
-                  <p className='text-sm text-base-content/60'>
-                    Protect access to your account with an extra verification
-                    step.
-                  </p>
+            <div className='mt-6 space-y-3'>
+              <div className='rounded-lg border border-base-content/10 border-l-4 border-l-success bg-base-200 px-4 py-4'>
+                <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
+                  <div className='flex items-center gap-3'>
+                    <div className='flex h-9 w-9 items-center justify-center rounded-full bg-success/20'>
+                      <i className='fa-solid fa-mobile-screen text-success' />
+                    </div>
+                    <div>
+                      <p className='text-sm font-medium text-base-content'>
+                        Two-factor authentication
+                      </p>
+                      <p className='text-xs text-base-content/60'>
+                        Protect access with an extra verification step.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type='button'
+                    className='btn btn-success gap-2 text-sm font-semibold'
+                    onClick={openTwoFactorModal}
+                  >
+                    <i className='fa-solid fa-shield-halved' />
+                    Manage two-factor
+                  </button>
                 </div>
-                <button
-                  type='button'
-                  className='btn btn-success gap-2 text-sm font-semibold'
-                  onClick={openTwoFactorModal}
-                >
-                  <i className='fa-solid fa-shield-halved' />
-                  Manage two-factor
-                </button>
               </div>
-              <div className='flex flex-col gap-3 rounded-lg border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
-                <div className='space-y-1'>
-                  <p className='text-xs uppercase  text-base-content/50'>
-                    <i className='fa-solid fa-key mr-1' />
-                    Password
-                  </p>
-                  <p className='text-sm text-base-content/60'>
-                    Rotate your password whenever you need extra assurance.
-                  </p>
+              <div className='rounded-lg border border-base-content/10 border-l-4 border-l-warning bg-base-200 px-4 py-4'>
+                <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
+                  <div className='flex items-center gap-3'>
+                    <div className='flex h-9 w-9 items-center justify-center rounded-full bg-warning/20'>
+                      <i className='fa-solid fa-key text-warning' />
+                    </div>
+                    <div>
+                      <p className='text-sm font-medium text-base-content'>
+                        Password
+                      </p>
+                      <p className='text-xs text-base-content/60'>
+                        Rotate your password for extra assurance.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type='button'
+                    className='btn btn-warning gap-2 text-sm font-semibold'
+                    onClick={openPasswordModal}
+                  >
+                    <i className='fa-solid fa-lock' />
+                    Change password
+                  </button>
                 </div>
-                <button
-                  type='button'
-                  className='btn btn-warning gap-2 text-sm font-semibold'
-                  onClick={openPasswordModal}
-                >
-                  <i className='fa-solid fa-lock' />
-                  Change password
-                </button>
               </div>
-              <div className='flex flex-col gap-3 rounded-lg border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
-                <div className='space-y-1'>
-                  <p className='text-xs uppercase  text-base-content/50'>
-                    <i className='fa-solid fa-fingerprint mr-1' />
-                    Passkeys
-                  </p>
-                  <p className='text-sm text-base-content/60'>
-                    Sign in faster with biometrics or security keys.
-                  </p>
+              <div className='rounded-lg border border-base-content/10 border-l-4 border-l-primary bg-base-200 px-4 py-4'>
+                <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
+                  <div className='flex items-center gap-3'>
+                    <div className='flex h-9 w-9 items-center justify-center rounded-full bg-primary/20'>
+                      <i className='fa-solid fa-fingerprint text-primary' />
+                    </div>
+                    <div>
+                      <p className='text-sm font-medium text-base-content'>
+                        Passkeys
+                      </p>
+                      <p className='text-xs text-base-content/60'>
+                        Sign in faster with biometrics or security keys.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type='button'
+                    className='btn btn-primary gap-2 text-sm font-semibold'
+                    onClick={() => setIsPasskeyModalOpen(true)}
+                  >
+                    <i className='fa-solid fa-fingerprint' />
+                    Manage passkeys
+                  </button>
                 </div>
-                <button
-                  type='button'
-                  className='btn btn-primary gap-2 text-sm font-semibold'
-                  onClick={() => setIsPasskeyModalOpen(true)}
-                >
-                  <i className='fa-solid fa-fingerprint' />
-                  Manage passkeys
-                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className='rounded-lg border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+          <div className='flex items-center gap-4'>
+            <div className='flex items-center gap-3'>
+              <span className='text-xl text-accent'>
+                <i className='fa-solid fa-sliders' />
+              </span>
+              <div>
+                <p className='text-xs uppercase text-base-content/50'>
+                  Workspace settings
+                </p>
+                <p className='text-sm text-base-content/60'>
+                  Customize currency, volume units, and the workspace
+                  experience.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className='mt-6 space-y-3'>
+            <div className='rounded-lg border border-base-content/10 border-l-4 border-l-accent bg-base-200 px-4 py-4'>
+              <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
+                <div className='flex items-center gap-3'>
+                  <div className='flex h-9 w-9 items-center justify-center rounded-full bg-accent/20'>
+                    <i className='fa-solid fa-sterling-sign text-accent' />
+                  </div>
+                  <div>
+                    <p className='text-sm font-medium text-base-content'>
+                      Default currency
+                    </p>
+                    <p className='text-xs text-base-content/60'>
+                      Controls how values appear in your workspace.
+                    </p>
+                  </div>
+                </div>
+                <div className='w-full max-w-xs'>
+                  <label className='sr-only' htmlFor='default-currency'>
+                    Default currency
+                  </label>
+                  <select
+                    id='default-currency'
+                    className='select select-bordered w-full'
+                    value={selectedCurrency}
+                    onChange={handleCurrencyChange}
+                    disabled={isUpdatingCurrency}
+                  >
+                    {currencyOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className='rounded-lg border border-base-content/10 border-l-4 border-l-accent bg-base-200 px-4 py-4'>
+              <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
+                <div className='flex items-center gap-3'>
+                  <div className='flex h-9 w-9 items-center justify-center rounded-full bg-accent/20'>
+                    <i className='fa-solid fa-ruler text-accent' />
+                  </div>
+                  <div>
+                    <p className='text-sm font-medium text-base-content'>
+                      Unit system
+                    </p>
+                    <p className='text-xs text-base-content/60'>
+                      Choose Metric for litres or Imperial for gallons.
+                    </p>
+                  </div>
+                </div>
+                <div className='w-full max-w-xs'>
+                  <label className='sr-only' htmlFor='unit-system'>
+                    Unit system
+                  </label>
+                  <select
+                    id='unit-system'
+                    className='select select-bordered w-full'
+                    value={selectedUnitSystem}
+                    onChange={handleUnitSystemChange}
+                    disabled={isUpdatingUnitSystem}
+                  >
+                    {UNIT_SYSTEM_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className='rounded-lg border border-base-content/10 border-l-4 border-l-accent bg-base-200 px-4 py-4'>
+              <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
+                <div className='flex items-center gap-3'>
+                  <div className='flex h-9 w-9 items-center justify-center rounded-full bg-accent/20'>
+                    <i className='fa-solid fa-gauge text-accent' />
+                  </div>
+                  <div>
+                    <p className='text-sm font-medium text-base-content'>
+                      Odometer units
+                    </p>
+                    <p className='text-xs text-base-content/60'>
+                      Display readings in kilometres or miles.
+                    </p>
+                  </div>
+                </div>
+                <div className='w-full max-w-xs'>
+                  <label className='sr-only' htmlFor='odometer-units'>
+                    Odometer units
+                  </label>
+                  <select
+                    id='odometer-units'
+                    className='select select-bordered w-full'
+                    value={selectedOdometerUnit}
+                    onChange={handleOdometerUnitChange}
+                    disabled={isUpdatingOdometerUnit}
+                  >
+                    {ODOMETER_UNIT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className='rounded-lg border border-base-content/10 border-l-4 border-l-accent bg-base-200 px-4 py-4'>
+              <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
+                <div className='flex items-center gap-3'>
+                  <div className='flex h-9 w-9 items-center justify-center rounded-full bg-accent/20'>
+                    <i className='fa-solid fa-droplet text-accent' />
+                  </div>
+                  <div>
+                    <p className='text-sm font-medium text-base-content'>
+                      Volume unit
+                    </p>
+                    <p className='text-xs text-base-content/60'>
+                      Select litres or the gallon type you prefer.
+                    </p>
+                  </div>
+                </div>
+                <div className='w-full max-w-xs'>
+                  <label className='sr-only' htmlFor='volume-unit'>
+                    Volume unit
+                  </label>
+                  <select
+                    id='volume-unit'
+                    className='select select-bordered w-full'
+                    value={selectedVolumeUnit}
+                    onChange={handleVolumeUnitChange}
+                    disabled={isUpdatingVolumeUnit}
+                  >
+                    {VOLUME_UNIT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -1054,171 +1246,54 @@ export default function SettingsPage() {
 
         <section className='rounded-lg border border-base-content/10 bg-base-100 p-6 shadow-sm'>
           <div className='flex items-center justify-between gap-4'>
-            <div>
-              <p className='text-xs uppercase text-base-content/50'>
-                <i className='fa-solid fa-sliders mr-1' />
-                Workspace settings
-              </p>
-              <h2 className='text-sm text-base-content/60'>
-                Customize currency, volume units, and the workspace experience.
-              </h2>
+            <div className='flex items-center gap-3'>
+              <span className='text-xl text-primary'>
+                <i className='fa-solid fa-car' />
+              </span>
+              <div>
+                <p className='text-xs uppercase text-base-content/50'>
+                  Vehicle profiles
+                </p>
+                <p className='text-sm text-base-content/60'>
+                  Manage vehicles that drive your expense tracking.
+                </p>
+              </div>
+            </div>
+            <div className='flex items-center gap-2'>
+              {vehicleProfiles.length > 0 && (
+                <span className='badge badge-sm badge-primary gap-1'>
+                  <i className='fa-solid fa-car text-[8px]' />
+                  {vehicleProfiles.length}
+                </span>
+              )}
+              <button
+                type='button'
+                className='btn btn-primary gap-2 text-sm font-semibold'
+                onClick={() => handleOpenVehicleModal()}
+              >
+                <i className='fa-solid fa-plus' />
+                Add vehicle
+              </button>
             </div>
           </div>
-          <div className='mt-6 space-y-4'>
-            <div className='flex flex-col gap-3 rounded-lg border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
-              <div className='space-y-1'>
-                <p className='text-xs uppercase text-base-content/50'>
-                  <i className='fa-solid fa-sterling-sign mr-1' />
-                  Default currency
-                </p>
-                <p className='text-sm text-base-content/60'>
-                  This currency controls how values appear in your workspace.
-                </p>
-              </div>
-              <div className='w-full max-w-xs'>
-                <label className='sr-only' htmlFor='default-currency'>
-                  Default currency
-                </label>
-                <select
-                  id='default-currency'
-                  className='select w-full'
-                  value={selectedCurrency}
-                  onChange={handleCurrencyChange}
-                  disabled={isUpdatingCurrency}
-                >
-                  {currencyOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className='flex flex-col gap-3 rounded-lg border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
-              <div className='space-y-1'>
-                <p className='text-xs uppercase text-base-content/50'>
-                  <i className='fa-solid fa-ruler mr-1' />
-                  Unit system
-                </p>
-                <p className='text-sm text-base-content/60'>
-                  Choose Metric for litres or Imperial for gallons.
-                </p>
-              </div>
-              <div className='w-full max-w-xs'>
-                <label className='sr-only' htmlFor='unit-system'>
-                  Unit system
-                </label>
-                <select
-                  id='unit-system'
-                  className='select w-full'
-                  value={selectedUnitSystem}
-                  onChange={handleUnitSystemChange}
-                  disabled={isUpdatingUnitSystem}
-                >
-                  {UNIT_SYSTEM_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className='flex flex-col gap-3 rounded-lg border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
-              <div className='space-y-1'>
-                <p className='text-xs uppercase text-base-content/50'>
-                  <i className='fa-solid fa-gauge mr-1' />
-                  Odometer units
-                </p>
-                <p className='text-sm text-base-content/60'>
-                  Display odometer readings in kilometres or miles on the logs
-                  view.
-                </p>
-              </div>
-              <div className='w-full max-w-xs'>
-                <label className='sr-only' htmlFor='odometer-units'>
-                  Odometer units
-                </label>
-                <select
-                  id='odometer-units'
-                  className='select w-full'
-                  value={selectedOdometerUnit}
-                  onChange={handleOdometerUnitChange}
-                  disabled={isUpdatingOdometerUnit}
-                >
-                  {ODOMETER_UNIT_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className='flex flex-col gap-3 rounded-lg border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
-              <div className='space-y-1'>
-                <p className='text-xs uppercase text-base-content/50'>
-                  <i className='fa-solid fa-droplet mr-1' />
-                  Volume unit
-                </p>
-                <p className='text-sm text-base-content/60'>
-                  Select litres or the gallon type you prefer for ICE.
-                </p>
-              </div>
-              <div className='w-full max-w-xs'>
-                <label className='sr-only' htmlFor='volume-unit'>
-                  Volume unit
-                </label>
-                <select
-                  id='volume-unit'
-                  className='select w-full'
-                  value={selectedVolumeUnit}
-                  onChange={handleVolumeUnitChange}
-                  disabled={isUpdatingVolumeUnit}
-                >
-                  {VOLUME_UNIT_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className='rounded-lg border border-base-content/10 bg-base-100 p-6 shadow-sm'>
-          <div className='flex items-center justify-between gap-4'>
-            <div>
-              <p className='text-xs uppercase text-base-content/50'>
-                <i className='fa-solid fa-car mr-1' />
-                Vehicle profiles
-              </p>
-              <h2 className='text-sm text-base-content/60'>
-                Manage vehicles that will drive your expense tracking.
-              </h2>
-            </div>
-            <button
-              type='button'
-              className='btn btn-primary gap-2 text-sm font-semibold'
-              onClick={() => handleOpenVehicleModal()}
-            >
-              <i className='fa-solid fa-car' />
-              Add vehicle
-            </button>
-          </div>
-          <div className='mt-6 space-y-4'>
+          <div className='mt-6 space-y-3'>
             {isLoadingVehicleProfiles ? (
               <div className='flex items-center gap-2 text-sm text-base-content/60'>
                 <span className='loading loading-spinner loading-sm' />
                 Loading vehicle profiles…
               </div>
             ) : vehicleProfiles.length === 0 ? (
-              <div className='flex flex-col gap-3 border border-base-content/10 px-4 py-5 text-sm text-base-content/60'>
-                <p>No vehicle profiles yet.</p>
+              <div className='flex flex-col items-center gap-2 rounded-lg border border-dashed border-base-content/20 px-4 py-8 text-center'>
+                <i className='fa-solid fa-car text-2xl text-base-content/30' />
+                <p className='text-sm text-base-content/60'>
+                  No vehicle profiles yet.
+                </p>
                 <button
                   type='button'
-                  className='btn btn-sm btn-outline text-xs normal-case'
+                  className='btn btn-sm btn-primary btn-outline gap-1 text-xs normal-case'
                   onClick={() => handleOpenVehicleModal()}
                 >
+                  <i className='fa-solid fa-plus text-[10px]' />
                   Create your first profile
                 </button>
               </div>
@@ -1231,9 +1306,9 @@ export default function SettingsPage() {
                   >
                     <div className='flex items-center justify-between gap-4'>
                       <div className='flex items-center gap-3'>
-                        <span className='text-xl text-base-content/40'>
-                          <i className='fa-solid fa-car' />
-                        </span>
+                        <div className='flex h-9 w-9 items-center justify-center rounded-full bg-primary/20'>
+                          <i className='fa-solid fa-car text-primary' />
+                        </div>
                         <div>
                           <p className='text-sm font-semibold text-base-content'>
                             {profile.label}
@@ -1244,19 +1319,20 @@ export default function SettingsPage() {
                           </p>
                         </div>
                       </div>
-                      <div className='flex flex-col items-end gap-4'>
+                      <div className='flex flex-col items-end gap-3'>
                         {profile.isDefault && (
                           <span className='badge badge-sm badge-primary gap-1'>
                             <i className='fa-solid fa-star text-xs' />
                             Default
                           </span>
                         )}
-                        <div className='flex flex-wrap gap-2'>
+                        <div className='flex flex-wrap gap-1'>
                           <button
                             type='button'
                             className='btn btn-xs btn-square btn-ghost text-info'
                             disabled={isVehicleProfileSaving}
                             onClick={() => handleOpenVehicleModal(profile)}
+                            title='Edit'
                           >
                             <i className='fa-solid fa-pen text-xs' />
                           </button>
@@ -1268,6 +1344,7 @@ export default function SettingsPage() {
                                 handleSetDefaultVehicleProfile(profile)
                               }
                               disabled={updateVehicleProfileMutation.isPending}
+                              title='Set as default'
                             >
                               <i className='fa-solid fa-star text-xs' />
                             </button>
@@ -1277,6 +1354,7 @@ export default function SettingsPage() {
                             className='btn btn-xs btn-square btn-ghost text-error'
                             onClick={() => handleDeleteVehicleProfile(profile)}
                             disabled={deleteVehicleProfileMutation.isPending}
+                            title='Delete'
                           >
                             <i className='fa-solid fa-trash text-xs' />
                           </button>
@@ -1292,38 +1370,55 @@ export default function SettingsPage() {
 
         <section className='rounded-lg border border-base-content/10 bg-base-100 p-6 shadow-sm'>
           <div className='flex items-center justify-between gap-4'>
-            <div>
-              <p className='text-xs uppercase text-base-content/50'>
-                <i className='fa-solid fa-bolt mr-1' />
-                EV charging vendors
-              </p>
-              <h2 className='text-sm text-base-content/60'>
-                Store vendor names and default charging rates for quick logging.
-              </h2>
+            <div className='flex items-center gap-3'>
+              <span className='text-xl text-info'>
+                <i className='fa-solid fa-bolt' />
+              </span>
+              <div>
+                <p className='text-xs uppercase text-base-content/50'>
+                  EV charging vendors
+                </p>
+                <p className='text-sm text-base-content/60'>
+                  Store vendor names and default rates for quick logging.
+                </p>
+              </div>
             </div>
-            <button
-              type='button'
-              className='btn btn-info gap-2 text-sm font-semibold'
-              onClick={() => handleOpenChargingVendorModal()}
-              disabled={isChargingVendorSaving}
-            >
-              <i className='fa-solid fa-bolt' />
-              Add vendor
-            </button>
+            <div className='flex items-center gap-2'>
+              {chargingVendors.length > 0 && (
+                <span className='badge badge-sm badge-info gap-1'>
+                  <i className='fa-solid fa-bolt text-[8px]' />
+                  {chargingVendors.length}
+                </span>
+              )}
+              <button
+                type='button'
+                className='btn btn-info gap-2 text-sm font-semibold'
+                onClick={() => handleOpenChargingVendorModal()}
+                disabled={isChargingVendorSaving}
+              >
+                <i className='fa-solid fa-plus' />
+                Add vendor
+              </button>
+            </div>
           </div>
-          <div className='mt-6 space-y-4'>
+          <div className='mt-6 space-y-3'>
             {isLoadingChargingVendors ? (
-              <p className='text-sm text-base-content/60'>
+              <div className='flex items-center gap-2 text-sm text-base-content/60'>
+                <span className='loading loading-spinner loading-sm' />
                 Loading charging vendors…
-              </p>
+              </div>
             ) : chargingVendors.length === 0 ? (
-              <div className='flex flex-col gap-3 border border-base-content/10 px-4 py-5 text-sm text-base-content/60'>
-                <p>No charging vendors yet.</p>
+              <div className='flex flex-col items-center gap-2 rounded-lg border border-dashed border-base-content/20 px-4 py-8 text-center'>
+                <i className='fa-solid fa-bolt text-2xl text-base-content/30' />
+                <p className='text-sm text-base-content/60'>
+                  No charging vendors yet.
+                </p>
                 <button
                   type='button'
-                  className='btn btn-sm btn-outline text-xs normal-case'
+                  className='btn btn-sm btn-info btn-outline gap-1 text-xs normal-case'
                   onClick={() => handleOpenChargingVendorModal()}
                 >
+                  <i className='fa-solid fa-plus text-[10px]' />
                   Create vendor
                 </button>
               </div>
@@ -1336,9 +1431,9 @@ export default function SettingsPage() {
                   >
                     <div className='flex items-center justify-between gap-4'>
                       <div className='flex items-center gap-3'>
-                        <span className='text-xl text-info'>
-                          <i className='fa-solid fa-bolt' />
-                        </span>
+                        <div className='flex h-9 w-9 items-center justify-center rounded-full bg-info/20'>
+                          <i className='fa-solid fa-bolt text-info' />
+                        </div>
                         <div>
                           <p className='text-sm font-semibold text-base-content'>
                             {vendor.label}
@@ -1348,12 +1443,13 @@ export default function SettingsPage() {
                           </p>
                         </div>
                       </div>
-                      <div className='flex flex-wrap gap-2'>
+                      <div className='flex flex-wrap gap-1'>
                         <button
                           type='button'
                           className='btn btn-xs btn-square btn-ghost text-info'
                           disabled={isChargingVendorSaving}
                           onClick={() => handleOpenChargingVendorModal(vendor)}
+                          title='Edit'
                         >
                           <i className='fa-solid fa-pen text-xs' />
                         </button>
@@ -1362,6 +1458,7 @@ export default function SettingsPage() {
                           className='btn btn-xs btn-square btn-ghost text-error'
                           disabled={deleteChargingVendorMutation.isPending}
                           onClick={() => handleDeleteChargingVendor(vendor)}
+                          title='Delete'
                         >
                           <i className='fa-solid fa-trash text-xs' />
                         </button>
@@ -1375,90 +1472,111 @@ export default function SettingsPage() {
         </section>
 
         <section className='rounded-lg border border-base-content/10 bg-base-100 p-6 shadow-sm'>
-          <div className='flex items-center justify-between gap-4'>
-            <div>
-              <p className='text-xs uppercase text-base-content/50'>
-                <i className='fa-solid fa-download mr-1' />
-                Export data
-              </p>
-              <h2 className='text-sm text-base-content/60'>
-                Download copies of your income and expense history for backup or
-                review.
-              </h2>
+          <div className='flex items-center gap-4'>
+            <div className='flex items-center gap-3'>
+              <span className='text-xl text-secondary'>
+                <i className='fa-solid fa-download' />
+              </span>
+              <div>
+                <p className='text-xs uppercase text-base-content/50'>
+                  Export data
+                </p>
+                <p className='text-sm text-base-content/60'>
+                  Download copies of your history for backup or review.
+                </p>
+              </div>
             </div>
           </div>
-          <div className='mt-6 space-y-4'>
-            <div className='flex flex-col gap-3 rounded-lg border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
-              <div className='space-y-1'>
-                <p className='text-xs uppercase text-base-content/50'>
-                  <i className='fa-solid fa-coins mr-1' />
-                  Income logs
-                </p>
-                <p className='text-sm text-base-content/60'>
-                  Export every logged income entry as a CSV file.
-                </p>
+          <div className='mt-6 space-y-3'>
+            <div className='rounded-lg border border-base-content/10 border-l-4 border-l-success bg-base-200 px-4 py-4'>
+              <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
+                <div className='flex items-center gap-3'>
+                  <div className='flex h-9 w-9 items-center justify-center rounded-full bg-success/20'>
+                    <i className='fa-solid fa-coins text-success' />
+                  </div>
+                  <div>
+                    <p className='text-sm font-medium text-base-content'>
+                      Income logs
+                    </p>
+                    <p className='text-xs text-base-content/60'>
+                      Export every logged income entry as a CSV file.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type='button'
+                  className='btn btn-success gap-2 text-sm font-semibold'
+                  onClick={handleExportIncomeCsv}
+                  disabled={isExportingIncome}
+                >
+                  {isExportingIncome ? (
+                    <span className='loading loading-spinner loading-sm' />
+                  ) : (
+                    <i className='fa-solid fa-file-csv' />
+                  )}
+                  {isExportingIncome ? 'Preparing…' : 'Export income'}
+                </button>
               </div>
-              <button
-                type='button'
-                className='btn btn-success gap-2 text-sm font-semibold'
-                onClick={handleExportIncomeCsv}
-                disabled={isExportingIncome}
-              >
-                {isExportingIncome ? (
-                  <span className='loading loading-spinner loading-sm' />
-                ) : (
-                  <i className='fa-solid fa-file-csv' />
-                )}
-                {isExportingIncome ? 'Preparing…' : 'Export income'}
-              </button>
             </div>
-            <div className='flex flex-col gap-3 rounded-lg border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
-              <div className='space-y-1'>
-                <p className='text-xs uppercase text-base-content/50'>
-                  <i className='fa-solid fa-receipt mr-1' />
-                  Expense logs
-                </p>
-                <p className='text-sm text-base-content/60'>
-                  Export every logged expense entry as a CSV file.
-                </p>
+            <div className='rounded-lg border border-base-content/10 border-l-4 border-l-error bg-base-200 px-4 py-4'>
+              <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
+                <div className='flex items-center gap-3'>
+                  <div className='flex h-9 w-9 items-center justify-center rounded-full bg-error/20'>
+                    <i className='fa-solid fa-receipt text-error' />
+                  </div>
+                  <div>
+                    <p className='text-sm font-medium text-base-content'>
+                      Expense logs
+                    </p>
+                    <p className='text-xs text-base-content/60'>
+                      Export every logged expense entry as a CSV file.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type='button'
+                  className='btn btn-error gap-2 text-sm font-semibold'
+                  onClick={handleExportExpenseCsv}
+                  disabled={isExportingExpense}
+                >
+                  {isExportingExpense ? (
+                    <span className='loading loading-spinner loading-sm' />
+                  ) : (
+                    <i className='fa-solid fa-file-csv' />
+                  )}
+                  {isExportingExpense ? 'Preparing…' : 'Export expenses'}
+                </button>
               </div>
-              <button
-                type='button'
-                className='btn btn-error gap-2 text-sm font-semibold'
-                onClick={handleExportExpenseCsv}
-                disabled={isExportingExpense}
-              >
-                {isExportingExpense ? (
-                  <span className='loading loading-spinner loading-sm' />
-                ) : (
-                  <i className='fa-solid fa-file-csv' />
-                )}
-                {isExportingExpense ? 'Preparing…' : 'Export expenses'}
-              </button>
             </div>
-            <div className='flex flex-col gap-3 rounded-lg border border-base-content/10 px-4 py-5 md:flex-row md:items-center md:justify-between'>
-              <div className='space-y-1'>
-                <p className='text-xs uppercase text-base-content/50'>
-                  <i className='fa-solid fa-database mr-1' />
-                  All data
-                </p>
-                <p className='text-sm text-base-content/60'>
-                  Download every income and expense entry in one combined CSV.
-                </p>
+            <div className='rounded-lg border border-base-content/10 border-l-4 border-l-primary bg-base-200 px-4 py-4'>
+              <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
+                <div className='flex items-center gap-3'>
+                  <div className='flex h-9 w-9 items-center justify-center rounded-full bg-primary/20'>
+                    <i className='fa-solid fa-database text-primary' />
+                  </div>
+                  <div>
+                    <p className='text-sm font-medium text-base-content'>
+                      All data
+                    </p>
+                    <p className='text-xs text-base-content/60'>
+                      Download every entry in one combined CSV.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type='button'
+                  className='btn btn-primary gap-2 text-sm font-semibold'
+                  onClick={handleExportAllDataCsv}
+                  disabled={isExportingAll}
+                >
+                  {isExportingAll ? (
+                    <span className='loading loading-spinner loading-sm' />
+                  ) : (
+                    <i className='fa-solid fa-download' />
+                  )}
+                  {isExportingAll ? 'Preparing…' : 'Export all'}
+                </button>
               </div>
-              <button
-                type='button'
-                className='btn btn-primary gap-2 text-sm font-semibold'
-                onClick={handleExportAllDataCsv}
-                disabled={isExportingAll}
-              >
-                {isExportingAll ? (
-                  <span className='loading loading-spinner loading-sm' />
-                ) : (
-                  <i className='fa-solid fa-download' />
-                )}
-                {isExportingAll ? 'Preparing…' : 'Export all'}
-              </button>
             </div>
           </div>
         </section>
