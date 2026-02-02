@@ -61,7 +61,6 @@ export default function Nav({
     return (
       <footer className='fixed inset-x-0 bottom-0 z-20 border-t border-base-content/10 bg-base-100/95 backdrop-blur-sm shadow-[0_-4px_20px_-4px] shadow-base-content/10 lg:hidden pb-[env(safe-area-inset-bottom)]'>
         <nav
-          role='navigation'
           aria-label='Primary workspace dock'
           className='dock dock-sm items-center justify-around gap-1 px-2 py-1.5'
         >

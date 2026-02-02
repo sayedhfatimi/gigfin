@@ -1,14 +1,13 @@
 @import '@fortawesome/fontawesome-free/css/all.min.css';
 @import 'tailwindcss';
-@plugin "daisyui" {
-  /* biome-ignore lint/correctness/noUnknownProperty: DaisyUI theme list */
+@plugin 'daisyui' {
   themes:
     nord --default,
     dim --prefersdark;
 }
 
-@custom-variant dark (&:where([data-theme=dim], [data-theme=dim] *));
-@custom-variant light (&:where([data-theme=nord], [data-theme=nord] *));
+@custom-variant dark (&:where([data-theme='dim'], [data-theme='dim'] *));
+@custom-variant light (&:where([data-theme='nord'], [data-theme='nord'] *));
 
 @layer utilities {
   input[type='number']::-webkit-inner-spin-button,

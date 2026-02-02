@@ -67,8 +67,7 @@ export default function FilterToolbar({
   const hasViewFilters =
     (view === 'income' && hasPlatforms) ||
     view === 'expenses' ||
-    ((view === 'all' || view === 'expenses' || view === 'odometer') &&
-      vehicleFilterControl);
+    ((view === 'all' || view === 'odometer') && vehicleFilterControl);
 
   return (
     <div className='flex flex-col gap-3 rounded-lg border border-base-content/10 bg-base-100 p-3 sm:p-4 shadow-sm'>
