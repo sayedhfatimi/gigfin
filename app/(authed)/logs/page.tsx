@@ -1,29 +1,36 @@
 'use client';
 
+import type { SortingState } from '@tanstack/react-table';
+import {
+  createColumnHelper,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import { useSession } from '@/lib/auth-client';
 import type { CurrencyCode } from '@/lib/currency';
 import { resolveCurrency } from '@/lib/currency';
 import {
   type ExpenseEntry,
-  type UnitRateUnit,
-  buildExpenseMonthOptions,
   expenseTypeOptions,
   formatExpenseType,
-  getExpenseEntryMonth,
+  type UnitRateUnit,
 } from '@/lib/expenses';
 import {
-  type DailyIncomeSummary,
-  type IncomeEntry,
   aggregateDailyIncomes,
+  type DailyIncomeSummary,
   formatCurrency,
-  getEntryMonth,
+  type IncomeEntry,
 } from '@/lib/income';
 import {
-  type OdometerEntry,
-  type OdometerUnit,
   formatOdometerDistance,
   formatOdometerReading,
   getOdometerDistance,
+  type OdometerEntry,
+  type OdometerUnit,
 } from '@/lib/odometer';
 import { useChargingVendors } from '@/lib/queries/chargingVendors';
 import type { ExpensePayload } from '@/lib/queries/expenses';
@@ -48,16 +55,6 @@ import {
 } from '@/lib/queries/odometers';
 import { useVehicleProfiles } from '@/lib/queries/vehicleProfiles';
 import { getSessionUser } from '@/lib/session';
-import type { SortingState } from '@tanstack/react-table';
-import {
-  createColumnHelper,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
 import CombinedTable from './_components/CombinedTable';
 import { type DateRange, getPresetDates } from './_components/DateRangeFilter';
 import EntryModal from './_components/EntryModal';
@@ -67,11 +64,7 @@ import IncomeTable from './_components/IncomeTable';
 import OdometerTable from './_components/OdometerTable';
 import VehicleFilterControl from './_components/VehicleFilterControl';
 
-import {
-  buildEntryMonthOptions,
-  formatDateLabel,
-  renderSortableHeader,
-} from './_lib/formatters';
+import { formatDateLabel, renderSortableHeader } from './_lib/formatters';
 import type {
   CombinedTransaction,
   DeletableEntry,
@@ -190,7 +183,6 @@ export default function LogsPage() {
     useVehicleProfiles();
   const { data: chargingVendors = [] } = useChargingVendors();
 
-  const [selectedMonth, setSelectedMonth] = useState('');
   const [platformFilter, setPlatformFilter] = useState<string[]>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -204,7 +196,7 @@ export default function LogsPage() {
       sorting.map((state) => `${state.id}-${state.desc ?? false}`).join(','),
     [sorting],
   );
-  const incomeResetSignature = `${selectedMonth}-${platformFilterKey}-${sortingSignature}`;
+  const incomeResetSignature = `${platformFilterKey}-${sortingSignature}`;
   const [combinedPagination, setCombinedPagination] = useState({
     pageIndex: 0,
     pageSize: PAGE_SIZE,
@@ -227,7 +219,6 @@ export default function LogsPage() {
   const [expandedExpenseRows, setExpandedExpenseRows] = useState<Set<string>>(
     () => new Set(),
   );
-  const [selectedExpenseMonth, setSelectedExpenseMonth] = useState('all');
   const [selectedExpenseType, setSelectedExpenseType] = useState('all');
   const [expenseSort, setExpenseSort] = useState<ExpenseSortState>({
     column: 'date',
@@ -236,7 +227,7 @@ export default function LogsPage() {
   const expenseSortSignature = expenseSort
     ? `${expenseSort.column}-${expenseSort.direction}`
     : 'none';
-  const expenseResetSignature = `${selectedExpenseMonth}-${selectedExpenseType}-${
+  const expenseResetSignature = `${selectedExpenseType}-${
     selectedVehicleFilter ?? ''
   }-${expenseSortSignature}`;
 
@@ -278,66 +269,6 @@ export default function LogsPage() {
     });
   };
 
-  const entryMonthOptions = useMemo(
-    () => buildEntryMonthOptions(incomes),
-    [incomes],
-  );
-  const monthOptions = useMemo(
-    () => [
-      {
-        key: 'all',
-        label: 'All months',
-        year: 0,
-        month: 0,
-      },
-      ...entryMonthOptions,
-    ],
-    [entryMonthOptions],
-  );
-  const defaultIncomeMonthKey = useMemo(
-    () => monthOptions[0]?.key ?? '',
-    [monthOptions],
-  );
-
-  const expenseMonthEntries = useMemo(
-    () => buildExpenseMonthOptions(expenses),
-    [expenses],
-  );
-  const expenseMonthOptions = useMemo(
-    () => [
-      {
-        key: 'all',
-        label: 'All months',
-        year: 0,
-        month: 0,
-      },
-      ...expenseMonthEntries,
-    ],
-    [expenseMonthEntries],
-  );
-
-  useEffect(() => {
-    if (!monthOptions.length) {
-      return;
-    }
-    setSelectedMonth((prev) =>
-      monthOptions.some((option) => option.key === prev)
-        ? prev
-        : monthOptions[0].key,
-    );
-  }, [monthOptions]);
-
-  useEffect(() => {
-    if (!expenseMonthOptions.length) {
-      return;
-    }
-    setSelectedExpenseMonth((prev) =>
-      expenseMonthOptions.some((option) => option.key === prev)
-        ? prev
-        : expenseMonthOptions[0].key,
-    );
-  }, [expenseMonthOptions]);
-
   useEffect(() => {
     void incomeResetSignature;
     setIncomePagination((prev) =>
@@ -352,23 +283,8 @@ export default function LogsPage() {
     );
   }, [expenseResetSignature]);
 
-  const filteredByMonth = useMemo(() => {
-    if (!selectedMonth) {
-      return [];
-    }
-    if (selectedMonth === 'all') {
-      return incomes;
-    }
-    return incomes.filter((entry) => {
-      const parsed = getEntryMonth(entry);
-      return parsed
-        ? `${parsed.year}-${parsed.month}` === selectedMonth
-        : false;
-    });
-  }, [incomes, selectedMonth]);
-
   const filteredIncomes = useMemo(() => {
-    let filtered = filteredByMonth;
+    let filtered = incomes;
     if (platformFilter.length > 0) {
       const selectedPlatforms = new Set(platformFilter);
       filtered = filtered.filter((entry) =>
@@ -385,8 +301,17 @@ export default function LogsPage() {
         return true;
       });
     }
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const searchLower = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(
+        (entry) =>
+          entry.platform.toLowerCase().includes(searchLower) ||
+          entry.amount.toString().includes(searchLower),
+      );
+    }
     return filtered;
-  }, [filteredByMonth, platformFilter, dateRange]);
+  }, [incomes, platformFilter, dateRange, searchQuery]);
 
   const filteredExpensesByVehicle = useMemo(() => {
     if (!selectedVehicleFilter) {
@@ -414,8 +339,18 @@ export default function LogsPage() {
         return true;
       });
     }
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const searchLower = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(
+        (entry) =>
+          (entry.vehicle?.label?.toLowerCase().includes(searchLower) ?? false) ||
+          entry.startReading.toString().includes(searchLower) ||
+          entry.endReading.toString().includes(searchLower),
+      );
+    }
     return filtered;
-  }, [odometers, selectedVehicleFilter, dateRange]);
+  }, [odometers, selectedVehicleFilter, dateRange, searchQuery]);
 
   const filteredExpensesByType = useMemo(() => {
     if (!selectedExpenseType || selectedExpenseType === 'all') {
@@ -426,16 +361,8 @@ export default function LogsPage() {
     );
   }, [filteredExpensesByVehicle, selectedExpenseType]);
 
-  const filteredExpensesByMonth = useMemo(() => {
+  const filteredExpenses = useMemo(() => {
     let filtered = filteredExpensesByType;
-    if (selectedExpenseMonth && selectedExpenseMonth !== 'all') {
-      filtered = filtered.filter((entry) => {
-        const parsed = getExpenseEntryMonth(entry);
-        return parsed
-          ? `${parsed.year}-${parsed.month}` === selectedExpenseMonth
-          : false;
-      });
-    }
     // Apply date range filter
     if (dateRange.start || dateRange.end) {
       filtered = filtered.filter((entry) => {
@@ -446,14 +373,27 @@ export default function LogsPage() {
         return true;
       });
     }
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const searchLower = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(
+        (entry) =>
+          formatExpenseType(entry.expenseType)
+            .toLowerCase()
+            .includes(searchLower) ||
+          (entry.amountMinor / 100).toString().includes(searchLower) ||
+          (entry.notes?.toLowerCase().includes(searchLower) ?? false) ||
+          (entry.vehicle?.label?.toLowerCase().includes(searchLower) ?? false),
+      );
+    }
     return filtered;
-  }, [filteredExpensesByType, selectedExpenseMonth, dateRange]);
+  }, [filteredExpensesByType, dateRange, searchQuery]);
 
   const sortedExpenses = useMemo(() => {
-    if (!expenseSort || !filteredExpensesByMonth.length) {
-      return filteredExpensesByMonth;
+    if (!expenseSort || !filteredExpenses.length) {
+      return filteredExpenses;
     }
-    const entries = [...filteredExpensesByMonth];
+    const entries = [...filteredExpenses];
     const compareExpenseEntries = (a: ExpenseEntry, b: ExpenseEntry) => {
       switch (expenseSort.column) {
         case 'type': {
@@ -482,7 +422,7 @@ export default function LogsPage() {
       return expenseSort.direction === 'asc' ? comparison : -comparison;
     });
     return entries;
-  }, [expenseSort, filteredExpensesByMonth]);
+  }, [expenseSort, filteredExpenses]);
 
   const expenseTable = useReactTable({
     data: sortedExpenses,
@@ -698,9 +638,13 @@ export default function LogsPage() {
   }, [incomePagination.pageIndex, incomeTotalPages]);
 
   const handleResetTableControls = () => {
-    setSelectedMonth(defaultIncomeMonthKey);
     setPlatformFilter([]);
     setSorting([]);
+    setSearchQuery('');
+    setDateRange({
+      ...getPresetDates('thisMonth'),
+      preset: 'thisMonth',
+    });
   };
 
   const handlePlatformFilterReset = () => {
@@ -717,17 +661,50 @@ export default function LogsPage() {
 
   const handleResetExpenseFilters = () => {
     setSelectedVehicleFilter(null);
-    setSelectedExpenseMonth(expenseMonthOptions[0]?.key ?? 'all');
     setSelectedExpenseType('all');
+    setSearchQuery('');
+    setDateRange({
+      ...getPresetDates('thisMonth'),
+      preset: 'thisMonth',
+    });
   };
+
+  const handleResetAllFilters = () => {
+    setSelectedVehicleFilter(null);
+    setSearchQuery('');
+    setDateRange({
+      ...getPresetDates('thisMonth'),
+      preset: 'thisMonth',
+    });
+  };
+
+  const handleResetOdometerFilters = () => {
+    setSelectedVehicleFilter(null);
+    setSearchQuery('');
+    setDateRange({
+      ...getPresetDates('thisMonth'),
+      preset: 'thisMonth',
+    });
+  };
+
   const isExpenseFilterDirty =
     !!selectedVehicleFilter ||
-    selectedExpenseMonth !== expenseMonthOptions[0]?.key ||
-    selectedExpenseType !== 'all';
+    selectedExpenseType !== 'all' ||
+    searchQuery !== '' ||
+    dateRange.preset !== 'thisMonth';
   const isIncomeFilterDirty =
-    selectedMonth !== defaultIncomeMonthKey ||
     platformFilter.length > 0 ||
-    sorting.length > 0;
+    sorting.length > 0 ||
+    searchQuery !== '' ||
+    dateRange.preset !== 'thisMonth';
+  const isAllFilterDirty =
+    !!selectedVehicleFilter ||
+    searchQuery !== '' ||
+    dateRange.preset !== 'thisMonth';
+  const isOdometerFilterDirty =
+    !!selectedVehicleFilter ||
+    searchQuery !== '' ||
+    dateRange.preset !== 'thisMonth';
 
   const toggleExpenseSort = (column: ExpenseSortColumn) => {
     setExpenseSort((prev) => {
@@ -755,11 +732,8 @@ export default function LogsPage() {
     ? 'No expenses match the selected filters.'
     : 'No expenses yet.';
 
-  const emptyMonthMessage = hasAnyIncome
-    ? `No income was logged during ${
-        monthOptions.find((option) => option.key === selectedMonth)?.label ??
-        'this period'
-      }.`
+  const emptyIncomeMessage = hasAnyIncome
+    ? 'No income was logged during this period.'
     : 'No logs yet. Add your first income entry to begin tracking.';
 
   const openEntryModal = (tab: EntryTab) => {
@@ -899,8 +873,8 @@ export default function LogsPage() {
     entryToDelete?.type === 'income'
       ? deleteIncomeMutation.isPending
       : entryToDelete?.type === 'expense'
-      ? deleteExpenseMutation.isPending
-      : deleteOdometerMutation.isPending;
+        ? deleteExpenseMutation.isPending
+        : deleteOdometerMutation.isPending;
 
   const incomeHasEntriesForSelectedMonth = dailySummaries.length > 0;
 
@@ -921,10 +895,10 @@ export default function LogsPage() {
     view === 'income'
       ? 'Tabulate daily totals and expand each row to see platform breakdowns.'
       : view === 'expenses'
-      ? 'Review logged expenses with context around the rate, vehicle, and notes.'
-      : view === 'odometer'
-      ? 'Capture shift start and end odometer readings for each day.'
-      : 'Review every income and expense transaction in one chronological feed.';
+        ? 'Review logged expenses with context around the rate, vehicle, and notes.'
+        : view === 'odometer'
+          ? 'Capture shift start and end odometer readings for each day.'
+          : 'Review every income and expense transaction in one chronological feed.';
 
   // Keyboard shortcuts for navigation and common actions
   useKeyboardShortcuts({
@@ -1001,10 +975,10 @@ export default function LogsPage() {
               view === 'income'
                 ? 'btn-success'
                 : view === 'expenses'
-                ? 'btn-error'
-                : view === 'odometer'
-                ? 'btn-info'
-                : 'btn-primary'
+                  ? 'btn-error'
+                  : view === 'odometer'
+                    ? 'btn-info'
+                    : 'btn-primary'
             }`}
             onClick={handleAddEntry}
             aria-label='Add entry'
@@ -1022,16 +996,10 @@ export default function LogsPage() {
         onSearchChange={setSearchQuery}
         dateRange={dateRange}
         onDateRangeChange={setDateRange}
-        monthOptions={monthOptions}
-        selectedMonth={selectedMonth}
-        onMonthChange={setSelectedMonth}
         platformOptions={platformOptions}
         platformFilter={platformFilter}
         onPlatformToggle={togglePlatformSelection}
         onPlatformReset={handlePlatformFilterReset}
-        expenseMonthOptions={expenseMonthOptions}
-        selectedExpenseMonth={selectedExpenseMonth}
-        onExpenseMonthChange={setSelectedExpenseMonth}
         selectedExpenseType={selectedExpenseType}
         onExpenseTypeChange={setSelectedExpenseType}
         expenseTypeOptions={expenseTypeLabels}
@@ -1041,15 +1009,19 @@ export default function LogsPage() {
           view === 'income'
             ? isIncomeFilterDirty
             : view === 'expenses'
-            ? isExpenseFilterDirty
-            : false
+              ? isExpenseFilterDirty
+              : view === 'odometer'
+                ? isOdometerFilterDirty
+                : isAllFilterDirty
         }
         onResetFilters={
           view === 'income'
             ? handleResetTableControls
             : view === 'expenses'
-            ? handleResetExpenseFilters
-            : undefined
+              ? handleResetExpenseFilters
+              : view === 'odometer'
+                ? handleResetOdometerFilters
+                : handleResetAllFilters
         }
         isLoading={isAnyLoading}
       />
@@ -1077,7 +1049,7 @@ export default function LogsPage() {
           pageRows={incomePageRows}
           currency={currency}
           hasEntriesForSelectedMonth={incomeHasEntriesForSelectedMonth}
-          emptyMonthMessage={emptyMonthMessage}
+          emptyMonthMessage={emptyIncomeMessage}
           hasAnyIncome={hasAnyIncome}
           onEditEntry={handleEditIncome}
           onDeleteEntry={handleDeleteIncomeEntry}
@@ -1202,8 +1174,8 @@ export default function LogsPage() {
               {entryToDelete.type === 'income'
                 ? entryToDelete.entry.platform
                 : entryToDelete.type === 'expense'
-                ? formatExpenseType(entryToDelete.entry.expenseType)
-                : 'Odometer reading'}
+                  ? formatExpenseType(entryToDelete.entry.expenseType)
+                  : 'Odometer reading'}
               )? This action cannot be undone.
             </p>
             <div className='modal-action mt-4'>
