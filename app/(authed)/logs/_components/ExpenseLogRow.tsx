@@ -53,7 +53,7 @@ export default function ExpenseLogRow({
             aria-hidden='true'
             className={`fa-solid fa-chevron-${
               isExpanded ? 'up' : 'down'
-            } ml-auto text-xs text-base-content/60`}
+            } ml-auto text-sm sm:text-xs text-base-content/60`}
           />
         </button>
         {isExpanded && (

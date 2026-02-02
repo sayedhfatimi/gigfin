@@ -198,23 +198,23 @@ export default function DateRangeFilter({
         </ul>
       </div>
       {isCustomOpen && (
-        <div className='flex flex-wrap items-center gap-2'>
+        <div className='flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center'>
           <label className='flex items-center gap-2 text-sm'>
-            <span className='text-base-content/60'>From</span>
+            <span className='text-base-content/60 min-w-10'>From</span>
             <input
               type='date'
               value={formatDateForInput(value.start)}
               onChange={(e) => handleCustomStartChange(e.target.value)}
-              className='input input-sm input-bordered'
+              className='input input-sm input-bordered flex-1 sm:flex-none'
             />
           </label>
           <label className='flex items-center gap-2 text-sm'>
-            <span className='text-base-content/60'>To</span>
+            <span className='text-base-content/60 min-w-10'>To</span>
             <input
               type='date'
               value={formatDateForInput(value.end)}
               onChange={(e) => handleCustomEndChange(e.target.value)}
-              className='input input-sm input-bordered'
+              className='input input-sm input-bordered flex-1 sm:flex-none'
             />
           </label>
         </div>

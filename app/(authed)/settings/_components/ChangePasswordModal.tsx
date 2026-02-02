@@ -67,7 +67,7 @@ export function ChangePasswordModal({ onClose }: ChangePasswordModalProps) {
         className='modal-backdrop bg-base-300/60 backdrop-blur-sm'
         onClick={onClose}
       />
-      <div className='modal-box max-w-md relative overflow-visible'>
+      <div className='modal-box w-full h-full sm:w-auto sm:h-auto sm:max-w-md relative overflow-visible'>
         {/* Close button */}
         <button
           type='button'

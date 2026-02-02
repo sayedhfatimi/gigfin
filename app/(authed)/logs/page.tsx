@@ -344,7 +344,8 @@ export default function LogsPage() {
       const searchLower = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(
         (entry) =>
-          (entry.vehicle?.label?.toLowerCase().includes(searchLower) ?? false) ||
+          (entry.vehicle?.label?.toLowerCase().includes(searchLower) ??
+            false) ||
           entry.startReading.toString().includes(searchLower) ||
           entry.endReading.toString().includes(searchLower),
       );
@@ -941,22 +942,27 @@ export default function LogsPage() {
   ) : null;
 
   return (
-    <div className='space-y-6'>
-      <header className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
-        <div className='flex items-center gap-4'>
-          <div className='flex h-12 w-12 items-center justify-center rounded-full bg-secondary/20'>
-            <i className='fa-solid fa-list-check text-xl text-secondary' />
+    <div className='space-y-4 sm:space-y-6'>
+      <header className='flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between'>
+        <div className='flex items-center gap-3 sm:gap-4'>
+          <div className='flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-secondary/20'>
+            <i className='fa-solid fa-list-check text-lg sm:text-xl text-secondary' />
           </div>
           <div>
             <p className='text-xs uppercase text-base-content/60'>Logs</p>
-            <h1 className='text-2xl font-semibold text-base-content'>
+            <h1 className='text-xl sm:text-2xl font-semibold text-base-content'>
               Transaction Logs
             </h1>
-            <p className='text-sm text-base-content/60'>{viewDescription}</p>
+            <p className='hidden sm:block text-sm text-base-content/60'>
+              {viewDescription}
+            </p>
           </div>
         </div>
         <div className='flex flex-wrap items-center gap-2'>
-          <div role='tablist' className='tabs tabs-box'>
+          <div
+            role='tablist'
+            className='tabs tabs-box tabs-xs sm:tabs-sm md:tabs-md'
+          >
             {LOG_TABS.map((tab) => (
               <input
                 key={tab.key}

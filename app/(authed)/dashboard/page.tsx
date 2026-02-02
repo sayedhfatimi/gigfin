@@ -1,11 +1,11 @@
 'use client';
 
 import {
+  closestCenter,
   DndContext,
   DragOverlay,
   PointerSensor,
   TouchSensor,
-  closestCenter,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -26,9 +26,9 @@ import { useSession } from '@/lib/auth-client';
 import { GlobalTimeframeProvider } from '@/lib/contexts/GlobalTimeframeContext';
 import {
   type DashboardWidgetDefinition,
-  type WidgetId,
   useDashboardData,
   useWidgetConfig,
+  type WidgetId,
 } from '@/lib/hooks';
 import { getSessionUser } from '@/lib/session';
 
@@ -347,22 +347,24 @@ export default function DashboardPage() {
           onChange={() => {}}
         />
         <div className='drawer-content relative'>
-          <div className='space-y-6'>
+          <div className='space-y-4 sm:space-y-6'>
             {/* Header */}
-            <header className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
-              <div className='flex items-center gap-4'>
-                <div className='flex h-12 w-12 items-center justify-center rounded-full bg-primary/20'>
-                  <i className='fa-solid fa-chart-line text-xl text-primary' />
+            <header className='flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between'>
+              <div className='flex items-center gap-3 sm:gap-4'>
+                <div className='flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-primary/20'>
+                  <i className='fa-solid fa-chart-line text-lg sm:text-xl text-primary' />
                 </div>
                 <div>
                   <p className='text-xs uppercase text-base-content/60'>
                     Dashboard
                   </p>
-                  <h1 className='text-2xl font-semibold text-base-content'>
-                    Welcome back,{' '}
+                  <h1 className='text-xl sm:text-2xl font-semibold text-base-content'>
+                    <span className='sm:inline'>Welcome back,</span>
+                    <br className='sm:hidden' />
+                    <span className='hidden sm:inline'> </span>
                     {sessionUser?.name ?? sessionUser?.email ?? 'gig worker'}
                   </h1>
-                  <p className='text-sm text-base-content/60'>
+                  <p className='hidden sm:block text-sm text-base-content/60'>
                     Track income, spot trends, and level up your earnings.
                   </p>
                 </div>

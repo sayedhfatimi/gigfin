@@ -1,4 +1,13 @@
 'use client';
+import {
+  type ChangeEvent,
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
+import { UAParser } from 'ua-parser-js';
 import { type ToastMessage, ToastStack } from '@/components/ToastStack';
 import { authClient, useSession } from '@/lib/auth-client';
 import type { ChargingVendor } from '@/lib/charging-vendor';
@@ -20,15 +29,6 @@ import {
 } from '@/lib/queries/vehicleProfiles';
 import { getSessionUser } from '@/lib/session';
 import { type VehicleProfile, vehicleTypeOptions } from '@/lib/vehicle';
-import {
-  type ChangeEvent,
-  type Dispatch,
-  type SetStateAction,
-  useCallback,
-  useEffect,
-  useState,
-} from 'react';
-import { UAParser } from 'ua-parser-js';
 import { ChangePasswordModal } from './_components/ChangePasswordModal';
 import ChargingVendorModal from './_components/ChargingVendorModal';
 import { PasskeyModal } from './_components/PasskeyModal';
@@ -726,25 +726,25 @@ export default function SettingsPage() {
 
   return (
     <>
-      <div className='space-y-6'>
-        <header className='flex items-center gap-4'>
-          <div className='flex h-12 w-12 items-center justify-center rounded-full bg-accent/20'>
-            <i className='fa-solid fa-gear text-xl text-accent' />
+      <div className='space-y-4 sm:space-y-6'>
+        <header className='flex items-center gap-3 sm:gap-4'>
+          <div className='flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-accent/20'>
+            <i className='fa-solid fa-gear text-lg sm:text-xl text-accent' />
           </div>
           <div>
             <p className='text-xs uppercase text-base-content/60'>
               User Preferences
             </p>
-            <h1 className='text-2xl font-semibold text-base-content'>
+            <h1 className='text-xl sm:text-2xl font-semibold text-base-content'>
               Settings
             </h1>
-            <p className='text-sm text-base-content/60'>
+            <p className='hidden sm:block text-sm text-base-content/60'>
               Keep your login details and preferences tidy.
             </p>
           </div>
         </header>
-        <section className='grid gap-6 lg:grid-cols-2'>
-          <div className='rounded-lg border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+        <section className='grid gap-4 sm:gap-6 lg:grid-cols-2'>
+          <div className='rounded-lg border border-base-content/10 bg-base-100 p-4 sm:p-6 shadow-sm'>
             <div className='flex items-start justify-between gap-4'>
               <div className='flex items-center gap-3'>
                 <span className='text-xl text-secondary'>
@@ -754,19 +754,19 @@ export default function SettingsPage() {
                   <p className='text-xs uppercase text-base-content/50'>
                     Sessions
                   </p>
-                  <p className='text-sm text-base-content/60'>
+                  <p className='hidden sm:block text-sm text-base-content/60'>
                     Devices signed in with this account.
                   </p>
                 </div>
               </div>
               <div className='flex items-center gap-2'>
-                <span className='badge badge-sm badge-secondary gap-1'>
+                <span className='badge badge-sm badge-secondary gap-1 whitespace-nowrap'>
                   <i className='fa-solid fa-circle text-[6px]' />
                   {activeSessions.length} active
                 </span>
                 <button
                   type='button'
-                  className='btn btn-sm btn-error btn-outline gap-2 text-xs font-semibold normal-case'
+                  className='btn btn-sm btn-error btn-outline gap-2 text-xs font-semibold normal-case whitespace-nowrap'
                   onClick={handleRevokeSessions}
                   disabled={isRevokingSessions || activeSessions.length <= 1}
                   title={
@@ -780,7 +780,14 @@ export default function SettingsPage() {
                   ) : (
                     <i className='fa-solid fa-right-from-bracket' />
                   )}
-                  {isRevokingSessions ? 'Signing out…' : 'Sign out everywhere'}
+                  <span className='hidden sm:inline'>
+                    {isRevokingSessions
+                      ? 'Signing out…'
+                      : 'Sign out everywhere'}
+                  </span>
+                  <span className='sm:hidden'>
+                    {isRevokingSessions ? '…' : 'Sign out'}
+                  </span>
                 </button>
               </div>
             </div>
@@ -842,7 +849,7 @@ export default function SettingsPage() {
                             </p>
                           </div>
                         </div>
-                        <span className='badge badge-success gap-1'>
+                        <span className='badge badge-xs sm:badge-sm badge-success gap-1 whitespace-nowrap'>
                           <i className='fa-solid fa-circle-check text-xs' />
                           This device
                         </span>
@@ -981,7 +988,7 @@ export default function SettingsPage() {
               )}
             </div>
           </div>
-          <div className='rounded-lg border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+          <div className='rounded-lg border border-base-content/10 bg-base-100 p-4 sm:p-6 shadow-sm'>
             <div className='flex items-center justify-between gap-4'>
               <div className='flex items-center gap-3'>
                 <span className='text-xl text-warning'>
@@ -991,13 +998,13 @@ export default function SettingsPage() {
                   <p className='text-xs uppercase text-base-content/50'>
                     Security
                   </p>
-                  <p className='text-sm text-base-content/60'>
+                  <p className='hidden sm:block text-sm text-base-content/60'>
                     Keep your authentication choices up to date.
                   </p>
                 </div>
               </div>
               <span
-                className={`badge badge-sm ${
+                className={`badge badge-sm whitespace-nowrap ${
                   isTwoFactorEnabled ? 'badge-success' : 'badge-warning'
                 } gap-1`}
               >
@@ -1089,7 +1096,7 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        <section className='rounded-lg border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+        <section className='rounded-lg border border-base-content/10 bg-base-100 p-4 sm:p-6 shadow-sm'>
           <div className='flex items-center gap-4'>
             <div className='flex items-center gap-3'>
               <span className='text-xl text-accent'>
@@ -1099,7 +1106,7 @@ export default function SettingsPage() {
                 <p className='text-xs uppercase text-base-content/50'>
                   Workspace settings
                 </p>
-                <p className='text-sm text-base-content/60'>
+                <p className='hidden sm:block text-sm text-base-content/60'>
                   Customize currency, volume units, and the workspace
                   experience.
                 </p>
@@ -1250,7 +1257,7 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        <section className='rounded-lg border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+        <section className='rounded-lg border border-base-content/10 bg-base-100 p-4 sm:p-6 shadow-sm'>
           <div className='flex items-center justify-between gap-4'>
             <div className='flex items-center gap-3'>
               <span className='text-xl text-primary'>
@@ -1260,7 +1267,7 @@ export default function SettingsPage() {
                 <p className='text-xs uppercase text-base-content/50'>
                   Vehicle profiles
                 </p>
-                <p className='text-sm text-base-content/60'>
+                <p className='hidden sm:block text-sm text-base-content/60'>
                   Manage vehicles that drive your expense tracking.
                 </p>
               </div>
@@ -1274,11 +1281,10 @@ export default function SettingsPage() {
               )}
               <button
                 type='button'
-                className='btn btn-primary gap-2 text-sm font-semibold'
+                className='btn btn-sm btn-square sm:btn-md btn-primary sm:gap-2 text-sm font-semibold'
                 onClick={() => handleOpenVehicleModal()}
               >
                 <i className='fa-solid fa-plus' />
-                Add vehicle
               </button>
             </div>
           </div>
@@ -1311,12 +1317,12 @@ export default function SettingsPage() {
                     className='rounded-lg border border-base-content/10 border-l-4 border-l-primary bg-base-200 p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:bg-base-200/80'
                   >
                     <div className='flex items-center justify-between gap-4'>
-                      <div className='flex items-center gap-3'>
-                        <div className='flex h-9 w-9 items-center justify-center rounded-full bg-primary/20'>
+                      <div className='flex items-center gap-3 min-w-0'>
+                        <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/20'>
                           <i className='fa-solid fa-car text-primary' />
                         </div>
-                        <div>
-                          <p className='text-sm font-semibold text-base-content'>
+                        <div className='min-w-0'>
+                          <p className='text-sm font-semibold text-base-content truncate'>
                             {profile.label}
                           </p>
                           <p className='text-xs text-base-content/60'>
@@ -1325,14 +1331,14 @@ export default function SettingsPage() {
                           </p>
                         </div>
                       </div>
-                      <div className='flex flex-col items-end gap-3'>
+                      <div className='flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3'>
                         {profile.isDefault && (
-                          <span className='badge badge-sm badge-primary gap-1'>
+                          <span className='badge badge-sm badge-primary gap-1 whitespace-nowrap'>
                             <i className='fa-solid fa-star text-xs' />
                             Default
                           </span>
                         )}
-                        <div className='flex flex-wrap gap-1'>
+                        <div className='flex shrink-0 gap-1'>
                           <button
                             type='button'
                             className='btn btn-xs btn-square btn-ghost text-info'
@@ -1374,7 +1380,7 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        <section className='rounded-lg border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+        <section className='rounded-lg border border-base-content/10 bg-base-100 p-4 sm:p-6 shadow-sm'>
           <div className='flex items-center justify-between gap-4'>
             <div className='flex items-center gap-3'>
               <span className='text-xl text-info'>
@@ -1384,7 +1390,7 @@ export default function SettingsPage() {
                 <p className='text-xs uppercase text-base-content/50'>
                   EV charging vendors
                 </p>
-                <p className='text-sm text-base-content/60'>
+                <p className='hidden sm:block text-sm text-base-content/60'>
                   Store vendor names and default rates for quick logging.
                 </p>
               </div>
@@ -1398,12 +1404,11 @@ export default function SettingsPage() {
               )}
               <button
                 type='button'
-                className='btn btn-info gap-2 text-sm font-semibold'
+                className='btn btn-sm btn-square sm:btn-md btn-info sm:gap-2 text-sm font-semibold'
                 onClick={() => handleOpenChargingVendorModal()}
                 disabled={isChargingVendorSaving}
               >
                 <i className='fa-solid fa-plus' />
-                Add vendor
               </button>
             </div>
           </div>
@@ -1436,12 +1441,12 @@ export default function SettingsPage() {
                     className='rounded-lg border border-base-content/10 border-l-4 border-l-info bg-base-200 p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:bg-base-200/80'
                   >
                     <div className='flex items-center justify-between gap-4'>
-                      <div className='flex items-center gap-3'>
-                        <div className='flex h-9 w-9 items-center justify-center rounded-full bg-info/20'>
+                      <div className='flex items-center gap-3 min-w-0'>
+                        <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-info/20'>
                           <i className='fa-solid fa-bolt text-info' />
                         </div>
-                        <div>
-                          <p className='text-sm font-semibold text-base-content'>
+                        <div className='min-w-0'>
+                          <p className='text-sm font-semibold text-base-content truncate'>
                             {vendor.label}
                           </p>
                           <p className='text-xs text-base-content/60'>
@@ -1449,7 +1454,7 @@ export default function SettingsPage() {
                           </p>
                         </div>
                       </div>
-                      <div className='flex flex-wrap gap-1'>
+                      <div className='flex shrink-0 gap-1'>
                         <button
                           type='button'
                           className='btn btn-xs btn-square btn-ghost text-info'
@@ -1477,7 +1482,7 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        <section className='rounded-lg border border-base-content/10 bg-base-100 p-6 shadow-sm'>
+        <section className='rounded-lg border border-base-content/10 bg-base-100 p-4 sm:p-6 shadow-sm'>
           <div className='flex items-center gap-4'>
             <div className='flex items-center gap-3'>
               <span className='text-xl text-secondary'>
@@ -1487,7 +1492,7 @@ export default function SettingsPage() {
                 <p className='text-xs uppercase text-base-content/50'>
                   Export data
                 </p>
-                <p className='text-sm text-base-content/60'>
+                <p className='hidden sm:block text-sm text-base-content/60'>
                   Download copies of your history for backup or review.
                 </p>
               </div>

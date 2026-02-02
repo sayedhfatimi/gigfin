@@ -219,7 +219,7 @@ export function PasskeyModal({ onClose }: PasskeyModalProps) {
         className='modal-backdrop bg-base-300/60 backdrop-blur-sm'
         onClick={onClose}
       />
-      <div className='modal-box max-w-lg relative overflow-visible'>
+      <div className='modal-box w-full h-full sm:w-auto sm:h-auto sm:max-w-lg relative overflow-visible'>
         {/* Close button */}
         <button
           type='button'

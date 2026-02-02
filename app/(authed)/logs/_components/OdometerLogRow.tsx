@@ -30,7 +30,7 @@ export default function OdometerLogRow({
   const endText = formatOdometerReading(entry.endReading, odometerUnit);
 
   return (
-    <div className='rounded-lg border border-base-content/10 border-l-4 border-l-info bg-base-200 p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:bg-base-200/80 space-y-3'>
+    <div className='rounded-lg border border-base-content/10 border-l-4 border-l-info bg-base-200 p-3 sm:p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:bg-base-200/80 space-y-2 sm:space-y-3'>
       <div className='flex flex-col gap-2 md:flex-row md:items-center md:justify-between'>
         <div className='space-y-1'>
           <div className='flex items-center gap-2'>

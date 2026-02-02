@@ -73,7 +73,31 @@ export default function PaginationControls({
       <span className='text-xs text-base-content/60'>
         Page {currentPage} of {totalPages}
       </span>
-      <div className='join'>
+      {/* Mobile: Simple prev/next only */}
+      <div className='flex items-center gap-2 sm:hidden'>
+        <button
+          type='button'
+          className='btn btn-sm btn-ghost'
+          onClick={handlePrevious}
+          disabled={currentPage <= 1}
+          aria-label='Previous page'
+        >
+          <i className='fa-solid fa-chevron-left' aria-hidden='true' />
+          <span className='text-xs'>Prev</span>
+        </button>
+        <button
+          type='button'
+          className='btn btn-sm btn-ghost'
+          onClick={handleNext}
+          disabled={currentPage >= totalPages}
+          aria-label='Next page'
+        >
+          <span className='text-xs'>Next</span>
+          <i className='fa-solid fa-chevron-right' aria-hidden='true' />
+        </button>
+      </div>
+      {/* Desktop: Full page numbers */}
+      <div className='hidden sm:flex join'>
         <button
           type='button'
           className='join-item btn btn-sm btn-ghost'

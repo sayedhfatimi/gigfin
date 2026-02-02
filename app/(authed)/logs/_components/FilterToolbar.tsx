@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { useState } from 'react';
 
 import type { CurrencyCode } from '@/lib/currency';
 import type { CombinedTransaction } from '../_lib/types';
@@ -60,11 +61,19 @@ export default function FilterToolbar({
   isLoading = false,
 }: FilterToolbarProps) {
   const hasPlatforms = platformOptions.length > 0;
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
+
+  // Check if there are any view-specific filters to show
+  const hasViewFilters =
+    (view === 'income' && hasPlatforms) ||
+    view === 'expenses' ||
+    ((view === 'all' || view === 'expenses' || view === 'odometer') &&
+      vehicleFilterControl);
 
   return (
-    <div className='flex flex-col gap-3 rounded-lg border border-base-content/10 bg-base-100 p-4 shadow-sm'>
+    <div className='flex flex-col gap-3 rounded-lg border border-base-content/10 bg-base-100 p-3 sm:p-4 shadow-sm'>
       {/* Row 1: Search + Date Range + Export */}
-      <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+      <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
         <SearchBar
           value={searchQuery}
           onChange={onSearchChange}
@@ -80,6 +89,25 @@ export default function FilterToolbar({
           className='w-full sm:max-w-xs'
         />
         <div className='flex flex-wrap items-center gap-2'>
+          {/* Mobile filter toggle button */}
+          {hasViewFilters && (
+            <button
+              type='button'
+              className='btn btn-sm btn-ghost gap-1 sm:hidden'
+              onClick={() => setFiltersExpanded(!filtersExpanded)}
+              aria-expanded={filtersExpanded}
+              aria-label='Toggle filters'
+            >
+              <i
+                className={`fa-solid fa-filter ${isFilterDirty ? 'text-primary' : ''}`}
+                aria-hidden='true'
+              />
+              <span className='text-xs'>Filters</span>
+              {isFilterDirty && (
+                <span className='badge badge-primary badge-xs'>•</span>
+              )}
+            </button>
+          )}
           <DateRangeFilter value={dateRange} onChange={onDateRangeChange} />
           {view === 'all' && transactions.length > 0 && (
             <ExportButton transactions={transactions} currency={currency} />
@@ -97,75 +125,83 @@ export default function FilterToolbar({
         </div>
       </div>
 
-      {/* Row 2: View-specific filters */}
-      <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap'>
-        {/* Income view: Platform pills */}
-        {view === 'income' && hasPlatforms && (
-          <div className='flex items-center gap-2 flex-wrap'>
-            <span className='text-xs uppercase text-base-content/60'>
-              Platforms
-            </span>
-            <div className='flex flex-wrap gap-1'>
-              {platformOptions.map((platform) => {
-                const isChecked = platformFilter.includes(platform);
-                return (
-                  <button
-                    key={platform}
-                    type='button'
-                    onClick={() => onPlatformToggle?.(platform)}
-                    className={`btn btn-xs normal-case ${
-                      isChecked ? 'btn-primary' : 'btn-outline'
-                    }`}
-                  >
-                    {platform}
-                  </button>
-                );
-              })}
-              {platformFilter.length > 0 && (
-                <button
-                  type='button'
-                  className='btn btn-xs btn-square btn-ghost'
-                  onClick={onPlatformReset}
-                  aria-label='Clear platform filters'
-                >
-                  <i className='fa-solid fa-xmark' aria-hidden='true' />
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Expense view: Type filter */}
-        {view === 'expenses' && (
-          <div className='flex items-center gap-2'>
-            <span className='text-xs uppercase text-base-content/60'>Type</span>
-            <select
-              className='select select-bordered select-sm'
-              value={selectedExpenseType}
-              onChange={(e) => onExpenseTypeChange?.(e.target.value)}
-              disabled={isLoading}
-            >
-              <option value='all'>All types</option>
-              {expenseTypeOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Vehicle filter (all views except income) */}
-        {(view === 'all' || view === 'expenses' || view === 'odometer') &&
-          vehicleFilterControl && (
-            <div className='flex items-center gap-2'>
+      {/* Row 2: View-specific filters - Always visible on desktop, collapsible on mobile */}
+      {hasViewFilters && (
+        <div
+          className={`flex-col gap-3 sm:flex sm:flex-row sm:items-center sm:flex-wrap ${
+            filtersExpanded ? 'flex' : 'hidden sm:flex'
+          }`}
+        >
+          {/* Income view: Platform pills */}
+          {view === 'income' && hasPlatforms && (
+            <div className='flex flex-col gap-2 sm:flex-row sm:items-center'>
               <span className='text-xs uppercase text-base-content/60'>
-                Vehicle
+                Platforms
               </span>
-              {vehicleFilterControl}
+              <div className='flex flex-wrap gap-1'>
+                {platformOptions.map((platform) => {
+                  const isChecked = platformFilter.includes(platform);
+                  return (
+                    <button
+                      key={platform}
+                      type='button'
+                      onClick={() => onPlatformToggle?.(platform)}
+                      className={`btn btn-xs normal-case ${
+                        isChecked ? 'btn-primary' : 'btn-outline'
+                      }`}
+                    >
+                      {platform}
+                    </button>
+                  );
+                })}
+                {platformFilter.length > 0 && (
+                  <button
+                    type='button'
+                    className='btn btn-xs btn-square btn-ghost'
+                    onClick={onPlatformReset}
+                    aria-label='Clear platform filters'
+                  >
+                    <i className='fa-solid fa-xmark' aria-hidden='true' />
+                  </button>
+                )}
+              </div>
             </div>
           )}
-      </div>
+
+          {/* Expense view: Type filter */}
+          {view === 'expenses' && (
+            <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2'>
+              <span className='text-xs uppercase text-base-content/60'>
+                Type
+              </span>
+              <select
+                className='select select-bordered select-sm w-full sm:w-auto'
+                value={selectedExpenseType}
+                onChange={(e) => onExpenseTypeChange?.(e.target.value)}
+                disabled={isLoading}
+              >
+                <option value='all'>All types</option>
+                {expenseTypeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Vehicle filter (all views except income) */}
+          {(view === 'all' || view === 'expenses' || view === 'odometer') &&
+            vehicleFilterControl && (
+              <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2'>
+                <span className='text-xs uppercase text-base-content/60'>
+                  Vehicle
+                </span>
+                {vehicleFilterControl}
+              </div>
+            )}
+        </div>
+      )}
     </div>
   );
 }

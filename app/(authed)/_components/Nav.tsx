@@ -43,21 +43,27 @@ export default function Nav({
       'flex-col',
       'items-center',
       'justify-center',
-      'gap-1',
-      'border',
+      'gap-0.5',
+      'px-4',
+      'py-2',
+      'rounded-xl',
+      'transition-all',
+      'duration-200',
+      'relative',
       active
-        ? 'border-primary/50 bg-primary/10 text-primary'
-        : 'border-transparent text-base-content/70 hover:border-base-content/30 hover:bg-base-200',
+        ? 'text-primary scale-105'
+        : 'text-base-content/60 hover:text-base-content hover:bg-base-200/50 active:scale-95',
     ]
       .filter(Boolean)
       .join(' ');
 
   if (variant === 'mobile') {
     return (
-      <footer className='fixed inset-x-0 bottom-0 z-20 border-t border-base-content/10 bg-base-100/95 shadow-[0_-20px_30px_-10px] shadow-base-content/30 lg:hidden'>
+      <footer className='fixed inset-x-0 bottom-0 z-20 border-t border-base-content/10 bg-base-100/95 backdrop-blur-sm shadow-[0_-4px_20px_-4px] shadow-base-content/10 lg:hidden pb-[env(safe-area-inset-bottom)]'>
         <nav
+          role='navigation'
           aria-label='Primary workspace dock'
-          className='dock dock-sm items-center gap-2 px-3 py-2'
+          className='dock dock-sm items-center justify-around gap-1 px-2 py-1.5'
         >
           {navItems.map((item) => {
             const active = isActive(item.href);
@@ -68,8 +74,18 @@ export default function Nav({
                 aria-current={active ? 'page' : undefined}
                 className={getDockButtonClasses(active)}
               >
-                <span aria-hidden='true' className={`fa-solid ${item.icon}`} />
-                <span className='dock-label'>{item.label}</span>
+                <span
+                  aria-hidden='true'
+                  className={`fa-solid ${item.icon} text-lg transition-transform duration-200 ${active ? 'scale-110' : ''}`}
+                />
+                <span
+                  className={`text-[0.65rem] font-medium transition-opacity duration-200 ${active ? 'opacity-100' : 'opacity-70'}`}
+                >
+                  {item.label}
+                </span>
+                {active && (
+                  <span className='absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary' />
+                )}
               </Link>
             );
           })}
@@ -84,44 +100,53 @@ export default function Nav({
                 aria-hidden='true'
                 className='fa-solid fa-ellipsis text-lg'
               />
-              <span className='dock-label'>More</span>
+              <span className='text-[0.65rem] font-medium opacity-70'>
+                More
+              </span>
             </button>
-            <ul className='dropdown-content menu rounded-box mt-2 w-52 gap-2 border border-base-content/10 bg-base-100 p-2 shadow-lg'>
-              <li className='px-3 text-xs text-base-content/70'>
-                <p className='font-semibold text-base-content'>
-                  {sessionUser?.name ?? sessionUser?.email ?? 'Gig Worker'}
-                </p>
-                {sessionUser?.email && (
-                  <p className='truncate text-[0.65rem] text-base-content/60'>
-                    {sessionUser.email}
+            <ul className='dropdown-content menu rounded-2xl mb-2 w-56 gap-1 border border-base-content/10 bg-base-100 p-3 shadow-xl'>
+              {/* User info section */}
+              <li className='px-2 py-2 border-b border-base-content/10 mb-1'>
+                <div className='flex flex-col gap-0.5'>
+                  <p className='font-semibold text-sm text-base-content'>
+                    {sessionUser?.name ?? sessionUser?.email ?? 'Gig Worker'}
                   </p>
-                )}
-              </li>
-              <li className='pt-2'>
-                <div className='flex items-center justify-between gap-4 px-2'>
-                  <span className='text-xs font-semibold text-base-content'>
-                    Sign Out
-                  </span>
-                  <button
-                    type='button'
-                    className='btn btn-square btn-sm text-sm btn-error'
-                    onClick={onSignOut}
-                    disabled={isSigningOut}
-                  >
-                    <span
-                      aria-hidden='true'
-                      className='fa-solid fa-arrow-right-from-bracket'
-                    />
-                  </button>
+                  {sessionUser?.email && sessionUser?.name && (
+                    <p className='truncate text-xs text-base-content/50'>
+                      {sessionUser.email}
+                    </p>
+                  )}
                 </div>
               </li>
-              <li className='pt-2'>
-                <div className='flex items-center justify-between gap-4 px-2'>
-                  <span className='text-xs font-semibold text-base-content'>
-                    Dark Mode
-                  </span>
+              {/* Theme toggle */}
+              <li>
+                <div className='flex items-center justify-between gap-4 px-2 py-2 rounded-lg hover:bg-base-200/50 transition-colors'>
+                  <div className='flex items-center gap-2'>
+                    <i
+                      className='fa-solid fa-moon text-base-content/60 text-sm'
+                      aria-hidden='true'
+                    />
+                    <span className='text-sm text-base-content'>Dark Mode</span>
+                  </div>
                   <ThemeToggle variant='toggle' className='toggle-sm' />
                 </div>
+              </li>
+              {/* Sign out */}
+              <li className='mt-1 pt-1 border-t border-base-content/10'>
+                <button
+                  type='button'
+                  className='flex items-center gap-2 px-2 py-2 w-full rounded-lg text-error hover:bg-error/10 transition-colors'
+                  onClick={onSignOut}
+                  disabled={isSigningOut}
+                >
+                  <i
+                    className={`fa-solid ${isSigningOut ? 'fa-spinner fa-spin' : 'fa-arrow-right-from-bracket'} text-sm`}
+                    aria-hidden='true'
+                  />
+                  <span className='text-sm font-medium'>
+                    {isSigningOut ? 'Signing out…' : 'Sign Out'}
+                  </span>
+                </button>
               </li>
             </ul>
           </div>
