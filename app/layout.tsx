@@ -25,6 +25,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang='en' suppressHydrationWarning>
+      <head>
+        <script
+          defer
+          data-domain='gigfin.me'
+          src='https://orichalcum.ltd4.dev/js/script.file-downloads.hash.outbound-links.js'
+        ></script>
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
