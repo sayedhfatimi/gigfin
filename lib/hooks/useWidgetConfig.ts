@@ -12,6 +12,7 @@ export type WidgetId =
   | 'todaySnapshot'
   | 'stats'
   | 'drivingStats'
+  | 'incomePerMileTrend'
   | 'profitability'
   | 'expenseOverview'
   | 'expenseCategoryBreakdown'
@@ -54,6 +55,7 @@ const parseJson = <T>(value: string | null): T | null => {
 /** Default visibility - widgets set to false are hidden by default */
 const DEFAULT_WIDGET_VISIBILITY: Partial<Record<WidgetId, boolean>> = {
   drivingStats: false,
+  incomePerMileTrend: false,
   platformConcentration: false,
   dailyCadence: false,
   recentDays: false,

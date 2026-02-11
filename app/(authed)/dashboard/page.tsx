@@ -39,6 +39,7 @@ import { ExpenseCategoryBreakdownWidget } from './_components/ExpenseCategoryBre
 import { ExpenseOverviewWidget } from './_components/ExpenseOverviewWidget';
 import { FuelConsumptionWidget } from './_components/FuelConsumptionWidget';
 import { GoalTrackerWidget } from './_components/GoalTrackerWidget';
+import { IncomePerMileTrendWidget } from './_components/IncomePerMileTrendWidget';
 import { LineChartWidget } from './_components/LineChartWidget';
 import { MileageDeductionWidget } from './_components/MileageDeductionWidget';
 import { PlatformBreakdownWidget } from './_components/PlatformBreakdownWidget';
@@ -125,6 +126,20 @@ export default function DashboardPage() {
           <DrivingStatsWidget
             expenses={expenses}
             incomes={incomes}
+            currency={currency}
+            odometerUnit={odometerUnit}
+          />
+        ),
+      },
+      {
+        id: 'incomePerMileTrend',
+        label: 'Income Per Mile',
+        description: 'Income efficiency trend from odometer days',
+        widthClass: 'md:col-span-2',
+        component: (
+          <IncomePerMileTrendWidget
+            incomes={incomes}
+            odometerEntries={odometerEntries}
             currency={currency}
             odometerUnit={odometerUnit}
           />
