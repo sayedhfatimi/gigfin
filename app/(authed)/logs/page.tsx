@@ -84,7 +84,7 @@ const buildColumns = (currency: CurrencyCode) => [
     header: ({ column }) => renderSortableHeader(column, 'Date'),
     cell: (info) => (
       <div className='text-sm font-semibold text-base-content'>
-        {info.getValue()}
+        {formatDateLabel(info.getValue())}
       </div>
     ),
   }),
