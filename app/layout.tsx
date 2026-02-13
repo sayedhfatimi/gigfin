@@ -27,9 +27,9 @@ export default function RootLayout({
     <html lang='en' suppressHydrationWarning>
       <head>
         <script
+          src='https://rybbit.ltd4.dev/api/script.js'
+          data-site-id='fd5c0bf574cb'
           defer
-          data-domain='gigfin.me'
-          src='https://orichalcum.ltd4.dev/js/script.file-downloads.hash.outbound-links.js'
         ></script>
       </head>
       <body
