@@ -1,6 +1,10 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 ENV DB_FILE_NAME=file:./data/db.sqlite
+# Build-time placeholders so Next.js static generation can initialise better-auth.
+# Real values are supplied at runtime via environment variables.
+ENV BETTER_AUTH_SECRET=build-placeholder
+ENV BETTER_AUTH_URL=http://localhost:3000
 
 # Upgrade npm so builds inside this repo always use the latest CLI.
 RUN npm install -g npm@latest
