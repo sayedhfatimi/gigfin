@@ -12,6 +12,7 @@
 [![Last Commit](https://img.shields.io/github/last-commit/sayedhfatimi/gigfin)](https://github.com/sayedhfatimi/gigfin/commits)
 [![Repo Size](https://img.shields.io/github/repo-size/sayedhfatimi/gigfin)](https://github.com/sayedhfatimi/gigfin)
 [![Issues](https://img.shields.io/github/issues/sayedhfatimi/gigfin)](https://github.com/sayedhfatimi/gigfin/issues)
+[![Docker Image](https://img.shields.io/badge/ghcr.io-sayedhfatimi%2Fgigfin-blue?logo=docker)](https://ghcr.io/sayedhfatimi/gigfin)
 
 GigFin helps gig workers keep a simple, reliable ledger of their overall income across platforms alongside monthly trends and platform breakdowns. Because the app focuses on platform-level income totals, it currently does not track individual line items per platform. Recent updates add customizable dashboards, built-in expense tracking, and vehicle profiles while keeping the same responsive Next.js dashboard, Better Auth–powered credential login, 2FA, and fast SQLite + Drizzle ORM backend so you can log earnings securely from any device.
 
@@ -78,6 +79,8 @@ GigFin expects the following values at runtime (set them via Coolify, another se
 - `BETTER_AUTH_URL` (required): the public URL where your GigFin instance is reached (for example `https://gigfin.me` or your custom domain). It must match the redirect URL configured in Better Auth.
 - `DB_FILE_NAME` (optional): connection string for SQLite (default: `file:./data/db.sqlite`). If you override it, make sure the path matches the named Docker volume or host directory you that want to persist.
 - `INTERNAL_API_BASE` (optional): internal API endpoint that GigFin pings (default: `http://localhost:3000`). Change it only if you run the frontend and backend on different hosts.
+- `ANALYTICS_SCRIPT_URL` (optional): URL to an external analytics script (e.g. Rybbit, Plausible, Umami). When set together with `ANALYTICS_SITE_ID`, the script is injected into every page.
+- `ANALYTICS_SITE_ID` (optional): site identifier passed as `data-site-id` to the analytics script. Both `ANALYTICS_SCRIPT_URL` and `ANALYTICS_SITE_ID` must be set for analytics to load.
 
 Bake these values into `.env` before running `npm` scripts or supply them through your orchestration platform so they are available to both the build and runtime environments.
 
@@ -96,6 +99,27 @@ Bake these values into `.env` before running `npm` scripts or supply them throug
 4. Docker Compose sources runtime environment variables from `.env` (see the `env_file` section in `docker-compose.yml`); store secrets there or inject them from your deployment platform.
 
 Bring it down with `docker compose down` when you need to rebuild.
+
+### Pre-built image
+
+A multi-platform Docker image (`linux/amd64` and `linux/arm64`) is published to GHCR on every push to `main`:
+
+```bash
+docker pull ghcr.io/sayedhfatimi/gigfin:latest
+```
+
+To run it directly:
+
+```bash
+docker run -d \
+  -p 3000:3000 \
+  -v gigfin-data:/app/data \
+  -e BETTER_AUTH_SECRET=your-secret \
+  -e BETTER_AUTH_URL=https://your-domain.com \
+  ghcr.io/sayedhfatimi/gigfin:latest
+```
+
+Pin a specific version for stability (e.g. `ghcr.io/sayedhfatimi/gigfin:1.2.3`).
 
 ### Coolify
 

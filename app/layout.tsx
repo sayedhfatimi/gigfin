@@ -26,11 +26,13 @@ export default function RootLayout({
   return (
     <html lang='en' suppressHydrationWarning>
       <head>
-        <script
-          src='https://rybbit.ltd4.dev/api/script.js'
-          data-site-id='fd5c0bf574cb'
-          defer
-        ></script>
+        {process.env.ANALYTICS_SCRIPT_URL && process.env.ANALYTICS_SITE_ID && (
+          <script
+            src={process.env.ANALYTICS_SCRIPT_URL}
+            data-site-id={process.env.ANALYTICS_SITE_ID}
+            defer
+          />
+        )}
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

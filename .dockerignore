@@ -1,0 +1,39 @@
+# Dependencies (installed fresh via npm ci inside container)
+node_modules/
+
+# Next.js build output (rebuilt inside container)
+.next/
+out/
+
+# Git metadata
+.git/
+.gitignore
+
+# GitHub assets not needed in image
+.github/
+
+# Local data directory (SQLite DB -- container creates its own)
+data/
+
+# Environment files (secrets must not be baked into images)
+.env
+.env.*
+!.env.example
+
+# Build artifacts
+*.tsbuildinfo
+next-env.d.ts
+
+# Docker files (not needed inside the build context)
+docker-compose.yml
+Dockerfile
+
+# Editor and OS files
+.DS_Store
+*.pem
+.vscode/
+.idea/
+
+# Documentation
+README.md
+LICENSE
