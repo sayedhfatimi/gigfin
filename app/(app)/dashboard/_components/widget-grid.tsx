@@ -72,6 +72,31 @@ export function WidgetGrid({ saved }: { saved: SavedLayout }) {
         onReset={cfg.reset}
       />
 
+      {cfg.isCustomizing && hiddenIds.length > 0 && (
+        <div className="rounded-lg border border-dashed p-4">
+          <p className="mb-3 font-medium text-muted-foreground text-sm">
+            Hidden widgets
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {hiddenIds.map((id) => {
+              const meta = cfg.metaMap[id];
+              if (!meta) return null;
+              return (
+                <Button
+                  key={id}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => cfg.toggle(id)}
+                >
+                  <Eye className="size-4" />
+                  {meta.label}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {data.loading ? (
         <DashboardSkeleton />
       ) : (
@@ -119,31 +144,6 @@ export function WidgetGrid({ saved }: { saved: SavedLayout }) {
               ) : null}
             </DragOverlay>
           </DndContext>
-
-          {cfg.isCustomizing && hiddenIds.length > 0 && (
-            <div className="rounded-lg border border-dashed p-4">
-              <p className="mb-3 font-medium text-muted-foreground text-sm">
-                Hidden widgets
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {hiddenIds.map((id) => {
-                  const meta = cfg.metaMap[id];
-                  if (!meta) return null;
-                  return (
-                    <Button
-                      key={id}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => cfg.toggle(id)}
-                    >
-                      <Eye className="size-4" />
-                      {meta.label}
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </>
       )}
     </div>
