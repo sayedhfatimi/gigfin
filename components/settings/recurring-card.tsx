@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
+import { AddDialog } from "@/components/add-dialog";
 import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/convex/_generated/api";
@@ -43,94 +45,25 @@ const CADENCE_OPTIONS = RECURRING_CADENCES.map((c) => ({
 
 export function RecurringCard({ currency }: { currency: string }) {
   const rows = useQuery(api.recurring.list);
-  const add = useMutation(api.recurring.add);
   const setActive = useMutation(api.recurring.setActive);
   const remove = useMutation(api.recurring.remove);
-
-  const [expenseType, setExpenseType] = useState<
-    (typeof EXPENSE_TYPES)[number]
-  >(EXPENSE_TYPES[0]);
-  const [amount, setAmount] = useState("");
-  const [cadence, setCadence] =
-    useState<(typeof RECURRING_CADENCES)[number]>("monthly");
-  const [nextDueDate, setNextDueDate] = useState(todayISO());
-
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    const amountMinor = parseMoneyToMinor(amount);
-    if (amountMinor === null) {
-      toast.error("Enter an amount.");
-      return;
-    }
-    try {
-      await add({ expenseType, amountMinor, cadence, nextDueDate });
-      setAmount("");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to add");
-    }
-  }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Recurring expenses</CardTitle>
-        <CardDescription>
-          Auto-logged on schedule (insurance, finance, subscriptions…).
-        </CardDescription>
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1.5">
+            <CardTitle>Recurring expenses</CardTitle>
+            <CardDescription>
+              Auto-logged on schedule (insurance, finance, subscriptions…).
+            </CardDescription>
+          </div>
+          <AddDialog title="Add recurring expense">
+            {(close) => <RecurringForm onDone={close} />}
+          </AddDialog>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-5">
-        <form
-          onSubmit={onSubmit}
-          className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
-        >
-          <div className="space-y-1.5">
-            <Label htmlFor="recurring-type">Category</Label>
-            <SelectField
-              id="recurring-type"
-              className="sm:w-44"
-              value={expenseType}
-              onValueChange={(v) =>
-                setExpenseType(v as (typeof EXPENSE_TYPES)[number])
-              }
-              options={TYPE_OPTIONS}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="recurring-amount">Amount</Label>
-            <Input
-              id="recurring-amount"
-              className="sm:w-28"
-              inputMode="decimal"
-              placeholder="0.00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="recurring-cadence">Cadence</Label>
-            <SelectField
-              id="recurring-cadence"
-              className="sm:w-40"
-              value={cadence}
-              onValueChange={(v) =>
-                setCadence(v as (typeof RECURRING_CADENCES)[number])
-              }
-              options={CADENCE_OPTIONS}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="recurring-next">Next due</Label>
-            <Input
-              id="recurring-next"
-              className="sm:w-40"
-              type="date"
-              value={nextDueDate}
-              onChange={(e) => setNextDueDate(e.target.value)}
-            />
-          </div>
-          <Button type="submit">Add</Button>
-        </form>
-
+      <CardContent>
         {rows === undefined ? (
           <p className="text-muted-foreground text-sm">Loading…</p>
         ) : rows.length === 0 ? (
@@ -187,5 +120,88 @@ export function RecurringCard({ currency }: { currency: string }) {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function RecurringForm({ onDone }: { onDone: () => void }) {
+  const add = useMutation(api.recurring.add);
+  const [expenseType, setExpenseType] = useState<
+    (typeof EXPENSE_TYPES)[number]
+  >(EXPENSE_TYPES[0]);
+  const [amount, setAmount] = useState("");
+  const [cadence, setCadence] =
+    useState<(typeof RECURRING_CADENCES)[number]>("monthly");
+  const [nextDueDate, setNextDueDate] = useState(todayISO());
+  const [busy, setBusy] = useState(false);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    const amountMinor = parseMoneyToMinor(amount);
+    if (amountMinor === null) {
+      toast.error("Enter an amount.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await add({ expenseType, amountMinor, cadence, nextDueDate });
+      onDone();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to add");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="space-y-4">
+      <div className="space-y-1.5">
+        <Label htmlFor="recurring-type">Category</Label>
+        <SelectField
+          id="recurring-type"
+          value={expenseType}
+          onValueChange={(v) =>
+            setExpenseType(v as (typeof EXPENSE_TYPES)[number])
+          }
+          options={TYPE_OPTIONS}
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="recurring-amount">Amount</Label>
+          <Input
+            id="recurring-amount"
+            inputMode="decimal"
+            placeholder="0.00"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="recurring-cadence">Cadence</Label>
+          <SelectField
+            id="recurring-cadence"
+            value={cadence}
+            onValueChange={(v) =>
+              setCadence(v as (typeof RECURRING_CADENCES)[number])
+            }
+            options={CADENCE_OPTIONS}
+          />
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="recurring-next">Next due</Label>
+        <Input
+          id="recurring-next"
+          type="date"
+          value={nextDueDate}
+          onChange={(e) => setNextDueDate(e.target.value)}
+        />
+      </div>
+      <DialogFooter>
+        <Button type="submit" disabled={busy}>
+          {busy ? "Saving…" : "Add"}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }

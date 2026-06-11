@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
+import { AddDialog } from "@/components/add-dialog";
 import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/convex/_generated/api";
@@ -32,79 +34,24 @@ const UNIT_OPTIONS = UNIT_RATE_UNITS.map((u) => ({
 
 export function ChargingCard({ currency }: { currency: string }) {
   const rows = useQuery(api.chargingVendors.list);
-  const add = useMutation(api.chargingVendors.add);
   const remove = useMutation(api.chargingVendors.remove);
-
-  const [label, setLabel] = useState("");
-  const [rate, setRate] = useState("");
-  const [unit, setUnit] = useState<(typeof UNIT_RATE_UNITS)[number]>(
-    UNIT_RATE_UNITS[0],
-  );
-
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    const unitRateMinor = parseMoneyToMinor(rate);
-    if (!label.trim() || unitRateMinor === null) {
-      toast.error("Enter a label and rate.");
-      return;
-    }
-    try {
-      await add({ label: label.trim(), unitRateMinor, unitRateUnit: unit });
-      setLabel("");
-      setRate("");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to add");
-    }
-  }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Charging vendors</CardTitle>
-        <CardDescription>
-          Saved unit rates for estimating EV charging costs.
-        </CardDescription>
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1.5">
+            <CardTitle>Charging vendors</CardTitle>
+            <CardDescription>
+              Saved unit rates for estimating EV charging costs.
+            </CardDescription>
+          </div>
+          <AddDialog title="Add charging vendor">
+            {(close) => <ChargingForm onDone={close} />}
+          </AddDialog>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-5">
-        <form
-          onSubmit={onSubmit}
-          className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
-        >
-          <div className="flex-1 space-y-1.5 sm:min-w-44">
-            <Label htmlFor="vendor-label">Label</Label>
-            <Input
-              id="vendor-label"
-              placeholder="e.g. Home, Ionity"
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="vendor-rate">Rate</Label>
-            <Input
-              id="vendor-rate"
-              className="sm:w-28"
-              inputMode="decimal"
-              placeholder="0.00"
-              value={rate}
-              onChange={(e) => setRate(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="vendor-unit">Unit</Label>
-            <SelectField
-              id="vendor-unit"
-              className="sm:w-44"
-              value={unit}
-              onValueChange={(v) =>
-                setUnit(v as (typeof UNIT_RATE_UNITS)[number])
-              }
-              options={UNIT_OPTIONS}
-            />
-          </div>
-          <Button type="submit">Add vendor</Button>
-        </form>
-
+      <CardContent>
         {rows === undefined ? (
           <p className="text-muted-foreground text-sm">Loading…</p>
         ) : rows.length === 0 ? (
@@ -114,11 +61,11 @@ export function ChargingCard({ currency }: { currency: string }) {
             {rows.map((vendor) => (
               <li
                 key={vendor._id}
-                className="flex items-center justify-between gap-3 px-4 py-3"
+                className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
               >
                 <div className="min-w-0">
-                  <span className="font-medium text-sm">{vendor.label}</span>{" "}
-                  <span className="text-muted-foreground text-sm">
+                  <span className="font-medium">{vendor.label}</span>{" "}
+                  <span className="text-muted-foreground">
                     {formatMoney(vendor.unitRateMinor, currency)} per{" "}
                     {UNIT_LABELS[vendor.unitRateUnit]}
                   </span>
@@ -141,5 +88,75 @@ export function ChargingCard({ currency }: { currency: string }) {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function ChargingForm({ onDone }: { onDone: () => void }) {
+  const add = useMutation(api.chargingVendors.add);
+  const [label, setLabel] = useState("");
+  const [rate, setRate] = useState("");
+  const [unit, setUnit] = useState<(typeof UNIT_RATE_UNITS)[number]>(
+    UNIT_RATE_UNITS[0],
+  );
+  const [busy, setBusy] = useState(false);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    const unitRateMinor = parseMoneyToMinor(rate);
+    if (!label.trim() || unitRateMinor === null) {
+      toast.error("Enter a label and rate.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await add({ label: label.trim(), unitRateMinor, unitRateUnit: unit });
+      onDone();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to add");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="space-y-4">
+      <div className="space-y-1.5">
+        <Label htmlFor="vendor-label">Label</Label>
+        <Input
+          id="vendor-label"
+          placeholder="e.g. Home, Ionity"
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="vendor-rate">Rate</Label>
+          <Input
+            id="vendor-rate"
+            inputMode="decimal"
+            placeholder="0.00"
+            value={rate}
+            onChange={(e) => setRate(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="vendor-unit">Unit</Label>
+          <SelectField
+            id="vendor-unit"
+            value={unit}
+            onValueChange={(v) =>
+              setUnit(v as (typeof UNIT_RATE_UNITS)[number])
+            }
+            options={UNIT_OPTIONS}
+          />
+        </div>
+      </div>
+      <DialogFooter>
+        <Button type="submit" disabled={busy}>
+          {busy ? "Saving…" : "Add vendor"}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }

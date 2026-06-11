@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { Star, Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
+import { AddDialog } from "@/components/add-dialog";
 import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,89 +14,40 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/convex/_generated/api";
 import { VEHICLE_TYPES } from "@/convex/lib/constants";
 
+const typeLabel = (t: (typeof VEHICLE_TYPES)[number]) =>
+  t === "EV" ? "EV" : t[0] + t.slice(1).toLowerCase();
 const TYPE_OPTIONS = VEHICLE_TYPES.map((t) => ({
   value: t,
-  label: t === "EV" ? "EV" : t[0] + t.slice(1).toLowerCase(),
+  label: typeLabel(t),
 }));
 
 export function VehiclesCard() {
   const rows = useQuery(api.vehicles.list);
-  const add = useMutation(api.vehicles.add);
   const update = useMutation(api.vehicles.update);
   const remove = useMutation(api.vehicles.remove);
-
-  const [label, setLabel] = useState("");
-  const [vehicleType, setVehicleType] = useState<
-    (typeof VEHICLE_TYPES)[number]
-  >(VEHICLE_TYPES[0]);
-  const [isDefault, setIsDefault] = useState(false);
-
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (!label.trim()) {
-      toast.error("Enter a label.");
-      return;
-    }
-    try {
-      await add({ label: label.trim(), vehicleType, isDefault });
-      setLabel("");
-      setIsDefault(false);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to add");
-    }
-  }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Vehicles</CardTitle>
-        <CardDescription>
-          Used to attribute expenses, mileage and charging.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-5">
-        <form
-          onSubmit={onSubmit}
-          className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
-        >
-          <div className="flex-1 space-y-1.5 sm:min-w-48">
-            <Label htmlFor="vehicle-label">Label</Label>
-            <Input
-              id="vehicle-label"
-              placeholder="e.g. Tesla Model 3"
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-            />
-          </div>
+        <div className="flex items-start justify-between gap-3">
           <div className="space-y-1.5">
-            <Label htmlFor="vehicle-type">Type</Label>
-            <SelectField
-              id="vehicle-type"
-              className="sm:w-36"
-              value={vehicleType}
-              onValueChange={(v) =>
-                setVehicleType(v as (typeof VEHICLE_TYPES)[number])
-              }
-              options={TYPE_OPTIONS}
-            />
+            <CardTitle>Vehicles</CardTitle>
+            <CardDescription>
+              Used to attribute expenses, mileage and charging.
+            </CardDescription>
           </div>
-          <label className="flex h-9 items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              className="size-4 accent-primary"
-              checked={isDefault}
-              onChange={(e) => setIsDefault(e.target.checked)}
-            />
-            Default
-          </label>
-          <Button type="submit">Add vehicle</Button>
-        </form>
-
+          <AddDialog title="Add vehicle">
+            {(close) => <VehicleForm onDone={close} />}
+          </AddDialog>
+        </div>
+      </CardHeader>
+      <CardContent>
         {rows === undefined ? (
           <p className="text-muted-foreground text-sm">Loading…</p>
         ) : rows.length === 0 ? (
@@ -112,9 +64,7 @@ export function VehiclesCard() {
                     {v.label}
                   </span>
                   <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground text-xs">
-                    {v.vehicleType === "EV"
-                      ? "EV"
-                      : v.vehicleType[0] + v.vehicleType.slice(1).toLowerCase()}
+                    {typeLabel(v.vehicleType)}
                   </span>
                   {v.isDefault && (
                     <span className="rounded bg-primary/10 px-1.5 py-0.5 text-primary text-xs">
@@ -160,5 +110,71 @@ export function VehiclesCard() {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function VehicleForm({ onDone }: { onDone: () => void }) {
+  const add = useMutation(api.vehicles.add);
+  const [label, setLabel] = useState("");
+  const [vehicleType, setVehicleType] = useState<
+    (typeof VEHICLE_TYPES)[number]
+  >(VEHICLE_TYPES[0]);
+  const [isDefault, setIsDefault] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!label.trim()) {
+      toast.error("Enter a label.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await add({ label: label.trim(), vehicleType, isDefault });
+      onDone();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to add");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="space-y-4">
+      <div className="space-y-1.5">
+        <Label htmlFor="vehicle-label">Label</Label>
+        <Input
+          id="vehicle-label"
+          placeholder="e.g. Tesla Model 3"
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="vehicle-type">Type</Label>
+        <SelectField
+          id="vehicle-type"
+          value={vehicleType}
+          onValueChange={(v) =>
+            setVehicleType(v as (typeof VEHICLE_TYPES)[number])
+          }
+          options={TYPE_OPTIONS}
+        />
+      </div>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          className="size-4 accent-primary"
+          checked={isDefault}
+          onChange={(e) => setIsDefault(e.target.checked)}
+        />
+        Set as default
+      </label>
+      <DialogFooter>
+        <Button type="submit" disabled={busy}>
+          {busy ? "Saving…" : "Add vehicle"}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }
