@@ -6,6 +6,7 @@ import { type FormEvent, type ReactNode, useState } from "react";
 import { toast } from "sonner";
 import { AddDialog } from "@/components/add-dialog";
 import { DatePicker } from "@/components/date-picker";
+import { ReceiptButton } from "@/components/receipt-button";
 import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -188,7 +189,7 @@ function ExpensePanel({ currency }: { currency: string }) {
     >
       <EntryTable
         empty="No expenses yet."
-        head={["Date", "Type", "Amount", ""]}
+        head={["Date", "Type", "Amount", "Receipt", ""]}
         rows={rows}
         render={(r) => (
           <TableRow key={r._id}>
@@ -196,6 +197,9 @@ function ExpensePanel({ currency }: { currency: string }) {
             <TableCell>{titleCase(r.expenseType)}</TableCell>
             <TableCell className="tabular-nums">
               {formatMoney(r.amountMinor, currency)}
+            </TableCell>
+            <TableCell className="text-right">
+              <ReceiptButton expenseId={r._id} />
             </TableCell>
             <TableCell className="text-right">
               <DeleteButton onClick={() => remove({ id: r._id })} />

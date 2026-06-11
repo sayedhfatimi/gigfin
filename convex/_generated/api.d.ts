@@ -24,6 +24,7 @@ import type * as lib_owner from "../lib/owner.js";
 import type * as lib_period from "../lib/period.js";
 import type * as odometers from "../odometers.js";
 import type * as profiles from "../profiles.js";
+import type * as receipts from "../receipts.js";
 import type * as recurring from "../recurring.js";
 import type * as shifts from "../shifts.js";
 import type * as vehicles from "../vehicles.js";
@@ -51,6 +52,7 @@ declare const fullApi: ApiFromModules<{
   "lib/period": typeof lib_period;
   odometers: typeof odometers;
   profiles: typeof profiles;
+  receipts: typeof receipts;
   recurring: typeof recurring;
   shifts: typeof shifts;
   vehicles: typeof vehicles;
