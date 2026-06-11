@@ -1,159 +1,53 @@
 "use client";
 
-import { useQuery } from "convex/react";
-import { useState } from "react";
-import { BreakdownList } from "@/components/dashboard/breakdown-list";
-import { BudgetsCard } from "@/components/dashboard/budgets-card";
-import { GoalsCard } from "@/components/dashboard/goals-card";
-import { MonthlyChart } from "@/components/dashboard/monthly-chart";
-import { TaxCard } from "@/components/dashboard/tax-card";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useMutation, useQuery } from "convex/react";
+import { useCallback } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
-import { formatMoney, titleCase } from "@/lib/format";
-import type { TaxJurisdiction } from "@/lib/tax";
+import { TimeframeProvider } from "@/lib/contexts/timeframe-context";
+import { TIMEFRAME_OPTIONS, type TimeframeKey } from "@/lib/dates";
+import { WidgetGrid } from "./_components/widget-grid";
 
-const KM_PER_MILE = 1.60934;
+const VALID_TIMEFRAMES = new Set(TIMEFRAME_OPTIONS.map((o) => o.value));
 
 export default function DashboardPage() {
-  const [year] = useState(() => new Date().getFullYear());
-  const profile = useQuery(api.profiles.getMine);
-  const summary = useQuery(api.dashboard.summary, { year });
-
-  const currency = profile?.currency ?? "GBP";
-  const jurisdiction = (profile?.taxJurisdiction ?? "UK") as TaxJurisdiction;
-  const odometerUnit = profile?.odometerUnit ?? "km";
-
-  if (summary === undefined) {
-    return (
-      <div className="space-y-6">
-        <Header year={year} />
-        <p className="text-muted-foreground text-sm">Loading…</p>
-      </div>
-    );
-  }
-
-  const yearHours = summary.yearMinutes / 60;
-  const ratePerHourMinor =
-    yearHours > 0 ? Math.round(summary.yearIncomeMinor / yearHours) : null;
-
-  const stats = [
-    {
-      label: `${year} income`,
-      value: formatMoney(summary.yearIncomeMinor, currency),
+  const layout = useQuery(api.dashboardLayout.getMine);
+  const save = useMutation(api.dashboardLayout.save);
+  const persistTimeframe = useCallback(
+    (timeframe: TimeframeKey) => {
+      void save({ timeframe });
     },
-    {
-      label: `${year} expenses`,
-      value: formatMoney(summary.yearExpenseMinor, currency),
-    },
-    {
-      label: `${year} net`,
-      value: formatMoney(summary.yearNetMinor, currency),
-    },
-    {
-      label: "Per hour",
-      value:
-        ratePerHourMinor === null
-          ? "—"
-          : `${formatMoney(ratePerHourMinor, currency)}/h`,
-    },
-  ];
+    [save],
+  );
 
-  const yearMiles =
-    odometerUnit === "mi"
-      ? summary.yearDistance
-      : summary.yearDistance / KM_PER_MILE;
+  if (layout === undefined) return <DashboardLoading />;
+
+  const stored = layout?.timeframe;
+  const initial: TimeframeKey =
+    stored && VALID_TIMEFRAMES.has(stored as TimeframeKey)
+      ? (stored as TimeframeKey)
+      : "monthly";
 
   return (
-    <div className="space-y-6">
-      <Header year={year} />
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((s) => (
-          <Card key={s.label}>
-            <CardHeader className="gap-1">
-              <CardDescription>{s.label}</CardDescription>
-              <CardTitle className="text-2xl tabular-nums">{s.value}</CardTitle>
-            </CardHeader>
-          </Card>
-        ))}
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Income vs expenses</CardTitle>
-            <CardDescription>Monthly, {year}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <MonthlyChart data={summary.byMonth} />
-          </CardContent>
-        </Card>
-
-        <TaxCard
-          jurisdiction={jurisdiction}
-          currency={currency}
-          yearNetMinor={summary.yearNetMinor}
-          yearMiles={yearMiles}
-        />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Income by platform</CardTitle>
-            <CardDescription>{year}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <BreakdownList
-              currency={currency}
-              empty="No income this year."
-              items={summary.byPlatform.map((p) => ({
-                label: p.platform,
-                amountMinor: p.amountMinor,
-              }))}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Expenses by category</CardTitle>
-            <CardDescription>{year}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <BreakdownList
-              currency={currency}
-              empty="No expenses this year."
-              items={summary.byCategory.map((c) => ({
-                label: titleCase(c.expenseType),
-                amountMinor: c.amountMinor,
-              }))}
-            />
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <GoalsCard currency={currency} />
-        <BudgetsCard currency={currency} />
-      </div>
-    </div>
+    <TimeframeProvider initial={initial} onChange={persistTimeframe}>
+      <WidgetGrid saved={layout ?? null} />
+    </TimeframeProvider>
   );
 }
 
-function Header({ year }: { year: number }) {
+function DashboardLoading() {
   return (
-    <div>
-      <h1 className="font-semibold text-2xl tracking-tight">Dashboard</h1>
-      <p className="text-muted-foreground text-sm">
-        Your {year} earnings at a glance.
-      </p>
+    <div className="space-y-6">
+      <Skeleton className="h-9 w-40" />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Skeleton className="h-28" />
+        <Skeleton className="h-28" />
+      </div>
+      <div className="grid auto-rows-min gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {["a", "b", "c", "d", "e", "f"].map((k) => (
+          <Skeleton key={k} className="h-48" />
+        ))}
+      </div>
     </div>
   );
 }

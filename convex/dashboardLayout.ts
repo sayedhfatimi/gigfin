@@ -13,6 +13,8 @@ export const getMine = authedQuery({
       .unique(),
 });
 
+// Patch-merge: only the provided fields change, so the timeframe and the widget
+// layout can be saved independently.
 export const save = authedMutation({
   args: dashboardLayoutFields,
   handler: async (ctx, args) => {
@@ -22,12 +24,18 @@ export const save = authedMutation({
       .unique();
     const now = Date.now();
     if (existing) {
-      await ctx.db.patch(existing._id, { ...args, updatedAt: now });
+      const patch: Record<string, unknown> = { updatedAt: now };
+      for (const [key, value] of Object.entries(args)) {
+        if (value !== undefined) patch[key] = value;
+      }
+      await ctx.db.patch(existing._id, patch);
       return existing._id;
     }
     return ctx.db.insert("dashboardLayouts", {
       userId: ctx.userId,
-      ...args,
+      order: args.order ?? [],
+      hidden: args.hidden ?? [],
+      timeframe: args.timeframe,
       updatedAt: now,
     });
   },

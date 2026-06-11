@@ -13,9 +13,10 @@ describe("dashboardLayoutSchema", () => {
     expect(out.timeframe).toBe("monthly");
   });
 
-  it("treats timeframe as optional", () => {
-    const out = dashboardLayoutSchema.parse({ order: [], hidden: [] });
-    expect(out.timeframe).toBeUndefined();
+  it("treats every field as optional (patch-merge)", () => {
+    expect(dashboardLayoutSchema.parse({})).toEqual({});
+    const out = dashboardLayoutSchema.parse({ timeframe: "weekly" });
+    expect(out).toEqual({ timeframe: "weekly" });
   });
 
   it("rejects non-array order/hidden", () => {
