@@ -17,21 +17,34 @@ a private network with no internet access.
 
 ## Features
 
-- **Income, expenses, mileage & shifts** — reactive logs (live updates, no refresh).
-- **Dashboard** — monthly income-vs-expenses chart, platform/category breakdowns,
-  effective £/hour, goals & budgets with progress.
-- **Tax estimator** — jurisdiction-aware (UK Self-Assessment / US Schedule C),
-  with mileage allowance. Computed locally; it's an estimate, not advice.
-- **Tax-year reports** — printable / save-as-PDF summaries.
-- **Recurring expenses** — auto-logged on schedule by an in-backend cron.
-- **Receipts** — image attachments in the self-hosted file storage (no S3).
+- **Live logs** — income, expenses, mileage and shifts, with one-tap start/stop
+  for live shifts and trips, plus search, filters and inline edit. Updates appear
+  instantly across devices (no refresh).
+- **Customisable dashboard** — 21 drag-and-drop widgets (income/expense trends,
+  platform & category breakdowns, effective £/hour, per-mile metrics, run-rate,
+  cadence heatmap…) under a global timeframe filter; layout saved per user.
+- **Recurring expenses** — scheduled by the backend (no external cron); due
+  entries also catch up the moment you open the app.
+- **Charging vendors** — save EV/fuel unit rates and price fuel/charging expenses
+  from quantity automatically.
+- **Goals & budgets** — weekly/monthly targets and spending limits with progress.
+- **Tax estimator + year-end reports** — UK Self-Assessment / US Schedule C,
+  mileage allowance, printable/PDF summaries. Computed locally; an estimate, not advice.
+- **Receipts** — image attachments in self-hosted file storage (no S3).
 - **CSV import/export** and one-click in-app migration from GigFin v1.
-- **Auth** — email/password + TOTP two-factor + session management (Better Auth).
+- **Auth** — email/password + TOTP two-factor (with backup codes) + session
+  management (Better Auth).
 - **PWA**, light/dark themes, mobile-friendly.
+
+## Using GigFin
+
+New to the app? The **[User guide](docs/USER-GUIDE.md)** is a step-by-step
+walkthrough of every feature — the dashboard and widgets, logging (including live
+shift/trip tracking), recurring expenses, taxes, import/export, settings and more.
 
 ## Deployment
 
-GigFin ships as one prebuilt multi-arch image (`ghcr.io/sayedhfatimi/gigfin`)
+GigFin ships as one prebuilt `linux/amd64` image (`ghcr.io/sayedhfatimi/gigfin`)
 plus a self-hosted Convex backend. The **same `docker-compose.yml`** covers both a
 private-network box and public infrastructure — only a couple of env vars differ.
 You set at most five vars; `scripts/setup.sh` generates the three secrets for you.
@@ -135,9 +148,10 @@ app preferences (currency / units / tax jurisdiction) — set those up fresh in 
 ## Air-gap / offline
 
 GigFin needs no internet at runtime. The backend's anonymous telemetry beacon is
-disabled (`DISABLE_BEACON=true`) in the compose file. Without `RESEND_API_KEY`,
-password recovery uses offline recovery codes (no email). Files (receipts) are
-stored locally in the backend volume.
+disabled (`DISABLE_BEACON=true`) in the compose file. Files (receipts) are stored
+locally in the backend volume. Note: self-service password reset requires email
+(`RESEND_API_KEY`); without it there is no self-service reset yet, so on an
+email-less instance an operator must help recover a locked-out account.
 
 ## Backup & restore
 
