@@ -50,5 +50,28 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  gigfin:
+    build:
+      context: .
+    image: ghcr.io/sayedhfatimi/gigfin:latest
+    ports:
+      - "${GIGFIN_PORT:-3000}:3000"
+    environment:
+      # Deploy target — the CLI reaches the backend over the compose network.
+      - CONVEX_SELF_HOSTED_URL=http://backend:3210
+      - CONVEX_SELF_HOSTED_ADMIN_KEY=${CONVEX_SELF_HOSTED_ADMIN_KEY}
+      # Browser-reachable backend URLs (read at runtime, not baked into the image).
+      - CONVEX_URL=${CONVEX_URL:-http://127.0.0.1:3210}
+      - CONVEX_SITE_URL=${CONVEX_SITE_URL:-http://127.0.0.1:3211}
+      - SITE_URL=${SITE_URL:-http://localhost:3000}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      # Optional integrations (omit to disable — air-gap friendly).
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - GIGFIN_DISABLE_SIGNUP=${GIGFIN_DISABLE_SIGNUP:-}
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   data:

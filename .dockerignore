@@ -1,0 +1,13 @@
+node_modules
+.next
+.git
+.github
+.env*
+!.env.example
+brand-concepts
+convex-data
+.convex-tmp
+data
+*.log
+README.md
+docs

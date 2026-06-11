@@ -15,15 +15,21 @@ export const viewport: Viewport = {
   themeColor: "#108050",
 };
 
+// Rendered per-request so the Convex URL is read from runtime env (not baked at
+// build) — lets one image serve any self-hosted backend.
+export const dynamic = "force-dynamic";
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const convexUrl =
+    process.env.CONVEX_URL ?? process.env.NEXT_PUBLIC_CONVEX_URL ?? "";
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-dvh antialiased">
-        <Providers>{children}</Providers>
+        <Providers convexUrl={convexUrl}>{children}</Providers>
       </body>
     </html>
   );
