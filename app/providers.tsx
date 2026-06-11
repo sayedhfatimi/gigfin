@@ -4,6 +4,7 @@ import { ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
 import { ConvexReactClient } from "convex/react";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
+import { ParticleBackground } from "@/components/effects/particle-background";
 import { authClient } from "@/lib/auth-client";
 
 const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL ?? "");
@@ -17,7 +18,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
       disableTransitionOnChange
     >
       <ConvexBetterAuthProvider client={convex} authClient={authClient}>
-        {children}
+        <ParticleBackground />
+        <div className="relative z-10">{children}</div>
         <Toaster richColors closeButton />
       </ConvexBetterAuthProvider>
     </ThemeProvider>

@@ -2,37 +2,48 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
+// Simple icon button that flips between light and dark (no dropdown), matching
+// the pattern used across valeon/plutarc/vocasync.
 export function ThemeToggle() {
-  const { setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+
+  const isDark = resolvedTheme === "dark";
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button variant="ghost" size="icon" aria-label="Toggle theme">
-            <Sun className="size-5 dark:hidden" />
-            <Moon className="hidden size-5 dark:block" />
-          </Button>
-        }
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
+      className="relative"
+    >
+      <Sun
+        aria-hidden
+        className={cn(
+          "absolute size-4 transition-all duration-300",
+          isDark
+            ? "rotate-90 scale-0 opacity-0"
+            : "rotate-0 scale-100 opacity-100",
+        )}
       />
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme("light")}>
-          Light
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
-          Dark
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>
-          System
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      <Moon
+        aria-hidden
+        className={cn(
+          "absolute size-4 transition-all duration-300",
+          isDark
+            ? "rotate-0 scale-100 opacity-100"
+            : "-rotate-90 scale-0 opacity-0",
+        )}
+      />
+    </Button>
   );
 }
