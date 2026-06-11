@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { SelectField } from "@/components/select-field";
 import { ChargingCard } from "@/components/settings/charging-card";
+import { DataCard } from "@/components/settings/data-card";
 import { RecurringCard } from "@/components/settings/recurring-card";
 import { SecurityCard } from "@/components/settings/security-card";
 import { SessionsCard } from "@/components/settings/sessions-card";
@@ -183,6 +184,7 @@ export default function SettingsPage() {
       <VehiclesCard />
       <RecurringCard currency={form.currency} />
       <ChargingCard currency={form.currency} />
+      <DataCard />
     </div>
   );
 }
