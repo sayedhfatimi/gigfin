@@ -1,5 +1,6 @@
 "use client";
 
+import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { KeyRound, ShieldCheck } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import QRCode from "react-qr-code";
@@ -22,6 +23,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
 
@@ -224,21 +231,29 @@ function TwoFactorDialog({ enabled }: { enabled: boolean }) {
     }
   }
 
-  async function verify(e: FormEvent) {
-    e.preventDefault();
+  async function submitCode(value: string) {
+    if (busy) return;
     setBusy(true);
     try {
-      const res = await authClient.twoFactor.verifyTotp({ code });
+      const res = await authClient.twoFactor.verifyTotp({ code: value });
       if (res.error) {
         toast.error(res.error.message ?? "Invalid code");
+        setCode("");
+        setBusy(false);
       } else {
-        toast.success("Two-factor authentication enabled");
-        setOpen(false);
-        reset();
+        // Enabling 2FA rotates the session; reload so the app adopts the new
+        // session token cleanly instead of erroring on a stale one.
+        window.location.reload();
       }
-    } finally {
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Unexpected error");
       setBusy(false);
     }
+  }
+
+  function verify(e: FormEvent) {
+    e.preventDefault();
+    submitCode(code);
   }
 
   async function disable(e: FormEvent) {
@@ -248,12 +263,13 @@ function TwoFactorDialog({ enabled }: { enabled: boolean }) {
       const res = await authClient.twoFactor.disable({ password });
       if (res.error) {
         toast.error(res.error.message ?? "Failed to disable");
+        setBusy(false);
       } else {
-        toast.success("Two-factor authentication disabled");
-        setOpen(false);
-        reset();
+        // Disabling also rotates the session — reload to adopt it cleanly.
+        window.location.reload();
       }
-    } finally {
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Unexpected error");
       setBusy(false);
     }
   }
@@ -314,15 +330,29 @@ function TwoFactorDialog({ enabled }: { enabled: boolean }) {
               </p>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="totp-code">Authenticator code</Label>
-              <Input
-                id="totp-code"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                placeholder="123456"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-              />
+              <Label>Authenticator code</Label>
+              <div className="flex justify-center">
+                <InputOTP
+                  maxLength={6}
+                  pattern={REGEXP_ONLY_DIGITS}
+                  value={code}
+                  onChange={setCode}
+                  onComplete={submitCode}
+                  disabled={busy}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                  </InputOTPGroup>
+                  <InputOTPSeparator />
+                  <InputOTPGroup>
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
             </div>
             <DialogFooter>
               <Button type="submit" disabled={busy}>
