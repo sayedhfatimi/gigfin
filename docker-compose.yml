@@ -1,19 +1,54 @@
-version: "3.9"
+# GigFin self-hosted stack.
+#
+# Air-gap notes:
+#   - DISABLE_BEACON=true turns off Convex's anonymous telemetry (on by default).
+#   - The backend defaults to SQLite in the `data` volume (which also holds file
+#     storage). Set POSTGRES_URL on `backend` only if you want an external DB.
+#   - No service requires internet egress at runtime.
+#
+# The `gigfin` app service (commented until Phase 7) builds the Next.js image and,
+# on start, deploys Convex functions to the backend via `npx convex deploy`.
 
 services:
-  gigfin:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    # Allow direct docker/docker-compose deployments to load env vars from .env
-    env_file:
-      - path: ./.env
-        required: false
+  backend:
+    image: ghcr.io/get-convex/convex-backend:latest
+    stop_grace_period: 10s
+    stop_signal: SIGINT
     ports:
-      - "3000:3000"
+      - "${CONVEX_PORT:-3210}:3210"
+      - "${CONVEX_SITE_PROXY_PORT:-3211}:3211"
     volumes:
-      - gigfin-data:/app/data:rw
+      - data:/convex/data
+    environment:
+      - INSTANCE_NAME=${CONVEX_INSTANCE_NAME:-gigfin}
+      - INSTANCE_SECRET=${CONVEX_INSTANCE_SECRET:-}
+      - DISABLE_BEACON=true
+      - DISABLE_METRICS_ENDPOINT=true
+      - REDACT_LOGS_TO_CLIENT=${REDACT_LOGS_TO_CLIENT:-true}
+      - CONVEX_CLOUD_ORIGIN=${CONVEX_CLOUD_ORIGIN:-http://127.0.0.1:3210}
+      - CONVEX_SITE_ORIGIN=${CONVEX_SITE_ORIGIN:-http://127.0.0.1:3211}
+      - POSTGRES_URL
+      - DO_NOT_REQUIRE_SSL
+      - RUST_LOG=${RUST_LOG:-info}
+    healthcheck:
+      test: curl -f http://localhost:3210/version
+      interval: 5s
+      start_period: 10s
+    restart: unless-stopped
+
+  dashboard:
+    image: ghcr.io/get-convex/convex-dashboard:latest
+    profiles: ["dashboard"]
+    stop_grace_period: 10s
+    stop_signal: SIGINT
+    ports:
+      - "${CONVEX_DASHBOARD_PORT:-6791}:6791"
+    environment:
+      - NEXT_PUBLIC_DEPLOYMENT_URL=${CONVEX_CLOUD_ORIGIN:-http://127.0.0.1:3210}
+    depends_on:
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
-  gigfin-data:
+  data:

@@ -1,45 +1,22 @@
-import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
-import ThemeProvider from '@/components/theme/ThemeProvider';
-import './globals.css';
-
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-});
+import type { Metadata } from "next";
+import { Providers } from "./providers";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: 'GigFin',
-  description: 'Income tracking for gig workers',
+  title: "GigFin",
+  description:
+    "Self-hosted, privacy-first income & expense ledger for gig workers.",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang='en' suppressHydrationWarning>
-      <head>
-        {process.env.ANALYTICS_SCRIPT_URL && process.env.ANALYTICS_SITE_ID && (
-          <script
-            src={process.env.ANALYTICS_SCRIPT_URL}
-            data-site-id={process.env.ANALYTICS_SITE_ID}
-            defer
-          />
-        )}
-      </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <ThemeProvider>
-          <div className='min-h-screen'>{children}</div>
-        </ThemeProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className="min-h-dvh antialiased">
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
