@@ -3,6 +3,8 @@
 import { useQuery } from "convex/react";
 import { useState } from "react";
 import { BreakdownList } from "@/components/dashboard/breakdown-list";
+import { BudgetsCard } from "@/components/dashboard/budgets-card";
+import { GoalsCard } from "@/components/dashboard/goals-card";
 import { MonthlyChart } from "@/components/dashboard/monthly-chart";
 import { TaxCard } from "@/components/dashboard/tax-card";
 import {
@@ -135,6 +137,11 @@ export default function DashboardPage() {
             />
           </CardContent>
         </Card>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <GoalsCard currency={currency} />
+        <BudgetsCard currency={currency} />
       </div>
     </div>
   );

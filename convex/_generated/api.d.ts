@@ -9,16 +9,19 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as budgets from "../budgets.js";
 import type * as chargingVendors from "../chargingVendors.js";
 import type * as crons from "../crons.js";
 import type * as dashboard from "../dashboard.js";
 import type * as expenses from "../expenses.js";
+import type * as goals from "../goals.js";
 import type * as http from "../http.js";
 import type * as income from "../income.js";
 import type * as lib_constants from "../lib/constants.js";
 import type * as lib_errors from "../lib/errors.js";
 import type * as lib_functions from "../lib/functions.js";
 import type * as lib_owner from "../lib/owner.js";
+import type * as lib_period from "../lib/period.js";
 import type * as odometers from "../odometers.js";
 import type * as profiles from "../profiles.js";
 import type * as recurring from "../recurring.js";
@@ -33,16 +36,19 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  budgets: typeof budgets;
   chargingVendors: typeof chargingVendors;
   crons: typeof crons;
   dashboard: typeof dashboard;
   expenses: typeof expenses;
+  goals: typeof goals;
   http: typeof http;
   income: typeof income;
   "lib/constants": typeof lib_constants;
   "lib/errors": typeof lib_errors;
   "lib/functions": typeof lib_functions;
   "lib/owner": typeof lib_owner;
+  "lib/period": typeof lib_period;
   odometers: typeof odometers;
   profiles: typeof profiles;
   recurring: typeof recurring;
