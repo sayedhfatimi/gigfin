@@ -10,6 +10,7 @@
 
 import type * as auth from "../auth.js";
 import type * as chargingVendors from "../chargingVendors.js";
+import type * as crons from "../crons.js";
 import type * as dashboard from "../dashboard.js";
 import type * as expenses from "../expenses.js";
 import type * as http from "../http.js";
@@ -20,6 +21,7 @@ import type * as lib_functions from "../lib/functions.js";
 import type * as lib_owner from "../lib/owner.js";
 import type * as odometers from "../odometers.js";
 import type * as profiles from "../profiles.js";
+import type * as recurring from "../recurring.js";
 import type * as shifts from "../shifts.js";
 import type * as vehicles from "../vehicles.js";
 
@@ -32,6 +34,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   chargingVendors: typeof chargingVendors;
+  crons: typeof crons;
   dashboard: typeof dashboard;
   expenses: typeof expenses;
   http: typeof http;
@@ -42,6 +45,7 @@ declare const fullApi: ApiFromModules<{
   "lib/owner": typeof lib_owner;
   odometers: typeof odometers;
   profiles: typeof profiles;
+  recurring: typeof recurring;
   shifts: typeof shifts;
   vehicles: typeof vehicles;
 }>;
