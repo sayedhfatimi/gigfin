@@ -79,12 +79,12 @@ export const summary = authedQuery({
 
     const yearDistance = sum(
       odometers.filter((o) => inYear(o.date)),
-      (o) => Math.max(0, o.endReading - o.startReading),
+      (o) => Math.max(0, (o.endReading ?? o.startReading) - o.startReading),
     );
 
     const yearMinutes = sum(
       shifts.filter((s) => inYear(s.date)),
-      (s) => s.durationMin,
+      (s) => s.durationMin ?? 0,
     );
 
     return {

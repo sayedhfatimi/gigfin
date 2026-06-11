@@ -72,7 +72,7 @@ export default defineSchema({
     userId: v.string(),
     date: v.string(),
     startReading: v.number(),
-    endReading: v.number(),
+    endReading: v.optional(v.number()), // absent while the reading is open (live)
     vehicleId: v.optional(v.id("vehicles")),
     notes: v.optional(v.string()),
     createdAt: v.number(),
@@ -96,8 +96,8 @@ export default defineSchema({
     userId: v.string(),
     date: v.string(),
     startMinutes: v.number(), // minutes from local midnight
-    endMinutes: v.number(),
-    durationMin: v.number(),
+    endMinutes: v.optional(v.number()), // absent while the shift is open (live)
+    durationMin: v.optional(v.number()), // computed on end
     platform: v.optional(v.string()),
     vehicleId: v.optional(v.id("vehicles")),
     notes: v.optional(v.string()),

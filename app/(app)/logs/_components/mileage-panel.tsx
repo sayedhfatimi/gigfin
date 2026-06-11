@@ -11,8 +11,10 @@ import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { formatDate } from "@/lib/format";
 import { useKeyboardShortcuts } from "@/lib/hooks/use-keyboard-shortcuts";
 import { distanceOf } from "@/lib/odometer";
+import { ActiveMileageCard } from "./active-mileage-card";
 import { DataTable } from "./data-table";
 import { MileageForm } from "./forms/mileage-form";
+import { StartReadingForm } from "./forms/start-reading-form";
 import { LogEmptyState } from "./log-empty-state";
 import { LogsToolbar } from "./logs-toolbar";
 import { DeleteButton, EditDialog } from "./row-actions";
@@ -31,6 +33,7 @@ export function MileagePanel({
   const rows = useQuery(api.odometers.list);
   const vehicles = useQuery(api.vehicles.list);
   const remove = useMutation(api.odometers.remove);
+  const openReading = (rows ?? []).find((r) => r.endReading === undefined);
   const { query, setQuery, from, setFrom, to, setTo } = useLogFilters();
   const [vehicleFilter, setVehicleFilter] = useState("all");
   const searchRef = useRef<HTMLInputElement>(null);
@@ -99,6 +102,9 @@ export function MileagePanel({
 
   return (
     <div className="space-y-4">
+      {openReading && (
+        <ActiveMileageCard reading={openReading} unit={odometerUnit} />
+      )}
       <LogsToolbar
         searchRef={searchRef}
         query={query}
@@ -122,9 +128,16 @@ export function MileagePanel({
           />
         }
         action={
-          <AddDialog title="Add mileage">
-            {(close) => <MileageForm onDone={close} />}
-          </AddDialog>
+          <div className="flex gap-2">
+            {!openReading && (
+              <AddDialog title="Log start reading" triggerLabel="Log start">
+                {(close) => <StartReadingForm onDone={close} />}
+              </AddDialog>
+            )}
+            <AddDialog title="Add mileage" triggerLabel="Add manually">
+              {(close) => <MileageForm onDone={close} />}
+            </AddDialog>
+          </div>
         }
       />
       {filtered.length === 0 ? (

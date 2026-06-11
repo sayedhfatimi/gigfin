@@ -2,6 +2,7 @@
 
 import { Search } from "lucide-react";
 import type { ReactNode, RefObject } from "react";
+import { DateRangePicker } from "@/components/date-range-picker";
 import { Input } from "@/components/ui/input";
 
 // Search + inclusive date range + an optional domain filter + an action (the
@@ -39,19 +40,13 @@ export function LogsToolbar({
           onChange={(e) => onQuery(e.target.value)}
         />
       </div>
-      <Input
-        type="date"
-        aria-label="From date"
-        className="w-auto"
-        value={from}
-        onChange={(e) => onFrom(e.target.value)}
-      />
-      <Input
-        type="date"
-        aria-label="To date"
-        className="w-auto"
-        value={to}
-        onChange={(e) => onTo(e.target.value)}
+      <DateRangePicker
+        from={from}
+        to={to}
+        onChange={(f, t) => {
+          onFrom(f);
+          onTo(t);
+        }}
       />
       {extra}
       <div className="ml-auto">{action}</div>

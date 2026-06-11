@@ -2,6 +2,7 @@ import { zid } from "convex-helpers/server/zod";
 import { z } from "zod";
 import type { Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
+import { appError, ERROR_CODES } from "./lib/errors";
 import { authedMutation, authedQuery } from "./lib/functions";
 import { requireOwner } from "./lib/owner";
 
@@ -52,6 +53,55 @@ export const add = authedMutation({
       durationMin: durationOf(args.startMinutes, args.endMinutes),
       createdAt: now,
       updatedAt: now,
+    });
+  },
+});
+
+// Live logging: one-tap start (client passes its local now). At most one open
+// shift at a time.
+export const start = authedMutation({
+  args: {
+    date,
+    startMinutes: minutes,
+    platform: z.string().trim().max(80).optional(),
+    vehicleId: zid("vehicles").optional(),
+    notes: z.string().trim().max(500).optional(),
+  },
+  handler: async (ctx, args) => {
+    await assertOwnedVehicle(ctx, ctx.userId, args.vehicleId);
+    const rows = await ctx.db
+      .query("shifts")
+      .withIndex("by_user_date", (q) => q.eq("userId", ctx.userId))
+      .collect();
+    if (rows.some((s) => s.endMinutes === undefined)) {
+      throw appError(
+        ERROR_CODES.INVALID_INPUT,
+        "You already have an active shift. End it first.",
+      );
+    }
+    const now = Date.now();
+    return ctx.db.insert("shifts", {
+      userId: ctx.userId,
+      date: args.date,
+      startMinutes: args.startMinutes,
+      platform: args.platform,
+      vehicleId: args.vehicleId,
+      notes: args.notes,
+      createdAt: now,
+      updatedAt: now,
+    });
+  },
+});
+
+// Close an open shift, computing its duration (handles midnight wrap).
+export const end = authedMutation({
+  args: { id: zid("shifts"), endMinutes: minutes },
+  handler: async (ctx, args) => {
+    const shift = requireOwner(ctx.userId, await ctx.db.get(args.id));
+    await ctx.db.patch(args.id, {
+      endMinutes: args.endMinutes,
+      durationMin: durationOf(shift.startMinutes, args.endMinutes),
+      updatedAt: Date.now(),
     });
   },
 });

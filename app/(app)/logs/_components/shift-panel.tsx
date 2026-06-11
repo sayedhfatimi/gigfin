@@ -2,13 +2,22 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMutation, useQuery } from "convex/react";
+import { Play } from "lucide-react";
 import { useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { AddDialog } from "@/components/add-dialog";
+import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
-import { formatDate, formatDuration, minutesToTime } from "@/lib/format";
+import {
+  formatDate,
+  formatDuration,
+  localDateISO,
+  localNowMinutes,
+  minutesToTime,
+} from "@/lib/format";
 import { useKeyboardShortcuts } from "@/lib/hooks/use-keyboard-shortcuts";
+import { ActiveShiftCard } from "./active-shift-card";
 import { DataTable } from "./data-table";
 import { ShiftForm } from "./forms/shift-form";
 import { LogEmptyState } from "./log-empty-state";
@@ -25,6 +34,14 @@ const timeRange = (r: Row) =>
 export function ShiftPanel({ active }: { active: boolean }) {
   const rows = useQuery(api.shifts.list);
   const remove = useMutation(api.shifts.remove);
+  const start = useMutation(api.shifts.start);
+  const openShift = (rows ?? []).find((r) => r.endMinutes === undefined);
+  const startShift = () =>
+    start({ date: localDateISO(), startMinutes: localNowMinutes() })
+      .then(() => toast.success("Shift started"))
+      .catch((err) =>
+        toast.error(err instanceof Error ? err.message : "Failed to start"),
+      );
   const { query, setQuery, from, setFrom, to, setTo } = useLogFilters();
   const searchRef = useRef<HTMLInputElement>(null);
   useKeyboardShortcuts({
@@ -90,6 +107,7 @@ export function ShiftPanel({ active }: { active: boolean }) {
 
   return (
     <div className="space-y-4">
+      {openShift && <ActiveShiftCard shift={openShift} />}
       <LogsToolbar
         searchRef={searchRef}
         query={query}
@@ -99,9 +117,17 @@ export function ShiftPanel({ active }: { active: boolean }) {
         to={to}
         onTo={setTo}
         action={
-          <AddDialog title="Add shift">
-            {(close) => <ShiftForm onDone={close} />}
-          </AddDialog>
+          <div className="flex gap-2">
+            {!openShift && (
+              <Button onClick={startShift}>
+                <Play className="size-4" />
+                Start shift
+              </Button>
+            )}
+            <AddDialog title="Add shift" triggerLabel="Add manually">
+              {(close) => <ShiftForm onDone={close} />}
+            </AddDialog>
+          </div>
         }
       />
       {filtered.length === 0 ? (

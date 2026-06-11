@@ -34,6 +34,19 @@ export function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+// Local-calendar date + minutes-from-midnight, for live "now" logging (matches
+// the local-time convention shifts/odometers store).
+export function localDateISO(): string {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+export function localNowMinutes(): number {
+  const d = new Date();
+  return d.getHours() * 60 + d.getMinutes();
+}
+
 // "fuel_charging" -> "Fuel charging"
 export function titleCase(value: string): string {
   return value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
