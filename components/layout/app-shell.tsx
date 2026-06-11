@@ -19,14 +19,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useConvexAuth();
   const router = useRouter();
   const ensureProfile = useMutation(api.profiles.ensure);
+  const materializeRecurring = useMutation(api.recurring.materializeMine);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) router.replace("/");
   }, [isLoading, isAuthenticated, router]);
 
   useEffect(() => {
-    if (isAuthenticated) ensureProfile({}).catch(() => {});
-  }, [isAuthenticated, ensureProfile]);
+    if (isAuthenticated) {
+      ensureProfile({}).catch(() => {});
+      // Catch up any due recurring expenses now instead of waiting for the cron.
+      materializeRecurring({}).catch(() => {});
+    }
+  }, [isAuthenticated, ensureProfile, materializeRecurring]);
 
   if (isLoading || !isAuthenticated) {
     return (

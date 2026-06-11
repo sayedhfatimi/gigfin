@@ -1,4 +1,6 @@
+import type { GenericMutationCtx } from "convex/server";
 import { v } from "convex/values";
+import type { DataModel, Doc } from "./_generated/dataModel";
 import { internalMutation } from "./_generated/server";
 import {
   expenseTypeValidator,
@@ -70,8 +72,37 @@ export const remove = authedMutationV({
   },
 });
 
-// Cron target: materialize every active recurring template whose next due date
-// has arrived (catching up any missed periods), then advance the schedule.
+// Insert an expense for every due period of each template (catching up missed
+// periods, capped to avoid runaway), then advance each schedule.
+async function materializeRows(
+  ctx: GenericMutationCtx<DataModel>,
+  rows: Doc<"recurringExpenses">[],
+  today: string,
+) {
+  const now = Date.now();
+  for (const r of rows) {
+    let dueDate = r.nextDueDate;
+    let created = 0;
+    while (dueDate <= today && created < 60) {
+      await ctx.db.insert("expenses", {
+        userId: r.userId,
+        expenseType: r.expenseType,
+        amountMinor: r.amountMinor,
+        date: dueDate,
+        vehicleId: r.vehicleId,
+        notes: r.notes,
+        createdAt: now,
+        updatedAt: now,
+      });
+      dueDate = advance(dueDate, r.cadence);
+      created++;
+    }
+    await ctx.db.patch(r._id, { nextDueDate: dueDate, updatedAt: now });
+  }
+}
+
+// Cron target: materialize due templates across all users (uses the
+// active+date index for an efficient scan).
 export const materializeDue = internalMutation({
   args: {},
   handler: async (ctx) => {
@@ -82,27 +113,22 @@ export const materializeDue = internalMutation({
         q.eq("active", true).lte("nextDueDate", today),
       )
       .collect();
+    await materializeRows(ctx, due, today);
+  },
+});
 
-    const now = Date.now();
-    for (const r of due) {
-      let dueDate = r.nextDueDate;
-      let created = 0;
-      // Cap catch-up to avoid runaway for very stale templates.
-      while (dueDate <= today && created < 60) {
-        await ctx.db.insert("expenses", {
-          userId: r.userId,
-          expenseType: r.expenseType,
-          amountMinor: r.amountMinor,
-          date: dueDate,
-          vehicleId: r.vehicleId,
-          notes: r.notes,
-          createdAt: now,
-          updatedAt: now,
-        });
-        dueDate = advance(dueDate, r.cadence);
-        created++;
-      }
-      await ctx.db.patch(r._id, { nextDueDate: dueDate, updatedAt: now });
-    }
+// Called on app load so a user's due recurring expenses appear immediately,
+// without waiting for the daily cron. Scoped to the signed-in user.
+export const materializeMine = authedMutationV({
+  args: {},
+  handler: async (ctx) => {
+    const today = new Date(Date.now()).toISOString().slice(0, 10);
+    const rows = (
+      await ctx.db
+        .query("recurringExpenses")
+        .withIndex("by_user", (q) => q.eq("userId", ctx.userId))
+        .collect()
+    ).filter((r) => r.active && r.nextDueDate <= today);
+    await materializeRows(ctx, rows, today);
   },
 });
