@@ -24,8 +24,11 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Browser-reachable Convex URL (the loopback/LAN/public address the user's
+  // browser hits). Distinct from the server-internal CONVEX_URL (backend:3210)
+  // that lib/auth-server.ts uses to proxy auth in-network.
   const convexUrl =
-    process.env.CONVEX_URL ?? process.env.NEXT_PUBLIC_CONVEX_URL ?? "";
+    process.env.CONVEX_PUBLIC_URL ?? process.env.NEXT_PUBLIC_CONVEX_URL ?? "";
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-dvh antialiased">

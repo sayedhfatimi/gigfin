@@ -1,0 +1,11 @@
+# Build-from-source override for the gigfin app image.
+#
+# The default docker-compose.yml pulls the prebuilt image from GHCR. Layer this
+# file to build it locally from the Dockerfile instead (forks / local changes):
+#
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+#
+services:
+  gigfin:
+    build:
+      context: .
