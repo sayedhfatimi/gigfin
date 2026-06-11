@@ -5,6 +5,7 @@ import { Star, Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { AddDialog } from "@/components/add-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
 import {
@@ -95,18 +96,21 @@ export function VehiclesCard() {
                       <Star className="size-4 text-muted-foreground" />
                     </Button>
                   )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Delete"
-                    onClick={() =>
+                  <ConfirmDialog
+                    title="Delete this vehicle?"
+                    description="Expenses, mileage and shifts linked to it will be unlinked."
+                    confirmLabel="Delete"
+                    onConfirm={() =>
                       remove({ id: v._id }).catch(() =>
                         toast.error("Failed to delete"),
                       )
                     }
-                  >
-                    <Trash2 className="size-4 text-muted-foreground" />
-                  </Button>
+                    trigger={
+                      <Button variant="ghost" size="icon" aria-label="Delete">
+                        <Trash2 className="size-4 text-muted-foreground" />
+                      </Button>
+                    }
+                  />
                 </div>
               </li>
             ))}

@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -120,16 +121,24 @@ export function AppSidebar() {
           </span>
           <div className="flex items-center gap-1 group-data-[collapsible=icon]:flex-col">
             <ThemeToggle />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={signOut}
-              aria-label="Sign out"
-              title="Sign out"
-            >
-              <LogOut className="size-4" />
-            </Button>
+            <ConfirmDialog
+              title="Sign out?"
+              description="You'll need to sign in again."
+              confirmLabel="Sign out"
+              destructive={false}
+              onConfirm={signOut}
+              trigger={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Sign out"
+                  title="Sign out"
+                >
+                  <LogOut className="size-4" />
+                </Button>
+              }
+            />
           </div>
         </div>
       </SidebarFooter>

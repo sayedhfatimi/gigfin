@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { Loader2, Paperclip } from "lucide-react";
 import { type ChangeEvent, useRef, useState } from "react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -16,6 +17,9 @@ export function ReceiptButton({ expenseId }: { expenseId: Id<"expenses"> }) {
   const remove = useMutation(api.receipts.remove);
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [pendingRemove, setPendingRemove] = useState<Id<"receipts"> | null>(
+    null,
+  );
 
   async function onFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -53,9 +57,7 @@ export function ReceiptButton({ expenseId }: { expenseId: Id<"expenses"> }) {
             onClick={(e) => {
               if (e.shiftKey) {
                 e.preventDefault();
-                remove({ id: r._id }).catch(() =>
-                  toast.error("Failed to remove"),
-                );
+                setPendingRemove(r._id);
               }
             }}
             title="Open receipt (shift-click to remove)"
@@ -64,6 +66,22 @@ export function ReceiptButton({ expenseId }: { expenseId: Id<"expenses"> }) {
           </a>
         ) : null,
       )}
+      <ConfirmDialog
+        open={pendingRemove !== null}
+        onOpenChange={(o) => {
+          if (!o) setPendingRemove(null);
+        }}
+        title="Remove this receipt?"
+        confirmLabel="Remove"
+        onConfirm={async () => {
+          if (pendingRemove) {
+            await remove({ id: pendingRemove }).catch(() =>
+              toast.error("Failed to remove"),
+            );
+          }
+          setPendingRemove(null);
+        }}
+      />
       <input
         ref={inputRef}
         type="file"

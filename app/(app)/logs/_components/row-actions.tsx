@@ -4,6 +4,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { AddDialog } from "@/components/add-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 
 export function DeleteButton({
@@ -12,16 +13,17 @@ export function DeleteButton({
   onDelete: () => Promise<unknown>;
 }) {
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      aria-label="Delete"
-      onClick={() => {
-        onDelete().catch(() => toast.error("Failed to delete"));
-      }}
-    >
-      <Trash2 className="size-4 text-muted-foreground" />
-    </Button>
+    <ConfirmDialog
+      title="Delete this entry?"
+      description="This can't be undone."
+      confirmLabel="Delete"
+      onConfirm={() => onDelete().catch(() => toast.error("Failed to delete"))}
+      trigger={
+        <Button variant="ghost" size="icon" aria-label="Delete">
+          <Trash2 className="size-4 text-muted-foreground" />
+        </Button>
+      }
+    />
   );
 }
 

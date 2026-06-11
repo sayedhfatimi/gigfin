@@ -5,6 +5,7 @@ import { Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { AddDialog } from "@/components/add-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
 import {
@@ -85,17 +86,20 @@ export function BudgetsCard({ currency }: { currency: string }) {
                     >
                       {formatMoney(b.spentMinor, currency)} /{" "}
                       {formatMoney(b.limitMinor, currency)}
-                      <button
-                        type="button"
-                        aria-label="Delete budget"
-                        onClick={() =>
+                      <ConfirmDialog
+                        title="Delete this budget?"
+                        confirmLabel="Delete"
+                        onConfirm={() =>
                           remove({ id: b._id }).catch(() =>
                             toast.error("Failed to delete"),
                           )
                         }
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
+                        trigger={
+                          <button type="button" aria-label="Delete budget">
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        }
+                      />
                     </span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-muted">

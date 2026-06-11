@@ -5,6 +5,7 @@ import { Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { AddDialog } from "@/components/add-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
 import {
@@ -74,18 +75,21 @@ export function ChargingCard({ currency }: { currency: string }) {
                     {UNIT_LABELS[vendor.unitRateUnit]}
                   </span>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Delete"
-                  onClick={() =>
+                <ConfirmDialog
+                  title="Delete this vendor?"
+                  description="Saved rates won't affect expenses you've already logged."
+                  confirmLabel="Delete"
+                  onConfirm={() =>
                     remove({ id: vendor._id }).catch(() =>
                       toast.error("Failed to delete"),
                     )
                   }
-                >
-                  <Trash2 className="size-4 text-muted-foreground" />
-                </Button>
+                  trigger={
+                    <Button variant="ghost" size="icon" aria-label="Delete">
+                      <Trash2 className="size-4 text-muted-foreground" />
+                    </Button>
+                  }
+                />
               </li>
             ))}
           </ul>

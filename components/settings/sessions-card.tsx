@@ -3,6 +3,7 @@
 import { Loader2, LogOut } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -111,15 +112,22 @@ export function SessionsCard() {
               Devices currently signed in to your account.
             </CardDescription>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={busy || others.length === 0}
-            onClick={revokeOthers}
-          >
-            <LogOut className="size-4" />
-            Sign out others
-          </Button>
+          <ConfirmDialog
+            title="Sign out other devices?"
+            description="All sessions except this one will be signed out."
+            confirmLabel="Sign out others"
+            onConfirm={revokeOthers}
+            trigger={
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={busy || others.length === 0}
+              >
+                <LogOut className="size-4" />
+                Sign out others
+              </Button>
+            }
+          />
         </div>
       </CardHeader>
       <CardContent>
@@ -155,14 +163,17 @@ export function SessionsCard() {
                     </p>
                   </div>
                   {!isCurrent && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={busy}
-                      onClick={() => revoke(r.token)}
-                    >
-                      Revoke
-                    </Button>
+                    <ConfirmDialog
+                      title="Revoke this session?"
+                      description="That device will be signed out."
+                      confirmLabel="Revoke"
+                      onConfirm={() => revoke(r.token)}
+                      trigger={
+                        <Button variant="ghost" size="sm" disabled={busy}>
+                          Revoke
+                        </Button>
+                      }
+                    />
                   )}
                 </li>
               );
