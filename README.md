@@ -25,7 +25,7 @@ a private network with no internet access.
 - **Tax-year reports** — printable / save-as-PDF summaries.
 - **Recurring expenses** — auto-logged on schedule by an in-backend cron.
 - **Receipts** — image attachments in the self-hosted file storage (no S3).
-- **CSV import/export** and a one-click sample-data loader.
+- **CSV import/export** and one-click in-app migration from GigFin v1.
 - **Auth** — email/password + TOTP two-factor + session management (Better Auth).
 - **PWA**, light/dark themes, mobile-friendly.
 
@@ -60,6 +60,27 @@ to `ghcr.io/sayedhfatimi/gigfin`.
 
 Optional: the Convex admin dashboard is available with the `dashboard` profile:
 `docker compose --profile dashboard up -d` (port 6791).
+
+## Migrating from GigFin v1
+
+GigFin v2 is a ground-up rewrite and is **not a drop-in upgrade** from v1: v1
+stored data in a local SQLite database (Drizzle), whereas v2 uses Convex. The two
+are **not compatible** — you don't point v2 at a v1 database, you import it.
+
+To bring your v1 ledger across:
+
+1. Deploy v2 and create an account.
+2. Go to **Settings → Data → Migrate from GigFin v1**.
+3. Upload your v1 `db.sqlite` file.
+
+The file is parsed **locally in your browser** (nothing is uploaded anywhere) and
+your income, expenses, mileage, vehicles and charging vendors are imported into
+your account. Money is converted to integer minor units automatically.
+
+Operators who prefer the command line can use `scripts/migrate-sqlite.ts` instead.
+
+What does **not** carry over: accounts / passwords, two-factor, sessions, and
+app preferences (currency / units / tax jurisdiction) — set those up fresh in v2.
 
 ## Configuration
 

@@ -28,7 +28,6 @@ import type * as odometers from "../odometers.js";
 import type * as profiles from "../profiles.js";
 import type * as receipts from "../receipts.js";
 import type * as recurring from "../recurring.js";
-import type * as seed from "../seed.js";
 import type * as shifts from "../shifts.js";
 import type * as vehicles from "../vehicles.js";
 
@@ -59,7 +58,6 @@ declare const fullApi: ApiFromModules<{
   profiles: typeof profiles;
   receipts: typeof receipts;
   recurring: typeof recurring;
-  seed: typeof seed;
   shifts: typeof shifts;
   vehicles: typeof vehicles;
 }>;
