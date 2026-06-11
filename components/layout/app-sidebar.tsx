@@ -94,7 +94,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-2">
               {SIDEBAR_PRIMARY_LINKS.map((item) => (
                 <SidebarLink key={item.href} item={item} />
               ))}
