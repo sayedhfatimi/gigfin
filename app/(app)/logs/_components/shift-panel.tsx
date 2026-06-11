@@ -11,7 +11,7 @@ import { useKeyboardShortcuts } from "@/lib/hooks/use-keyboard-shortcuts";
 import { ActiveShiftCard } from "./active-shift-card";
 import { DataTable } from "./data-table";
 import { ShiftForm } from "./forms/shift-form";
-import { LogEmptyState } from "./log-empty-state";
+import { LogEmptyState, LogSkeleton } from "./log-empty-state";
 import { LogsToolbar } from "./logs-toolbar";
 import { DeleteButton, EditDialog } from "./row-actions";
 import { SwipeableRow } from "./swipeable-row";
@@ -101,7 +101,9 @@ export function ShiftPanel({ active }: { active: boolean }) {
         to={to}
         onTo={setTo}
       />
-      {filtered.length === 0 ? (
+      {rows === undefined ? (
+        <LogSkeleton />
+      ) : filtered.length === 0 ? (
         <LogEmptyState message="No shifts match these filters." />
       ) : (
         <DataTable

@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -70,7 +71,18 @@ export default function ReportsPage() {
       </div>
 
       {summary === undefined ? (
-        <p className="text-muted-foreground text-sm">Loading…</p>
+        <div className="space-y-6">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+          </div>
+          <Skeleton className="h-56" />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Skeleton className="h-40" />
+            <Skeleton className="h-40" />
+          </div>
+        </div>
       ) : (
         <ReportBody
           year={Number(year)}

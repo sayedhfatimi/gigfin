@@ -13,7 +13,7 @@ import { distanceOf } from "@/lib/odometer";
 import { ActiveMileageCard } from "./active-mileage-card";
 import { DataTable } from "./data-table";
 import { MileageForm } from "./forms/mileage-form";
-import { LogEmptyState } from "./log-empty-state";
+import { LogEmptyState, LogSkeleton } from "./log-empty-state";
 import { LogsToolbar } from "./logs-toolbar";
 import { DeleteButton, EditDialog } from "./row-actions";
 import { SwipeableRow } from "./swipeable-row";
@@ -126,7 +126,9 @@ export function MileagePanel({
           />
         }
       />
-      {filtered.length === 0 ? (
+      {rows === undefined ? (
+        <LogSkeleton />
+      ) : filtered.length === 0 ? (
         <LogEmptyState message="No mileage matches these filters." />
       ) : (
         <DataTable

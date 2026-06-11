@@ -18,6 +18,7 @@ import {
 import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import { EXPENSE_TYPES, RECURRING_CADENCES } from "@/convex/lib/constants";
 import {
@@ -66,7 +67,10 @@ export function RecurringCard({ currency }: { currency: string }) {
       </CardHeader>
       <CardContent>
         {rows === undefined ? (
-          <p className="text-muted-foreground text-sm">Loading…</p>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
         ) : rows.length === 0 ? (
           <p className="text-muted-foreground text-sm">
             No recurring expenses yet.

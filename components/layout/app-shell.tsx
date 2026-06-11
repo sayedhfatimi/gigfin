@@ -1,6 +1,7 @@
 "use client";
 
 import { useConvexAuth, useMutation } from "convex/react";
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import {
@@ -30,7 +31,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (isLoading || !isAuthenticated) {
     return (
       <div className="flex min-h-dvh items-center justify-center">
-        <p className="text-muted-foreground text-sm">Loading…</p>
+        <Loader2 className="size-5 animate-spin text-muted-foreground" />
       </div>
     );
   }

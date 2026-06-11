@@ -10,7 +10,7 @@ import { formatDate, formatMoney } from "@/lib/format";
 import { useKeyboardShortcuts } from "@/lib/hooks/use-keyboard-shortcuts";
 import { DataTable } from "./data-table";
 import { IncomeForm } from "./forms/income-form";
-import { LogEmptyState } from "./log-empty-state";
+import { LogEmptyState, LogSkeleton } from "./log-empty-state";
 import { LogsToolbar } from "./logs-toolbar";
 import { DeleteButton, EditDialog } from "./row-actions";
 import { SwipeableRow } from "./swipeable-row";
@@ -86,7 +86,9 @@ export function IncomePanel({
         to={to}
         onTo={setTo}
       />
-      {filtered.length === 0 ? (
+      {rows === undefined ? (
+        <LogSkeleton />
+      ) : filtered.length === 0 ? (
         <LogEmptyState message="No income matches these filters." />
       ) : (
         <DataTable

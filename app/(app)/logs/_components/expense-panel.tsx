@@ -13,7 +13,7 @@ import { formatDate, formatMoney, titleCase } from "@/lib/format";
 import { useKeyboardShortcuts } from "@/lib/hooks/use-keyboard-shortcuts";
 import { DataTable } from "./data-table";
 import { ExpenseForm } from "./forms/expense-form";
-import { LogEmptyState } from "./log-empty-state";
+import { LogEmptyState, LogSkeleton } from "./log-empty-state";
 import { LogsToolbar } from "./logs-toolbar";
 import { DeleteButton, EditDialog } from "./row-actions";
 import { SwipeableRow } from "./swipeable-row";
@@ -111,7 +111,9 @@ export function ExpensePanel({
           />
         }
       />
-      {filtered.length === 0 ? (
+      {rows === undefined ? (
+        <LogSkeleton />
+      ) : filtered.length === 0 ? (
         <LogEmptyState message="No expenses match these filters." />
       ) : (
         <DataTable

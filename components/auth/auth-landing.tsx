@@ -1,6 +1,7 @@
 "use client";
 
 import { useConvexAuth } from "convex/react";
+import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
@@ -111,7 +112,13 @@ export function AuthLanding({ signupEnabled }: { signupEnabled: boolean }) {
               />
             </div>
             <Button type="submit" className="w-full" disabled={busy}>
-              {busy ? "…" : isSignup ? "Sign up" : "Sign in"}
+              {busy ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : isSignup ? (
+                "Sign up"
+              ) : (
+                "Sign in"
+              )}
             </Button>
           </form>
 
