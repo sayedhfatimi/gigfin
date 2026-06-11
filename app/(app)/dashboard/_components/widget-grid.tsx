@@ -16,8 +16,8 @@ import { useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import { useDashboardData } from "@/lib/hooks/use-dashboard-data";
-import { CustomizeSheet } from "./customize-sheet";
 import { DashboardHeader } from "./dashboard-header";
+import { PinnedWidget } from "./pinned-widget";
 import { SortableWidget } from "./sortable-widget";
 import { useWidgetConfig } from "./use-widget-config";
 import { WIDGETS } from "./widget-registry";
@@ -42,6 +42,16 @@ export function WidgetGrid({ saved }: { saved: SavedLayout }) {
     }),
   );
 
+  // In customize mode hidden widgets stay visible (dimmed) so they can be
+  // toggled back on; otherwise only enabled widgets render.
+  const isShown = (id: string) => cfg.isCustomizing || !cfg.hiddenSet.has(id);
+  const pinnedIds = cfg.order.filter(
+    (id) => cfg.metaMap[id]?.pinned && isShown(id),
+  );
+  const sortableIds = cfg.order.filter(
+    (id) => !cfg.metaMap[id]?.pinned && isShown(id),
+  );
+
   const renderWidget = (id: string) => {
     const meta = cfg.metaMap[id];
     if (!meta) return null;
@@ -54,18 +64,26 @@ export function WidgetGrid({ saved }: { saved: SavedLayout }) {
       <DashboardHeader
         isCustomizing={cfg.isCustomizing}
         onCustomize={cfg.startCustomizing}
+        onDone={cfg.finishCustomizing}
+        onReset={cfg.reset}
       />
 
       {data.loading ? (
         <DashboardSkeleton />
       ) : (
         <>
-          {cfg.pinnedIds.length > 0 && (
+          {pinnedIds.length > 0 && (
             <div className="grid gap-4 sm:grid-cols-2">
-              {cfg.pinnedIds.map((id) => (
-                <div key={id} className={cfg.metaMap[id]?.widthClass}>
+              {pinnedIds.map((id) => (
+                <PinnedWidget
+                  key={id}
+                  customizing={cfg.isCustomizing}
+                  hidden={cfg.hiddenSet.has(id)}
+                  widthClass={cfg.metaMap[id]?.widthClass}
+                  onToggleVisibility={() => cfg.toggle(id)}
+                >
                   {renderWidget(id)}
-                </div>
+                </PinnedWidget>
               ))}
             </div>
           )}
@@ -77,17 +95,16 @@ export function WidgetGrid({ saved }: { saved: SavedLayout }) {
             onDragEnd={cfg.handleDragEnd}
             onDragCancel={cfg.handleDragCancel}
           >
-            <SortableContext
-              items={cfg.sortableIds}
-              strategy={rectSortingStrategy}
-            >
+            <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
               <div className="grid auto-rows-min gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {cfg.sortableIds.map((id) => (
+                {sortableIds.map((id) => (
                   <SortableWidget
                     key={id}
                     id={id}
                     customizing={cfg.isCustomizing}
+                    hidden={cfg.hiddenSet.has(id)}
                     widthClass={cfg.metaMap[id]?.widthClass}
+                    onToggleVisibility={() => cfg.toggle(id)}
                   >
                     {renderWidget(id)}
                   </SortableWidget>
@@ -102,16 +119,6 @@ export function WidgetGrid({ saved }: { saved: SavedLayout }) {
           </DndContext>
         </>
       )}
-
-      <CustomizeSheet
-        open={cfg.isCustomizing}
-        widgets={WIDGETS}
-        hiddenSet={cfg.hiddenSet}
-        onToggle={cfg.toggle}
-        onReset={cfg.reset}
-        onDone={cfg.finishCustomizing}
-        onCancel={cfg.cancelCustomizing}
-      />
     </div>
   );
 }

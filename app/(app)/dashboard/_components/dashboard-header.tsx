@@ -14,9 +14,13 @@ const OPTIONS = TIMEFRAME_OPTIONS.map((o) => ({
 export function DashboardHeader({
   isCustomizing,
   onCustomize,
+  onDone,
+  onReset,
 }: {
   isCustomizing: boolean;
   onCustomize: () => void;
+  onDone: () => void;
+  onReset: () => void;
 }) {
   const { timeframe, setTimeframe } = useTimeframe();
 
@@ -25,7 +29,9 @@ export function DashboardHeader({
       <div>
         <h1 className="font-semibold text-2xl tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground text-sm">
-          Your earnings at a glance.
+          {isCustomizing
+            ? "Drag the handle to reorder · use the eye to show or hide."
+            : "Your earnings at a glance."}
         </p>
       </div>
       <div className="flex items-center gap-2">
@@ -35,7 +41,14 @@ export function DashboardHeader({
           onValueChange={(v) => setTimeframe(v as TimeframeKey)}
           options={OPTIONS}
         />
-        {!isCustomizing && (
+        {isCustomizing ? (
+          <>
+            <Button variant="ghost" onClick={onReset}>
+              Reset
+            </Button>
+            <Button onClick={onDone}>Done</Button>
+          </>
+        ) : (
           <Button variant="outline" onClick={onCustomize}>
             <Settings2 className="size-4" />
             Customize
