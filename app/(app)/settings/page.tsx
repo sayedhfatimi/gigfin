@@ -3,6 +3,7 @@
 import { useMutation, useQuery } from "convex/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { SelectField } from "@/components/select-field";
 import { ChargingCard } from "@/components/settings/charging-card";
 import { VehiclesCard } from "@/components/settings/vehicles-card";
 import { Button } from "@/components/ui/button";
@@ -16,10 +17,32 @@ import {
 import { Label } from "@/components/ui/label";
 import { api } from "@/convex/_generated/api";
 
-const selectClass =
-  "h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
-
-const CURRENCIES = ["GBP", "USD", "EUR", "CAD", "AUD", "NZD", "INR", "SGD"];
+const CURRENCY_OPTIONS = [
+  "GBP",
+  "USD",
+  "EUR",
+  "CAD",
+  "AUD",
+  "NZD",
+  "INR",
+  "SGD",
+].map((c) => ({ value: c, label: c }));
+const UNIT_SYSTEM_OPTIONS = [
+  { value: "metric", label: "Metric" },
+  { value: "imperial", label: "Imperial" },
+];
+const VOLUME_OPTIONS = [
+  { value: "litre", label: "Litre" },
+  { value: "gallon", label: "Gallon" },
+];
+const ODOMETER_OPTIONS = [
+  { value: "km", label: "Kilometres" },
+  { value: "mi", label: "Miles" },
+];
+const JURISDICTION_OPTIONS = [
+  { value: "UK", label: "United Kingdom" },
+  { value: "US", label: "United States" },
+];
 
 type SettingsForm = {
   currency: string;
@@ -55,6 +78,10 @@ export default function SettingsPage() {
     }
   }, [profile]);
 
+  function set<K extends keyof SettingsForm>(key: K, value: SettingsForm[K]) {
+    setForm((f) => ({ ...f, [key]: value }));
+  }
+
   async function save() {
     setBusy(true);
     try {
@@ -83,99 +110,63 @@ export default function SettingsPage() {
             These drive how amounts, distances and tax are shown.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="currency">Currency</Label>
-            <select
-              id="currency"
-              className={selectClass}
-              value={form.currency}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, currency: e.target.value }))
-              }
-            >
-              {CURRENCIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+        <CardContent className="space-y-5">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="currency">Currency</Label>
+              <SelectField
+                id="currency"
+                value={form.currency}
+                onValueChange={(v) => set("currency", v)}
+                options={CURRENCY_OPTIONS}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="unitSystem">Unit system</Label>
+              <SelectField
+                id="unitSystem"
+                value={form.unitSystem}
+                onValueChange={(v) =>
+                  set("unitSystem", v as SettingsForm["unitSystem"])
+                }
+                options={UNIT_SYSTEM_OPTIONS}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="volumeUnit">Fuel volume</Label>
+              <SelectField
+                id="volumeUnit"
+                value={form.volumeUnit}
+                onValueChange={(v) =>
+                  set("volumeUnit", v as SettingsForm["volumeUnit"])
+                }
+                options={VOLUME_OPTIONS}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="odometerUnit">Odometer unit</Label>
+              <SelectField
+                id="odometerUnit"
+                value={form.odometerUnit}
+                onValueChange={(v) =>
+                  set("odometerUnit", v as SettingsForm["odometerUnit"])
+                }
+                options={ODOMETER_OPTIONS}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="taxJurisdiction">Tax jurisdiction</Label>
+              <SelectField
+                id="taxJurisdiction"
+                value={form.taxJurisdiction}
+                onValueChange={(v) =>
+                  set("taxJurisdiction", v as SettingsForm["taxJurisdiction"])
+                }
+                options={JURISDICTION_OPTIONS}
+              />
+            </div>
           </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="unitSystem">Unit system</Label>
-            <select
-              id="unitSystem"
-              className={selectClass}
-              value={form.unitSystem}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  unitSystem: e.target.value as SettingsForm["unitSystem"],
-                }))
-              }
-            >
-              <option value="metric">Metric</option>
-              <option value="imperial">Imperial</option>
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="volumeUnit">Fuel volume</Label>
-            <select
-              id="volumeUnit"
-              className={selectClass}
-              value={form.volumeUnit}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  volumeUnit: e.target.value as SettingsForm["volumeUnit"],
-                }))
-              }
-            >
-              <option value="litre">Litre</option>
-              <option value="gallon">Gallon</option>
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="odometerUnit">Odometer unit</Label>
-            <select
-              id="odometerUnit"
-              className={selectClass}
-              value={form.odometerUnit}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  odometerUnit: e.target.value as SettingsForm["odometerUnit"],
-                }))
-              }
-            >
-              <option value="km">Kilometres</option>
-              <option value="mi">Miles</option>
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="taxJurisdiction">Tax jurisdiction</Label>
-            <select
-              id="taxJurisdiction"
-              className={selectClass}
-              value={form.taxJurisdiction}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  taxJurisdiction: e.target
-                    .value as SettingsForm["taxJurisdiction"],
-                }))
-              }
-            >
-              <option value="UK">United Kingdom</option>
-              <option value="US">United States</option>
-            </select>
-          </div>
-
-          <div className="flex items-end">
+          <div>
             <Button onClick={save} disabled={busy || !profile}>
               {busy ? "Saving…" : "Save changes"}
             </Button>

@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
+import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,12 +14,21 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { api } from "@/convex/_generated/api";
 import { UNIT_RATE_UNITS } from "@/convex/lib/constants";
 import { formatMoney, parseMoneyToMinor } from "@/lib/format";
 
-const selectClass =
-  "h-9 rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+const UNIT_LABELS: Record<(typeof UNIT_RATE_UNITS)[number], string> = {
+  kwh: "kWh",
+  litre: "litre",
+  gallon_us: "gallon (US)",
+  gallon_imp: "gallon (imp)",
+};
+const UNIT_OPTIONS = UNIT_RATE_UNITS.map((u) => ({
+  value: u,
+  label: `per ${UNIT_LABELS[u]}`,
+}));
 
 export function ChargingCard({ currency }: { currency: string }) {
   const rows = useQuery(api.chargingVendors.list);
@@ -55,35 +65,44 @@ export function ChargingCard({ currency }: { currency: string }) {
           Saved unit rates for estimating EV charging costs.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <form onSubmit={onSubmit} className="flex flex-wrap items-center gap-2">
-          <Input
-            className="w-44"
-            placeholder="Label (e.g. Home, Ionity)"
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-          />
-          <Input
-            className="w-28"
-            inputMode="decimal"
-            placeholder="Rate"
-            value={rate}
-            onChange={(e) => setRate(e.target.value)}
-          />
-          <select
-            className={selectClass}
-            value={unit}
-            onChange={(e) =>
-              setUnit(e.target.value as (typeof UNIT_RATE_UNITS)[number])
-            }
-          >
-            {UNIT_RATE_UNITS.map((u) => (
-              <option key={u} value={u}>
-                per {u}
-              </option>
-            ))}
-          </select>
-          <Button type="submit">Add</Button>
+      <CardContent className="space-y-5">
+        <form
+          onSubmit={onSubmit}
+          className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
+        >
+          <div className="flex-1 space-y-1.5 sm:min-w-44">
+            <Label htmlFor="vendor-label">Label</Label>
+            <Input
+              id="vendor-label"
+              placeholder="e.g. Home, Ionity"
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="vendor-rate">Rate</Label>
+            <Input
+              id="vendor-rate"
+              className="sm:w-28"
+              inputMode="decimal"
+              placeholder="0.00"
+              value={rate}
+              onChange={(e) => setRate(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="vendor-unit">Unit</Label>
+            <SelectField
+              id="vendor-unit"
+              className="sm:w-44"
+              value={unit}
+              onValueChange={(v) =>
+                setUnit(v as (typeof UNIT_RATE_UNITS)[number])
+              }
+              options={UNIT_OPTIONS}
+            />
+          </div>
+          <Button type="submit">Add vendor</Button>
         </form>
 
         {rows === undefined ? (
@@ -91,19 +110,19 @@ export function ChargingCard({ currency }: { currency: string }) {
         ) : rows.length === 0 ? (
           <p className="text-muted-foreground text-sm">No vendors yet.</p>
         ) : (
-          <ul className="divide-y rounded-md border">
+          <ul className="divide-y rounded-lg border">
             {rows.map((vendor) => (
               <li
                 key={vendor._id}
-                className="flex items-center justify-between gap-2 px-3 py-2 text-sm"
+                className="flex items-center justify-between gap-3 px-4 py-3"
               >
-                <span>
-                  <span className="font-medium">{vendor.label}</span>{" "}
-                  <span className="text-muted-foreground">
-                    {formatMoney(vendor.unitRateMinor, currency)} /{" "}
-                    {vendor.unitRateUnit}
+                <div className="min-w-0">
+                  <span className="font-medium text-sm">{vendor.label}</span>{" "}
+                  <span className="text-muted-foreground text-sm">
+                    {formatMoney(vendor.unitRateMinor, currency)} per{" "}
+                    {UNIT_LABELS[vendor.unitRateUnit]}
                   </span>
-                </span>
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"

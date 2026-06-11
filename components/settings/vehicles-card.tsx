@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { Star, Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
+import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,12 +14,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { api } from "@/convex/_generated/api";
 import { VEHICLE_TYPES } from "@/convex/lib/constants";
-import { titleCase } from "@/lib/format";
 
-const selectClass =
-  "h-9 rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+const TYPE_OPTIONS = VEHICLE_TYPES.map((t) => ({
+  value: t,
+  label: t === "EV" ? "EV" : t[0] + t.slice(1).toLowerCase(),
+}));
 
 export function VehiclesCard() {
   const rows = useQuery(api.vehicles.list);
@@ -55,36 +58,42 @@ export function VehiclesCard() {
           Used to attribute expenses, mileage and charging.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <form onSubmit={onSubmit} className="flex flex-wrap items-center gap-2">
-          <Input
-            className="w-44"
-            placeholder="Label (e.g. Tesla Model 3)"
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-          />
-          <select
-            className={selectClass}
-            value={vehicleType}
-            onChange={(e) =>
-              setVehicleType(e.target.value as (typeof VEHICLE_TYPES)[number])
-            }
-          >
-            {VEHICLE_TYPES.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-          <label className="flex items-center gap-1.5 text-sm">
+      <CardContent className="space-y-5">
+        <form
+          onSubmit={onSubmit}
+          className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
+        >
+          <div className="flex-1 space-y-1.5 sm:min-w-48">
+            <Label htmlFor="vehicle-label">Label</Label>
+            <Input
+              id="vehicle-label"
+              placeholder="e.g. Tesla Model 3"
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="vehicle-type">Type</Label>
+            <SelectField
+              id="vehicle-type"
+              className="sm:w-36"
+              value={vehicleType}
+              onValueChange={(v) =>
+                setVehicleType(v as (typeof VEHICLE_TYPES)[number])
+              }
+              options={TYPE_OPTIONS}
+            />
+          </div>
+          <label className="flex h-9 items-center gap-2 text-sm">
             <input
               type="checkbox"
+              className="size-4 accent-primary"
               checked={isDefault}
               onChange={(e) => setIsDefault(e.target.checked)}
             />
             Default
           </label>
-          <Button type="submit">Add</Button>
+          <Button type="submit">Add vehicle</Button>
         </form>
 
         {rows === undefined ? (
@@ -92,24 +101,28 @@ export function VehiclesCard() {
         ) : rows.length === 0 ? (
           <p className="text-muted-foreground text-sm">No vehicles yet.</p>
         ) : (
-          <ul className="divide-y rounded-md border">
+          <ul className="divide-y rounded-lg border">
             {rows.map((v) => (
               <li
                 key={v._id}
-                className="flex items-center justify-between gap-2 px-3 py-2"
+                className="flex items-center justify-between gap-3 px-4 py-3"
               >
-                <span className="flex items-center gap-2 text-sm">
-                  <span className="font-medium">{v.label}</span>
-                  <span className="text-muted-foreground text-xs">
-                    {titleCase(v.vehicleType)}
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="truncate font-medium text-sm">
+                    {v.label}
+                  </span>
+                  <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground text-xs">
+                    {v.vehicleType === "EV"
+                      ? "EV"
+                      : v.vehicleType[0] + v.vehicleType.slice(1).toLowerCase()}
                   </span>
                   {v.isDefault && (
                     <span className="rounded bg-primary/10 px-1.5 py-0.5 text-primary text-xs">
                       Default
                     </span>
                   )}
-                </span>
-                <span className="flex items-center gap-1">
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
                   {!v.isDefault && (
                     <Button
                       variant="ghost"
@@ -140,7 +153,7 @@ export function VehiclesCard() {
                   >
                     <Trash2 className="size-4 text-muted-foreground" />
                   </Button>
-                </span>
+                </div>
               </li>
             ))}
           </ul>

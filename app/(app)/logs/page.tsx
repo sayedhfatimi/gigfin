@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
+import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,8 +27,10 @@ import {
   todayISO,
 } from "@/lib/format";
 
-const selectClass =
-  "h-9 rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+const EXPENSE_OPTIONS = EXPENSE_TYPES.map((t) => ({
+  value: t,
+  label: titleCase(t),
+}));
 
 export default function LogsPage() {
   const profile = useQuery(api.profiles.getMine);
@@ -156,19 +159,14 @@ function ExpenseSection({ currency }: { currency: string }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-2">
-          <select
-            className={selectClass}
+          <SelectField
+            className="w-48"
             value={expenseType}
-            onChange={(e) =>
-              setExpenseType(e.target.value as (typeof EXPENSE_TYPES)[number])
+            onValueChange={(v) =>
+              setExpenseType(v as (typeof EXPENSE_TYPES)[number])
             }
-          >
-            {EXPENSE_TYPES.map((t) => (
-              <option key={t} value={t}>
-                {titleCase(t)}
-              </option>
-            ))}
-          </select>
+            options={EXPENSE_OPTIONS}
+          />
           <Input
             className="w-32"
             inputMode="decimal"
@@ -261,7 +259,7 @@ function MileageSection({ odometerUnit }: { odometerUnit: string }) {
   const [date, setDate] = useState(todayISO());
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
-  const [vehicleId, setVehicleId] = useState("");
+  const [vehicleId, setVehicleId] = useState("none");
 
   const vehicleLabel = (id?: Id<"vehicles">) =>
     id ? (vehicles?.find((v) => v._id === id)?.label ?? "—") : "—";
@@ -279,7 +277,8 @@ function MileageSection({ odometerUnit }: { odometerUnit: string }) {
         date,
         startReading: s,
         endReading: en,
-        vehicleId: vehicleId ? (vehicleId as Id<"vehicles">) : undefined,
+        vehicleId:
+          vehicleId !== "none" ? (vehicleId as Id<"vehicles">) : undefined,
       });
       setStart("");
       setEnd("");
@@ -315,18 +314,18 @@ function MileageSection({ odometerUnit }: { odometerUnit: string }) {
             value={end}
             onChange={(e) => setEnd(e.target.value)}
           />
-          <select
-            className={selectClass}
+          <SelectField
+            className="w-44"
             value={vehicleId}
-            onChange={(e) => setVehicleId(e.target.value)}
-          >
-            <option value="">No vehicle</option>
-            {vehicles?.map((v) => (
-              <option key={v._id} value={v._id}>
-                {v.label}
-              </option>
-            ))}
-          </select>
+            onValueChange={setVehicleId}
+            options={[
+              { value: "none", label: "No vehicle" },
+              ...(vehicles ?? []).map((v) => ({
+                value: v._id,
+                label: v.label,
+              })),
+            ]}
+          />
           <Button type="submit">Add</Button>
         </form>
 
