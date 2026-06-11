@@ -1,4 +1,5 @@
 import {
+  FileText,
   LayoutDashboard,
   type LucideIcon,
   ScrollText,
@@ -14,6 +15,7 @@ export interface NavItem {
 export const SIDEBAR_PRIMARY_LINKS: readonly NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Logs", href: "/logs", icon: ScrollText },
+  { name: "Reports", href: "/reports", icon: FileText },
 ] as const;
 
 export const SIDEBAR_SECONDARY_LINKS: readonly NavItem[] = [

@@ -40,7 +40,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset className="bg-transparent">
-          <header className="flex h-12 items-center gap-2 border-b px-4 md:hidden">
+          <header className="flex h-12 items-center gap-2 border-b px-4 md:hidden print:hidden">
             <SidebarTrigger />
             <span className="font-semibold">GigFin</span>
           </header>
