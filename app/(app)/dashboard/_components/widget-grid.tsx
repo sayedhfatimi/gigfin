@@ -12,7 +12,9 @@ import {
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import { rectSortingStrategy, SortableContext } from "@dnd-kit/sortable";
 import { useMutation } from "convex/react";
+import { Eye } from "lucide-react";
 import { useCallback } from "react";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import { useDashboardData } from "@/lib/hooks/use-dashboard-data";
@@ -42,15 +44,17 @@ export function WidgetGrid({ saved }: { saved: SavedLayout }) {
     }),
   );
 
-  // In customize mode hidden widgets stay visible (dimmed) so they can be
-  // toggled back on; otherwise only enabled widgets render.
-  const isShown = (id: string) => cfg.isCustomizing || !cfg.hiddenSet.has(id);
+  // The grid always shows only the enabled widgets in their real positions — so
+  // customize mode reflects the actual layout. Hidden widgets live in the tray.
   const pinnedIds = cfg.order.filter(
-    (id) => cfg.metaMap[id]?.pinned && isShown(id),
+    (id) => cfg.metaMap[id]?.pinned && !cfg.hiddenSet.has(id),
   );
   const sortableIds = cfg.order.filter(
-    (id) => !cfg.metaMap[id]?.pinned && isShown(id),
+    (id) => !cfg.metaMap[id]?.pinned && !cfg.hiddenSet.has(id),
   );
+  const hiddenIds = cfg.isCustomizing
+    ? cfg.order.filter((id) => cfg.hiddenSet.has(id))
+    : [];
 
   const renderWidget = (id: string) => {
     const meta = cfg.metaMap[id];
@@ -78,9 +82,8 @@ export function WidgetGrid({ saved }: { saved: SavedLayout }) {
                 <PinnedWidget
                   key={id}
                   customizing={cfg.isCustomizing}
-                  hidden={cfg.hiddenSet.has(id)}
                   widthClass={cfg.metaMap[id]?.widthClass}
-                  onToggleVisibility={() => cfg.toggle(id)}
+                  onHide={() => cfg.toggle(id)}
                 >
                   {renderWidget(id)}
                 </PinnedWidget>
@@ -102,9 +105,8 @@ export function WidgetGrid({ saved }: { saved: SavedLayout }) {
                     key={id}
                     id={id}
                     customizing={cfg.isCustomizing}
-                    hidden={cfg.hiddenSet.has(id)}
                     widthClass={cfg.metaMap[id]?.widthClass}
-                    onToggleVisibility={() => cfg.toggle(id)}
+                    onHide={() => cfg.toggle(id)}
                   >
                     {renderWidget(id)}
                   </SortableWidget>
@@ -117,6 +119,31 @@ export function WidgetGrid({ saved }: { saved: SavedLayout }) {
               ) : null}
             </DragOverlay>
           </DndContext>
+
+          {cfg.isCustomizing && hiddenIds.length > 0 && (
+            <div className="rounded-lg border border-dashed p-4">
+              <p className="mb-3 font-medium text-muted-foreground text-sm">
+                Hidden widgets
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {hiddenIds.map((id) => {
+                  const meta = cfg.metaMap[id];
+                  if (!meta) return null;
+                  return (
+                    <Button
+                      key={id}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => cfg.toggle(id)}
+                    >
+                      <Eye className="size-4" />
+                      {meta.label}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

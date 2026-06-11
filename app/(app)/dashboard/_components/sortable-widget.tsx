@@ -5,24 +5,22 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { VisibilityToggle } from "./visibility-toggle";
+import { HideButton } from "./visibility-toggle";
 
-// A reorderable widget. In customize mode it shows a drag handle (reorder) and an
-// eye toggle (show/hide); hidden widgets render dimmed so they can be toggled
-// back on without a modal.
+// A reorderable widget. In customize mode it shows a drag handle (reorder) and a
+// hide button (moves it to the hidden tray). Only visible widgets are rendered
+// in the grid, so the layout always reflects the real arrangement.
 export function SortableWidget({
   id,
   customizing,
-  hidden,
   widthClass,
-  onToggleVisibility,
+  onHide,
   children,
 }: {
   id: string;
   customizing: boolean;
-  hidden: boolean;
   widthClass?: string;
-  onToggleVisibility: () => void;
+  onHide: () => void;
   children: ReactNode;
 }) {
   const {
@@ -43,13 +41,12 @@ export function SortableWidget({
         widthClass,
         customizing &&
           "ring-1 ring-border ring-offset-2 ring-offset-background",
-        customizing && hidden && "opacity-50",
         isDragging && "z-10 opacity-60",
       )}
     >
       {customizing && (
         <>
-          <VisibilityToggle hidden={hidden} onToggle={onToggleVisibility} />
+          <HideButton onHide={onHide} />
           <button
             type="button"
             aria-label="Drag to reorder"

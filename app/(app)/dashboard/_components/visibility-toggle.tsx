@@ -1,24 +1,18 @@
 "use client";
 
-import { Eye, EyeOff } from "lucide-react";
+import { EyeOff } from "lucide-react";
 
-// Eye toggle shown on a widget in customize mode. Top-left so it doesn't collide
-// with the drag handle (top-right).
-export function VisibilityToggle({
-  hidden,
-  onToggle,
-}: {
-  hidden: boolean;
-  onToggle: () => void;
-}) {
+// "Hide" affordance shown on a visible widget in customize mode (top-left, clear
+// of the drag handle at top-right). Hiding moves the widget to the tray below.
+export function HideButton({ onHide }: { onHide: () => void }) {
   return (
     <button
       type="button"
-      onClick={onToggle}
-      aria-label={hidden ? "Show widget" : "Hide widget"}
+      onClick={onHide}
+      aria-label="Hide widget"
       className="absolute top-2 left-2 z-10 rounded-md bg-background/80 p-1 text-muted-foreground ring-1 ring-border hover:text-foreground"
     >
-      {hidden ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+      <EyeOff className="size-4" />
     </button>
   );
 }

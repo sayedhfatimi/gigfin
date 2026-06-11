@@ -30,7 +30,7 @@ export function DashboardHeader({
         <h1 className="font-semibold text-2xl tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground text-sm">
           {isCustomizing
-            ? "Drag the handle to reorder · use the eye to show or hide."
+            ? "Drag to reorder · hide a widget to move it to the tray below."
             : "Your earnings at a glance."}
         </p>
       </div>

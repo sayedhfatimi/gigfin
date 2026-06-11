@@ -2,34 +2,23 @@
 
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { VisibilityToggle } from "./visibility-toggle";
+import { HideButton } from "./visibility-toggle";
 
-// A pinned widget: not reorderable, but still gets a visibility toggle in
-// customize mode.
+// A pinned widget: not reorderable, but can still be hidden in customize mode.
 export function PinnedWidget({
   customizing,
-  hidden,
   widthClass,
-  onToggleVisibility,
+  onHide,
   children,
 }: {
   customizing: boolean;
-  hidden: boolean;
   widthClass?: string;
-  onToggleVisibility: () => void;
+  onHide: () => void;
   children: ReactNode;
 }) {
   return (
-    <div
-      className={cn(
-        "relative",
-        widthClass,
-        customizing && hidden && "opacity-50",
-      )}
-    >
-      {customizing && (
-        <VisibilityToggle hidden={hidden} onToggle={onToggleVisibility} />
-      )}
+    <div className={cn("relative", widthClass)}>
+      {customizing && <HideButton onHide={onHide} />}
       {children}
     </div>
   );
