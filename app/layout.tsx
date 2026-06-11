@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
+import { serverFeatures } from "@/lib/features";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -33,6 +35,16 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-dvh antialiased">
         <Providers convexUrl={convexUrl}>{children}</Providers>
+        {/* Privacy-friendly analytics (Rybbit / Plausible / Umami) — only when
+            both env vars are set. Off by default (air-gap friendly). */}
+        {serverFeatures.analytics && (
+          <Script
+            src={process.env.ANALYTICS_SCRIPT_URL}
+            data-site-id={process.env.ANALYTICS_SITE_ID}
+            strategy="afterInteractive"
+            defer
+          />
+        )}
       </body>
     </html>
   );
