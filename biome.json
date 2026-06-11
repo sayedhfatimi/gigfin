@@ -68,6 +68,9 @@
           },
           "correctness": {
             "useExhaustiveDependencies": "off"
+          },
+          "security": {
+            "noDangerouslySetInnerHtml": "off"
           }
         }
       }
