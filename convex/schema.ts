@@ -151,6 +151,17 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_expense", ["expenseId"]),
 
+  // Per-user customizable dashboard: widget order, hidden widget ids, and the
+  // selected global timeframe. One row per user (upserted). Widget ids are
+  // opaque strings owned by the client-side registry.
+  dashboardLayouts: defineTable({
+    userId: v.string(),
+    order: v.array(v.string()),
+    hidden: v.array(v.string()),
+    timeframe: v.optional(v.string()),
+    updatedAt: v.number(),
+  }).index("by_user", ["userId"]),
+
   // Custom offline account recovery: hashed one-time codes that authorize a
   // password reset without email.
   recoveryCodes: defineTable({

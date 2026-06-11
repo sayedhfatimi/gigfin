@@ -13,6 +13,7 @@ import type * as budgets from "../budgets.js";
 import type * as chargingVendors from "../chargingVendors.js";
 import type * as crons from "../crons.js";
 import type * as dashboard from "../dashboard.js";
+import type * as dashboardLayout from "../dashboardLayout.js";
 import type * as data from "../data.js";
 import type * as expenses from "../expenses.js";
 import type * as goals from "../goals.js";
@@ -43,6 +44,7 @@ declare const fullApi: ApiFromModules<{
   chargingVendors: typeof chargingVendors;
   crons: typeof crons;
   dashboard: typeof dashboard;
+  dashboardLayout: typeof dashboardLayout;
   data: typeof data;
   expenses: typeof expenses;
   goals: typeof goals;
