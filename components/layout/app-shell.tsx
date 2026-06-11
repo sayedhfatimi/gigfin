@@ -44,9 +44,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <SidebarTrigger />
             <span className="font-semibold">GigFin</span>
           </header>
-          <div className="mx-auto w-full max-w-6xl flex-1 p-4 md:p-6">
-            {children}
-          </div>
+          <div className="w-full flex-1 p-4 md:p-6 lg:p-8">{children}</div>
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>
