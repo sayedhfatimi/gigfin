@@ -3,6 +3,8 @@
 import { useMutation, useQuery } from "convex/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ChargingCard } from "@/components/settings/charging-card";
+import { VehiclesCard } from "@/components/settings/vehicles-card";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -180,6 +182,9 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <VehiclesCard />
+      <ChargingCard currency={form.currency} />
     </div>
   );
 }

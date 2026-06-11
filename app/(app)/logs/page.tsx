@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import { EXPENSE_TYPES } from "@/convex/lib/constants";
 import {
   formatDate,
@@ -31,17 +32,19 @@ const selectClass =
 export default function LogsPage() {
   const profile = useQuery(api.profiles.getMine);
   const currency = profile?.currency ?? "GBP";
+  const odometerUnit = profile?.odometerUnit ?? "km";
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-semibold text-2xl tracking-tight">Logs</h1>
         <p className="text-muted-foreground text-sm">
-          Record income and expenses. Updates are live.
+          Record income, expenses and mileage. Updates are live.
         </p>
       </div>
       <IncomeSection currency={currency} />
       <ExpenseSection currency={currency} />
+      <MileageSection odometerUnit={odometerUnit} />
     </div>
   );
 }
@@ -247,5 +250,104 @@ function DeleteButton({ onClick }: { onClick: () => Promise<unknown> }) {
     >
       <Trash2 className="size-4 text-muted-foreground" />
     </Button>
+  );
+}
+
+function MileageSection({ odometerUnit }: { odometerUnit: string }) {
+  const rows = useQuery(api.odometers.list);
+  const vehicles = useQuery(api.vehicles.list);
+  const add = useMutation(api.odometers.add);
+  const remove = useMutation(api.odometers.remove);
+  const [date, setDate] = useState(todayISO());
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [vehicleId, setVehicleId] = useState("");
+
+  const vehicleLabel = (id?: Id<"vehicles">) =>
+    id ? (vehicles?.find((v) => v._id === id)?.label ?? "—") : "—";
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    const s = Number.parseFloat(start);
+    const en = Number.parseFloat(end);
+    if (!Number.isFinite(s) || !Number.isFinite(en)) {
+      toast.error("Enter start and end readings.");
+      return;
+    }
+    try {
+      await add({
+        date,
+        startReading: s,
+        endReading: en,
+        vehicleId: vehicleId ? (vehicleId as Id<"vehicles">) : undefined,
+      });
+      setStart("");
+      setEnd("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to add");
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Mileage</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-2">
+          <Input
+            className="w-40"
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
+          <Input
+            className="w-28"
+            inputMode="decimal"
+            placeholder="Start"
+            value={start}
+            onChange={(e) => setStart(e.target.value)}
+          />
+          <Input
+            className="w-28"
+            inputMode="decimal"
+            placeholder="End"
+            value={end}
+            onChange={(e) => setEnd(e.target.value)}
+          />
+          <select
+            className={selectClass}
+            value={vehicleId}
+            onChange={(e) => setVehicleId(e.target.value)}
+          >
+            <option value="">No vehicle</option>
+            {vehicles?.map((v) => (
+              <option key={v._id} value={v._id}>
+                {v.label}
+              </option>
+            ))}
+          </select>
+          <Button type="submit">Add</Button>
+        </form>
+
+        <EntryTable
+          empty="No mileage yet."
+          head={["Date", "Vehicle", `Distance (${odometerUnit})`, ""]}
+          rows={rows}
+          render={(r) => (
+            <TableRow key={r._id}>
+              <TableCell>{formatDate(r.date)}</TableCell>
+              <TableCell>{vehicleLabel(r.vehicleId)}</TableCell>
+              <TableCell className="tabular-nums">
+                {(r.endReading - r.startReading).toLocaleString()}
+              </TableCell>
+              <TableCell className="text-right">
+                <DeleteButton onClick={() => remove({ id: r._id })} />
+              </TableCell>
+            </TableRow>
+          )}
+        />
+      </CardContent>
+    </Card>
   );
 }
