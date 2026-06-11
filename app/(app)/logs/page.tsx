@@ -1,0 +1,251 @@
+"use client";
+
+import { useMutation, useQuery } from "convex/react";
+import { Trash2 } from "lucide-react";
+import { type FormEvent, useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { api } from "@/convex/_generated/api";
+import { EXPENSE_TYPES } from "@/convex/lib/constants";
+import {
+  formatDate,
+  formatMoney,
+  parseMoneyToMinor,
+  titleCase,
+  todayISO,
+} from "@/lib/format";
+
+const selectClass =
+  "h-9 rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+
+export default function LogsPage() {
+  const profile = useQuery(api.profiles.getMine);
+  const currency = profile?.currency ?? "GBP";
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-semibold text-2xl tracking-tight">Logs</h1>
+        <p className="text-muted-foreground text-sm">
+          Record income and expenses. Updates are live.
+        </p>
+      </div>
+      <IncomeSection currency={currency} />
+      <ExpenseSection currency={currency} />
+    </div>
+  );
+}
+
+function IncomeSection({ currency }: { currency: string }) {
+  const rows = useQuery(api.income.list);
+  const add = useMutation(api.income.add);
+  const remove = useMutation(api.income.remove);
+  const [platform, setPlatform] = useState("");
+  const [amount, setAmount] = useState("");
+  const [date, setDate] = useState(todayISO());
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    const amountMinor = parseMoneyToMinor(amount);
+    if (!platform.trim() || amountMinor === null) {
+      toast.error("Enter a platform and amount.");
+      return;
+    }
+    try {
+      await add({ platform: platform.trim(), amountMinor, date });
+      setPlatform("");
+      setAmount("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to add");
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Income</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-2">
+          <Input
+            className="w-40"
+            placeholder="Platform"
+            value={platform}
+            onChange={(e) => setPlatform(e.target.value)}
+          />
+          <Input
+            className="w-32"
+            inputMode="decimal"
+            placeholder="Amount"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+          <Input
+            className="w-40"
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
+          <Button type="submit">Add</Button>
+        </form>
+
+        <EntryTable
+          empty="No income yet."
+          head={["Date", "Platform", "Amount", ""]}
+          rows={rows}
+          render={(r) => (
+            <TableRow key={r._id}>
+              <TableCell>{formatDate(r.date)}</TableCell>
+              <TableCell>{r.platform}</TableCell>
+              <TableCell className="tabular-nums">
+                {formatMoney(r.amountMinor, currency)}
+              </TableCell>
+              <TableCell className="text-right">
+                <DeleteButton onClick={() => remove({ id: r._id })} />
+              </TableCell>
+            </TableRow>
+          )}
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
+function ExpenseSection({ currency }: { currency: string }) {
+  const rows = useQuery(api.expenses.list);
+  const add = useMutation(api.expenses.add);
+  const remove = useMutation(api.expenses.remove);
+  const [expenseType, setExpenseType] = useState<
+    (typeof EXPENSE_TYPES)[number]
+  >(EXPENSE_TYPES[0]);
+  const [amount, setAmount] = useState("");
+  const [date, setDate] = useState(todayISO());
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    const amountMinor = parseMoneyToMinor(amount);
+    if (amountMinor === null) {
+      toast.error("Enter an amount.");
+      return;
+    }
+    try {
+      await add({ expenseType, amountMinor, date });
+      setAmount("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to add");
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Expenses</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-2">
+          <select
+            className={selectClass}
+            value={expenseType}
+            onChange={(e) =>
+              setExpenseType(e.target.value as (typeof EXPENSE_TYPES)[number])
+            }
+          >
+            {EXPENSE_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {titleCase(t)}
+              </option>
+            ))}
+          </select>
+          <Input
+            className="w-32"
+            inputMode="decimal"
+            placeholder="Amount"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+          <Input
+            className="w-40"
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
+          <Button type="submit">Add</Button>
+        </form>
+
+        <EntryTable
+          empty="No expenses yet."
+          head={["Date", "Type", "Amount", ""]}
+          rows={rows}
+          render={(r) => (
+            <TableRow key={r._id}>
+              <TableCell>{formatDate(r.date)}</TableCell>
+              <TableCell>{titleCase(r.expenseType)}</TableCell>
+              <TableCell className="tabular-nums">
+                {formatMoney(r.amountMinor, currency)}
+              </TableCell>
+              <TableCell className="text-right">
+                <DeleteButton onClick={() => remove({ id: r._id })} />
+              </TableCell>
+            </TableRow>
+          )}
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
+function EntryTable<T>({
+  rows,
+  head,
+  render,
+  empty,
+}: {
+  rows: T[] | undefined;
+  head: string[];
+  render: (row: T) => React.ReactNode;
+  empty: string;
+}) {
+  if (rows === undefined) {
+    return <p className="text-muted-foreground text-sm">Loading…</p>;
+  }
+  if (rows.length === 0) {
+    return <p className="text-muted-foreground text-sm">{empty}</p>;
+  }
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          {head.map((h, i) => (
+            <TableHead key={h || `col-${i}`}>{h}</TableHead>
+          ))}
+        </TableRow>
+      </TableHeader>
+      <TableBody>{rows.map(render)}</TableBody>
+    </Table>
+  );
+}
+
+function DeleteButton({ onClick }: { onClick: () => Promise<unknown> }) {
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      aria-label="Delete"
+      onClick={() => {
+        onClick().catch(() => toast.error("Failed to delete"));
+      }}
+    >
+      <Trash2 className="size-4 text-muted-foreground" />
+    </Button>
+  );
+}

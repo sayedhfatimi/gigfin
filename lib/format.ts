@@ -33,3 +33,8 @@ export function formatDate(iso: string, locale = "en-GB"): string {
 export function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
+
+// "fuel_charging" -> "Fuel charging"
+export function titleCase(value: string): string {
+  return value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
