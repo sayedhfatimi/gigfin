@@ -23,6 +23,7 @@ import type * as lib_errors from "../lib/errors.js";
 import type * as lib_functions from "../lib/functions.js";
 import type * as lib_owner from "../lib/owner.js";
 import type * as lib_period from "../lib/period.js";
+import type * as migrate from "../migrate.js";
 import type * as odometers from "../odometers.js";
 import type * as profiles from "../profiles.js";
 import type * as receipts from "../receipts.js";
@@ -53,6 +54,7 @@ declare const fullApi: ApiFromModules<{
   "lib/functions": typeof lib_functions;
   "lib/owner": typeof lib_owner;
   "lib/period": typeof lib_period;
+  migrate: typeof migrate;
   odometers: typeof odometers;
   profiles: typeof profiles;
   receipts: typeof receipts;
