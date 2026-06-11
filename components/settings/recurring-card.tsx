@@ -5,6 +5,7 @@ import { Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { AddDialog } from "@/components/add-dialog";
+import { DatePicker } from "@/components/date-picker";
 import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
 import {
@@ -190,11 +191,10 @@ function RecurringForm({ onDone }: { onDone: () => void }) {
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="recurring-next">Next due</Label>
-        <Input
+        <DatePicker
           id="recurring-next"
-          type="date"
           value={nextDueDate}
-          onChange={(e) => setNextDueDate(e.target.value)}
+          onChange={setNextDueDate}
         />
       </div>
       <DialogFooter>

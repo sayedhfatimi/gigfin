@@ -3,6 +3,16 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Base UI state variants used by the shadcn (Base UI) components. */
+@custom-variant data-active (&[data-active]);
+@custom-variant data-open (&[data-open]);
+@custom-variant data-closed (&[data-closed]);
+@custom-variant data-disabled (&[data-disabled]);
+@custom-variant data-placeholder (&[data-placeholder]);
+@custom-variant data-inset (&[data-inset]);
+@custom-variant data-horizontal (&[data-orientation="horizontal"]);
+@custom-variant data-vertical (&[data-orientation="vertical"]);
+
 /*
   GigFin brand palette
   - primary: deep money-green  ~#108050  (oklch ≈ 0.56 0.118 158)

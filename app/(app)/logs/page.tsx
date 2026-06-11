@@ -5,6 +5,7 @@ import { Trash2 } from "lucide-react";
 import { type FormEvent, type ReactNode, useState } from "react";
 import { toast } from "sonner";
 import { AddDialog } from "@/components/add-dialog";
+import { DatePicker } from "@/components/date-picker";
 import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -165,11 +166,7 @@ function IncomeForm({ onDone }: { onDone: () => void }) {
         />
       </Field>
       <Field label="Date">
-        <Input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
+        <DatePicker value={date} onChange={setDate} />
       </Field>
     </EntryForm>
   );
@@ -249,11 +246,7 @@ function ExpenseForm({ onDone }: { onDone: () => void }) {
         />
       </Field>
       <Field label="Date">
-        <Input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
+        <DatePicker value={date} onChange={setDate} />
       </Field>
     </EntryForm>
   );
@@ -333,11 +326,7 @@ function MileageForm({
       onDone={onDone}
     >
       <Field label="Date">
-        <Input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
+        <DatePicker value={date} onChange={setDate} />
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Start">
@@ -445,11 +434,7 @@ function ShiftForm({
       onDone={onDone}
     >
       <Field label="Date">
-        <Input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
+        <DatePicker value={date} onChange={setDate} />
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Start">
