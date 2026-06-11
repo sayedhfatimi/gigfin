@@ -70,7 +70,7 @@ All four (lint, typecheck, test, build) must be green before a release.
 - **Version bump + tag go in their own commit**, never bundled with implementation. Bump
   `package.json` (runtime reads version from it), commit, then `git tag vX.Y.Z`.
 - Push commits touching `.github/workflows/**` over **SSH** (the gh HTTPS token lacks `workflow` scope).
-- Tagged `v*` builds publish a multi-platform GHCR image; CI enforces tag == `package.json` version.
+- Tagged `v*` builds publish a `linux/amd64` GHCR image; CI enforces tag == `package.json` version.
 
 ## Migration
 
