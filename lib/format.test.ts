@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   formatDate,
+  formatDuration,
   formatMoney,
+  minutesToTime,
   parseMoneyToMinor,
+  timeToMinutes,
   titleCase,
   todayISO,
 } from "./format";
@@ -59,5 +62,26 @@ describe("titleCase", () => {
 describe("todayISO", () => {
   it("returns a YYYY-MM-DD string", () => {
     expect(todayISO()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+});
+
+describe("time helpers", () => {
+  it("timeToMinutes parses HH:MM", () => {
+    expect(timeToMinutes("09:30")).toBe(570);
+    expect(timeToMinutes("00:00")).toBe(0);
+    expect(timeToMinutes("23:59")).toBe(1439);
+    expect(timeToMinutes("bad")).toBeNull();
+    expect(timeToMinutes("25:00")).toBeNull();
+  });
+
+  it("minutesToTime formats minutes from midnight", () => {
+    expect(minutesToTime(570)).toBe("09:30");
+    expect(minutesToTime(0)).toBe("00:00");
+  });
+
+  it("formatDuration renders hours and minutes", () => {
+    expect(formatDuration(90)).toBe("1h 30m");
+    expect(formatDuration(45)).toBe("45m");
+    expect(formatDuration(0)).toBe("0m");
   });
 });

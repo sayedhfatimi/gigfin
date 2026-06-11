@@ -13,7 +13,7 @@ export const summary = authedQuery({
     const yr = String(year);
     const inYear = (date: string) => date.startsWith(`${yr}-`);
 
-    const [incomes, expenses, odometers] = await Promise.all([
+    const [incomes, expenses, odometers, shifts] = await Promise.all([
       ctx.db
         .query("income")
         .withIndex("by_user_date", (q) => q.eq("userId", ctx.userId))
@@ -24,6 +24,10 @@ export const summary = authedQuery({
         .collect(),
       ctx.db
         .query("odometers")
+        .withIndex("by_user_date", (q) => q.eq("userId", ctx.userId))
+        .collect(),
+      ctx.db
+        .query("shifts")
         .withIndex("by_user_date", (q) => q.eq("userId", ctx.userId))
         .collect(),
     ]);
@@ -78,6 +82,11 @@ export const summary = authedQuery({
       (o) => Math.max(0, o.endReading - o.startReading),
     );
 
+    const yearMinutes = sum(
+      shifts.filter((s) => inYear(s.date)),
+      (s) => s.durationMin,
+    );
+
     return {
       year,
       totalIncomeMinor,
@@ -87,6 +96,7 @@ export const summary = authedQuery({
       yearExpenseMinor,
       yearNetMinor: yearIncomeMinor - yearExpenseMinor,
       yearDistance,
+      yearMinutes,
       byMonth,
       byPlatform,
       byCategory,

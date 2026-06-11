@@ -21,8 +21,11 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { EXPENSE_TYPES } from "@/convex/lib/constants";
 import {
   formatDate,
+  formatDuration,
   formatMoney,
+  minutesToTime,
   parseMoneyToMinor,
+  timeToMinutes,
   titleCase,
   todayISO,
 } from "@/lib/format";
@@ -42,12 +45,13 @@ export default function LogsPage() {
       <div>
         <h1 className="font-semibold text-2xl tracking-tight">Logs</h1>
         <p className="text-muted-foreground text-sm">
-          Record income, expenses and mileage. Updates are live.
+          Record income, expenses, mileage and shifts. Updates are live.
         </p>
       </div>
       <IncomeSection currency={currency} />
       <ExpenseSection currency={currency} />
       <MileageSection odometerUnit={odometerUnit} />
+      <ShiftsSection />
     </div>
   );
 }
@@ -340,6 +344,111 @@ function MileageSection({ odometerUnit }: { odometerUnit: string }) {
               <TableCell className="tabular-nums">
                 {(r.endReading - r.startReading).toLocaleString()}
               </TableCell>
+              <TableCell className="text-right">
+                <DeleteButton onClick={() => remove({ id: r._id })} />
+              </TableCell>
+            </TableRow>
+          )}
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
+function ShiftsSection() {
+  const rows = useQuery(api.shifts.list);
+  const vehicles = useQuery(api.vehicles.list);
+  const add = useMutation(api.shifts.add);
+  const remove = useMutation(api.shifts.remove);
+  const [date, setDate] = useState(todayISO());
+  const [start, setStart] = useState("09:00");
+  const [end, setEnd] = useState("17:00");
+  const [platform, setPlatform] = useState("");
+  const [vehicleId, setVehicleId] = useState("none");
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    const s = timeToMinutes(start);
+    const en = timeToMinutes(end);
+    if (s === null || en === null) {
+      toast.error("Enter valid start and end times.");
+      return;
+    }
+    try {
+      await add({
+        date,
+        startMinutes: s,
+        endMinutes: en,
+        platform: platform.trim() || undefined,
+        vehicleId:
+          vehicleId !== "none" ? (vehicleId as Id<"vehicles">) : undefined,
+      });
+      setPlatform("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to add");
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Shifts</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-2">
+          <Input
+            className="w-40"
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
+          <Input
+            className="w-28"
+            type="time"
+            value={start}
+            onChange={(e) => setStart(e.target.value)}
+          />
+          <Input
+            className="w-28"
+            type="time"
+            value={end}
+            onChange={(e) => setEnd(e.target.value)}
+          />
+          <Input
+            className="w-36"
+            placeholder="Platform"
+            value={platform}
+            onChange={(e) => setPlatform(e.target.value)}
+          />
+          <SelectField
+            className="w-44"
+            value={vehicleId}
+            onValueChange={setVehicleId}
+            options={[
+              { value: "none", label: "No vehicle" },
+              ...(vehicles ?? []).map((v) => ({
+                value: v._id,
+                label: v.label,
+              })),
+            ]}
+          />
+          <Button type="submit">Add</Button>
+        </form>
+
+        <EntryTable
+          empty="No shifts yet."
+          head={["Date", "Time", "Hours", "Platform", ""]}
+          rows={rows}
+          render={(r) => (
+            <TableRow key={r._id}>
+              <TableCell>{formatDate(r.date)}</TableCell>
+              <TableCell className="tabular-nums">
+                {minutesToTime(r.startMinutes)}–{minutesToTime(r.endMinutes)}
+              </TableCell>
+              <TableCell className="tabular-nums">
+                {formatDuration(r.durationMin)}
+              </TableCell>
+              <TableCell>{r.platform ?? "—"}</TableCell>
               <TableCell className="text-right">
                 <DeleteButton onClick={() => remove({ id: r._id })} />
               </TableCell>

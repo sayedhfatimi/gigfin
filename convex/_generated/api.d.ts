@@ -20,6 +20,7 @@ import type * as lib_functions from "../lib/functions.js";
 import type * as lib_owner from "../lib/owner.js";
 import type * as odometers from "../odometers.js";
 import type * as profiles from "../profiles.js";
+import type * as shifts from "../shifts.js";
 import type * as vehicles from "../vehicles.js";
 
 import type {
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   "lib/owner": typeof lib_owner;
   odometers: typeof odometers;
   profiles: typeof profiles;
+  shifts: typeof shifts;
   vehicles: typeof vehicles;
 }>;
 

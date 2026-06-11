@@ -36,11 +36,30 @@ export default function DashboardPage() {
     );
   }
 
+  const yearHours = summary.yearMinutes / 60;
+  const ratePerHourMinor =
+    yearHours > 0 ? Math.round(summary.yearIncomeMinor / yearHours) : null;
+
   const stats = [
-    { label: `${year} income`, value: summary.yearIncomeMinor },
-    { label: `${year} expenses`, value: summary.yearExpenseMinor },
-    { label: `${year} net`, value: summary.yearNetMinor },
-    { label: "All-time net", value: summary.netMinor },
+    {
+      label: `${year} income`,
+      value: formatMoney(summary.yearIncomeMinor, currency),
+    },
+    {
+      label: `${year} expenses`,
+      value: formatMoney(summary.yearExpenseMinor, currency),
+    },
+    {
+      label: `${year} net`,
+      value: formatMoney(summary.yearNetMinor, currency),
+    },
+    {
+      label: "Per hour",
+      value:
+        ratePerHourMinor === null
+          ? "—"
+          : `${formatMoney(ratePerHourMinor, currency)}/h`,
+    },
   ];
 
   const yearMiles =
@@ -57,9 +76,7 @@ export default function DashboardPage() {
           <Card key={s.label}>
             <CardHeader className="gap-1">
               <CardDescription>{s.label}</CardDescription>
-              <CardTitle className="text-2xl tabular-nums">
-                {formatMoney(s.value, currency)}
-              </CardTitle>
+              <CardTitle className="text-2xl tabular-nums">{s.value}</CardTitle>
             </CardHeader>
           </Card>
         ))}
