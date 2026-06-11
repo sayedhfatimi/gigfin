@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type ReactElement, type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,17 +12,20 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-// Standard "Add" affordance: a button that opens a dialog. `children` is a
-// render function given a `close` callback to dismiss the dialog on success.
+// A button (or custom `trigger`) that opens a dialog. `children` is a render
+// function given a `close` callback to dismiss the dialog on success. Pass
+// `trigger` to reuse this for edit (e.g. a pencil button) instead of "Add".
 export function AddDialog({
   title,
   description,
   triggerLabel = "Add",
+  trigger,
   children,
 }: {
   title: string;
   description?: string;
   triggerLabel?: string;
+  trigger?: ReactElement;
   children: (close: () => void) => ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -30,10 +33,12 @@ export function AddDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button size="sm">
-            <Plus className="size-4" />
-            {triggerLabel}
-          </Button>
+          trigger ?? (
+            <Button size="sm">
+              <Plus className="size-4" />
+              {triggerLabel}
+            </Button>
+          )
         }
       />
       <DialogContent>
