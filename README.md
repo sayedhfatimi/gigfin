@@ -62,7 +62,8 @@ first boot — there is **no second "generate key / redeploy" step**.
 ### Path B — Public infrastructure (Coolify example, `gigfin.me`)
 
 1. New resource → **Docker Compose (empty)** → paste this repo's `docker-compose.yml`.
-2. Run `sh scripts/setup.sh` locally and paste the three printed lines
+2. Run `sh scripts/setup.sh` on any machine with Docker + openssl (it doesn't deploy
+   anything — it just prints three portable secrets). Paste the three printed lines
    (`BETTER_AUTH_SECRET`, `CONVEX_INSTANCE_SECRET`, `CONVEX_SELF_HOSTED_ADMIN_KEY`)
    into Coolify's **Environment** UI, plus:
    - `CONVEX_PUBLIC_URL=https://convex.gigfin.me`

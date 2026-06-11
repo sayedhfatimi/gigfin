@@ -12,12 +12,14 @@
 # Usage:
 #   sh scripts/setup.sh
 #
-#   - If .env is missing, it is created from .env.example with the three values filled.
-#   - If .env already exists, the values are only printed (nothing is overwritten) —
-#     paste them into your env (e.g. Coolify's environment UI).
+#   - Always prints the three secrets at the end (paste them into your docker-compose
+#     host's environment UI, e.g. Coolify).
+#   - If .env is missing, also writes them into a new .env (mode 600) from .env.example.
+#   - Never overwrites an existing .env.
 #
-# Requires: docker, openssl. NOTE: use a FRESH `gigfin-convex-data` volume — a pinned
-# secret that differs from an already-initialised volume's secret will not match.
+# Runs locally on any machine with docker + openssl; it does not deploy or connect to
+# anything — the secrets are portable. NOTE: deploy onto a FRESH `gigfin-convex-data`
+# volume — a pinned secret that differs from an already-initialised volume's will not match.
 
 set -e
 
@@ -63,15 +65,11 @@ print_values() {
 
 if [ -f .env ]; then
   echo
-  echo "[setup] .env already exists — not overwriting. Add/replace these three lines"
-  echo "        (or paste them into your host's environment, e.g. Coolify):"
-  echo
-  print_values
+  echo "[setup] .env already exists — not overwriting it."
+elif [ ! -f .env.example ]; then
+  echo "error: .env.example not found (run from the repo root)." >&2
+  exit 1
 else
-  if [ ! -f .env.example ]; then
-    echo "error: .env.example not found (run from the repo root)." >&2
-    exit 1
-  fi
   # Write the secrets via a restrictively-created temp file (umask 077 → mode 600),
   # then move into place, so .env is never momentarily world-readable.
   (
@@ -88,10 +86,17 @@ else
   ) && mv .env.tmp .env
   echo
   echo "[setup] Wrote .env (mode 600) with the generated secrets."
-  echo "        Review CONVEX_PUBLIC_URL and SITE_URL for your deployment (local"
-  echo "        defaults are already set), then: docker compose up -d"
 fi
 
+# Always print the three secrets — for a docker-compose host (e.g. Coolify) you
+# paste these into the environment UI; for a local .env they're shown for reference.
 echo
-echo "[setup] Done. Reminder: deploy onto a FRESH 'gigfin-convex-data' volume so the"
-echo "        pinned instance secret matches."
+echo "[setup] Generated secrets (these are saved in .env if it was just created):"
+echo
+print_values
+echo
+echo "[setup] Next:"
+echo "  - Local/LAN: review CONVEX_PUBLIC_URL + SITE_URL in .env, then: docker compose up -d"
+echo "  - Coolify:   paste the three lines above + CONVEX_PUBLIC_URL + SITE_URL into the"
+echo "               environment UI, then deploy."
+echo "  Reminder: deploy onto a FRESH 'gigfin-convex-data' volume so the pinned secret matches."
