@@ -29,37 +29,86 @@ a private network with no internet access.
 - **Auth** — email/password + TOTP two-factor + session management (Better Auth).
 - **PWA**, light/dark themes, mobile-friendly.
 
-## Self-hosting (Docker Compose)
+## Deployment
+
+GigFin ships as one prebuilt multi-arch image (`ghcr.io/sayedhfatimi/gigfin`)
+plus a self-hosted Convex backend. The **same `docker-compose.yml`** covers both a
+private-network box and public infrastructure — only a couple of env vars differ.
+You set at most five vars; `scripts/setup.sh` generates the three secrets for you.
 
 Requires Docker + Docker Compose.
+
+### Path A — Self-host on a private network / LAN
 
 ```bash
 git clone https://github.com/sayedhfatimi/gigfin.git
 cd gigfin
-cp .env.example .env
 
-# 1. Start the Convex backend and generate an admin key
-docker compose up -d backend
-docker compose exec backend ./generate_admin_key.sh
-#   → copy the printed key into .env as CONVEX_SELF_HOSTED_ADMIN_KEY
+# 1. Generate the three required secrets into .env
+sh scripts/setup.sh
 
-# 2. Set the required vars in .env:
-#    - CONVEX_SELF_HOSTED_ADMIN_KEY (from above)
-#    - CONVEX_URL / CONVEX_SITE_URL  (how the BROWSER reaches the backend)
-#    - SITE_URL                      (public app URL)
-#    - BETTER_AUTH_SECRET            (openssl rand -base64 32)
+# 2. (LAN only) point browsers at this host — edit .env:
+#    CONVEX_PUBLIC_URL=http://<lan-ip>:3210
+#    SITE_URL=http://<lan-ip>:3000
+#    (skip for a single machine — the localhost defaults already work)
 
-# 3. Start everything (builds the app image on first run)
+# 3. Start everything
 docker compose up -d
 ```
 
-GigFin is now on `http://localhost:3000` (or your `SITE_URL`). The app container
-deploys its Convex functions to the backend on start. To use the prebuilt image
-instead of building locally, `docker compose pull` first — images are published
-to `ghcr.io/sayedhfatimi/gigfin`.
+Open `SITE_URL` and sign up. The app deploys its Convex functions to the backend on
+first boot — there is **no second "generate key / redeploy" step**.
 
-Optional: the Convex admin dashboard is available with the `dashboard` profile:
-`docker compose --profile dashboard up -d` (port 6791).
+### Path B — Public infrastructure (Coolify example, `gigfin.me`)
+
+1. New resource → **Docker Compose (empty)** → paste this repo's `docker-compose.yml`.
+2. Run `sh scripts/setup.sh` locally and paste the three printed lines
+   (`BETTER_AUTH_SECRET`, `CONVEX_INSTANCE_SECRET`, `CONVEX_SELF_HOSTED_ADMIN_KEY`)
+   into Coolify's **Environment** UI, plus:
+   - `CONVEX_PUBLIC_URL=https://convex.gigfin.me`
+   - `SITE_URL=https://gigfin.me`
+3. Assign one domain per service (Coolify allows one each — that's all you need):
+   - `gigfin.me` → **gigfin** service, port `3000`
+   - `convex.gigfin.me` → **convex** service, port `3210`
+   - *(optional)* `convex-dash.gigfin.me` → **convex-dashboard** service, port `6791`
+
+   Only the Convex **cloud** port (3210) is ever browser-facing; the site port (3211)
+   stays internal, so a single domain per service is sufficient.
+4. Deploy — Coolify **pulls** the prebuilt image from GHCR.
+
+> **Dashboard access:** the Convex dashboard requires your deployment URL +
+> `CONVEX_SELF_HOSTED_ADMIN_KEY` to log in, so it is not open to the public. Exposing
+> it on a domain is optional — you can also leave it unmapped and reach it over an SSH
+> tunnel. Either way, keep the admin key secret.
+
+### Environment variables
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `BETTER_AUTH_SECRET` | ✓ | Session signing secret (from `scripts/setup.sh`) |
+| `CONVEX_INSTANCE_SECRET` | ✓ | Pins the backend instance so the admin key stays valid (from `scripts/setup.sh`) |
+| `CONVEX_SELF_HOSTED_ADMIN_KEY` | ✓ | Lets the app deploy Convex functions (from `scripts/setup.sh`) |
+| `CONVEX_PUBLIC_URL` | ✓ | Where the **browser** reaches the Convex backend (3210). Local default works. |
+| `SITE_URL` | ✓ | Public URL of the app. Local default works. |
+| `RESEND_API_KEY` | — | Enables email (password reset/verification). Omit to disable. |
+| `GIGFIN_DISABLE_SIGNUP` | — | Set to `true` to lock registration to existing users |
+| `ANALYTICS_SCRIPT_URL` / `ANALYTICS_SITE_ID` | — | Privacy-friendly analytics. Omit to disable. |
+| `POSTGRES_URL` | — | External Postgres for the backend instead of the bundled SQLite volume |
+
+Advanced/internal overrides (the `backend:*` URLs, instance name, host ports) are
+fixed in `docker-compose.yml` and normally untouched — see the comments there.
+
+### Updating
+
+```bash
+docker compose pull && docker compose up -d   # or redeploy in Coolify
+```
+
+### Build from source (optional)
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+```
 
 ## Migrating from GigFin v1
 
@@ -82,19 +131,6 @@ Operators who prefer the command line can use `scripts/migrate-sqlite.ts` instea
 What does **not** carry over: accounts / passwords, two-factor, sessions, and
 app preferences (currency / units / tax jurisdiction) — set those up fresh in v2.
 
-## Configuration
-
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `CONVEX_SELF_HOSTED_URL` | ✓ | Backend address for the deploy CLI (compose sets this internally) |
-| `CONVEX_SELF_HOSTED_ADMIN_KEY` | ✓ | Admin key from `generate_admin_key.sh` |
-| `CONVEX_URL` / `CONVEX_SITE_URL` | ✓ | Browser-reachable backend URLs (site = API port + 1) |
-| `SITE_URL` | ✓ | Public app URL |
-| `BETTER_AUTH_SECRET` | ✓ | Auth signing secret (`openssl rand -base64 32`) |
-| `RESEND_API_KEY` | — | Enables email (password reset/verification). Omit to disable. |
-| `GIGFIN_DISABLE_SIGNUP` | — | Set to `true` to lock registration to existing users |
-| `ANALYTICS_SCRIPT_URL` / `ANALYTICS_SITE_ID` | — | Privacy-friendly analytics. Omit to disable. |
-
 ## Air-gap / offline
 
 GigFin needs no internet at runtime. The backend's anonymous telemetry beacon is
@@ -104,8 +140,8 @@ stored locally in the backend volume.
 
 ## Backup & restore
 
-All data lives in the `data` Docker volume (SQLite + file storage). Back it up
-with the Convex self-hosted snapshot export, or by snapshotting the volume while
+All data lives in the `gigfin-convex-data` Docker volume (SQLite + file storage). Back
+it up with the Convex self-hosted snapshot export, or by snapshotting the volume while
 the stack is stopped. See the
 [Convex self-hosting docs](https://github.com/get-convex/convex-backend/tree/main/self-hosted).
 
@@ -113,8 +149,10 @@ the stack is stopped. See the
 
 ```bash
 bun install
-docker compose up -d backend            # the Convex backend
-cp .env.example .env.local              # set NEXT_PUBLIC_* + admin key
+docker compose up -d convex             # the Convex backend
+# .env.local sets NEXT_PUBLIC_CONVEX_URL / CONVEX_PUBLIC_URL (= 127.0.0.1:3210),
+# the admin key, and BETTER_AUTH_SECRET. Generate an admin key with:
+#   docker compose exec convex ./generate_admin_key.sh
 bunx convex dev                          # terminal 1 — sync functions
 bun run dev                              # terminal 2 — http://localhost:3000
 ```
