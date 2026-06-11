@@ -36,7 +36,10 @@ services:
       # by the backend itself — hence loopback).
       - CONVEX_SITE_ORIGIN=http://127.0.0.1:3211
       - POSTGRES_URL
-      - DO_NOT_REQUIRE_SSL
+      # The backend never terminates TLS itself — it's plain HTTP locally and sits
+      # behind a TLS-terminating proxy (e.g. Coolify) in production — so it must not
+      # require SSL on the proxied/loopback connections. Always true for this stack.
+      - DO_NOT_REQUIRE_SSL=true
       - RUST_LOG=${RUST_LOG:-info}
     healthcheck:
       test: curl -f http://localhost:3210/version
