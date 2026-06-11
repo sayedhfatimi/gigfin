@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
-import { Download, Upload } from "lucide-react";
+import { Download, Sparkles, Upload } from "lucide-react";
 import { type ChangeEvent, useRef } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ export function DataCard() {
   const data = useQuery(api.data.exportAll);
   const importIncome = useMutation(api.data.importIncome);
   const importExpenses = useMutation(api.data.importExpenses);
+  const loadSample = useMutation(api.seed.loadSample);
   const incomeInput = useRef<HTMLInputElement>(null);
   const expenseInput = useRef<HTMLInputElement>(null);
 
@@ -157,6 +158,18 @@ export function DataCard() {
         >
           <Upload className="size-4" />
           Import expenses
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() =>
+            loadSample({})
+              .then(() => toast.success("Sample data loaded"))
+              .catch(() => toast.error("Failed to load sample data"))
+          }
+        >
+          <Sparkles className="size-4" />
+          Load sample data
         </Button>
         <input
           ref={incomeInput}
