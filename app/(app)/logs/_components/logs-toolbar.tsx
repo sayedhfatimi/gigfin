@@ -5,8 +5,8 @@ import type { ReactNode, RefObject } from "react";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { Input } from "@/components/ui/input";
 
-// Search + inclusive date range + an optional domain filter + an action (the
-// Add button). The search input ref lets `/` focus it.
+// Search + inclusive date range + an optional domain filter. The Add/Start
+// actions live in the page header, not here. The search ref lets `/` focus it.
 export function LogsToolbar({
   searchRef,
   query,
@@ -16,7 +16,6 @@ export function LogsToolbar({
   to,
   onTo,
   extra,
-  action,
 }: {
   searchRef?: RefObject<HTMLInputElement | null>;
   query: string;
@@ -26,7 +25,6 @@ export function LogsToolbar({
   to: string;
   onTo: (v: string) => void;
   extra?: ReactNode;
-  action: ReactNode;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -49,7 +47,6 @@ export function LogsToolbar({
         }}
       />
       {extra}
-      <div className="ml-auto">{action}</div>
     </div>
   );
 }

@@ -4,7 +4,6 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useMutation, useQuery } from "convex/react";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { AddDialog } from "@/components/add-dialog";
 import { SelectField } from "@/components/select-field";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
@@ -14,7 +13,6 @@ import { distanceOf } from "@/lib/odometer";
 import { ActiveMileageCard } from "./active-mileage-card";
 import { DataTable } from "./data-table";
 import { MileageForm } from "./forms/mileage-form";
-import { StartReadingForm } from "./forms/start-reading-form";
 import { LogEmptyState } from "./log-empty-state";
 import { LogsToolbar } from "./logs-toolbar";
 import { DeleteButton, EditDialog } from "./row-actions";
@@ -126,18 +124,6 @@ export function MileagePanel({
               })),
             ]}
           />
-        }
-        action={
-          <div className="flex gap-2">
-            {!openReading && (
-              <AddDialog title="Log start reading" triggerLabel="Log start">
-                {(close) => <StartReadingForm onDone={close} />}
-              </AddDialog>
-            )}
-            <AddDialog title="Add mileage" triggerLabel="Add manually">
-              {(close) => <MileageForm onDone={close} />}
-            </AddDialog>
-          </div>
         }
       />
       {filtered.length === 0 ? (

@@ -4,7 +4,6 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useMutation, useQuery } from "convex/react";
 import { useMemo, useRef } from "react";
 import { toast } from "sonner";
-import { AddDialog } from "@/components/add-dialog";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -86,11 +85,6 @@ export function IncomePanel({
         onFrom={setFrom}
         to={to}
         onTo={setTo}
-        action={
-          <AddDialog title="Add income">
-            {(close) => <IncomeForm onDone={close} />}
-          </AddDialog>
-        }
       />
       {filtered.length === 0 ? (
         <LogEmptyState message="No income matches these filters." />

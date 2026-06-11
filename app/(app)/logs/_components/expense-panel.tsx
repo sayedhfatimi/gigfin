@@ -4,7 +4,6 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useMutation, useQuery } from "convex/react";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { AddDialog } from "@/components/add-dialog";
 import { ReceiptButton } from "@/components/receipt-button";
 import { SelectField } from "@/components/select-field";
 import { api } from "@/convex/_generated/api";
@@ -110,11 +109,6 @@ export function ExpensePanel({
             onValueChange={setTypeFilter}
             options={TYPE_FILTER_OPTIONS}
           />
-        }
-        action={
-          <AddDialog title="Add expense">
-            {(close) => <ExpenseForm onDone={close} />}
-          </AddDialog>
         }
       />
       {filtered.length === 0 ? (
