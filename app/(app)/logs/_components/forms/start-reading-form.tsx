@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { SelectField } from "@/components/select-field";
@@ -9,13 +9,13 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { localDateISO } from "@/lib/format";
 import { EntryForm, Field } from "../form-primitives";
+import { useVehicleField } from "./hooks";
 
 // Opens a live odometer reading (start only; end logged later).
 export function StartReadingForm({ onDone }: { onDone: () => void }) {
   const start = useMutation(api.odometers.start);
-  const vehicles = useQuery(api.vehicles.list);
+  const { vehicles, vehicleId, setVehicleId } = useVehicleField();
   const [reading, setReading] = useState("");
-  const [vehicleId, setVehicleId] = useState("none");
 
   return (
     <EntryForm

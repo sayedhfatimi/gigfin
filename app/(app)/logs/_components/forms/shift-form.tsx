@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DatePicker } from "@/components/date-picker";
@@ -10,6 +10,7 @@ import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { minutesToTime, timeToMinutes, todayISO } from "@/lib/format";
 import { EntryForm, Field } from "../form-primitives";
+import { usePlatformSuggestions, useVehicleField } from "./hooks";
 
 export function ShiftForm({
   onDone,
@@ -20,7 +21,10 @@ export function ShiftForm({
 }) {
   const add = useMutation(api.shifts.add);
   const update = useMutation(api.shifts.update);
-  const vehicles = useQuery(api.vehicles.list);
+  const { vehicles, vehicleId, setVehicleId } = useVehicleField(
+    initial?.vehicleId,
+  );
+  const platforms = usePlatformSuggestions();
 
   const [date, setDate] = useState(initial?.date ?? todayISO());
   const [start, setStart] = useState(
@@ -32,9 +36,6 @@ export function ShiftForm({
       : "17:00",
   );
   const [platform, setPlatform] = useState(initial?.platform ?? "");
-  const [vehicleId, setVehicleId] = useState<string>(
-    initial?.vehicleId ?? "none",
-  );
   const [notes, setNotes] = useState(initial?.notes ?? "");
 
   return (
@@ -84,9 +85,15 @@ export function ShiftForm({
       <Field label="Platform">
         <Input
           placeholder="Optional"
+          list="shift-platform-suggestions"
           value={platform}
           onChange={(e) => setPlatform(e.target.value)}
         />
+        <datalist id="shift-platform-suggestions">
+          {platforms.map((p) => (
+            <option key={p} value={p} />
+          ))}
+        </datalist>
       </Field>
       <Field label="Vehicle">
         <SelectField

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DatePicker } from "@/components/date-picker";
@@ -10,6 +10,7 @@ import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { todayISO } from "@/lib/format";
 import { EntryForm, Field } from "../form-primitives";
+import { useVehicleField } from "./hooks";
 
 export function MileageForm({
   onDone,
@@ -20,14 +21,13 @@ export function MileageForm({
 }) {
   const add = useMutation(api.odometers.add);
   const update = useMutation(api.odometers.update);
-  const vehicles = useQuery(api.vehicles.list);
+  const { vehicles, vehicleId, setVehicleId } = useVehicleField(
+    initial?.vehicleId,
+  );
 
   const [date, setDate] = useState(initial?.date ?? todayISO());
   const [start, setStart] = useState(initial?.startReading?.toString() ?? "");
   const [end, setEnd] = useState(initial?.endReading?.toString() ?? "");
-  const [vehicleId, setVehicleId] = useState<string>(
-    initial?.vehicleId ?? "none",
-  );
   const [notes, setNotes] = useState(initial?.notes ?? "");
 
   return (

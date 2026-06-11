@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DatePicker } from "@/components/date-picker";
@@ -11,6 +11,7 @@ import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { EXPENSE_TYPES } from "@/convex/lib/constants";
 import { parseMoneyToMinor, titleCase, todayISO } from "@/lib/format";
 import { EntryForm, Field } from "../form-primitives";
+import { useVehicleField } from "./hooks";
 
 const TYPE_OPTIONS = EXPENSE_TYPES.map((t) => ({
   value: t,
@@ -26,7 +27,9 @@ export function ExpenseForm({
 }) {
   const add = useMutation(api.expenses.add);
   const update = useMutation(api.expenses.update);
-  const vehicles = useQuery(api.vehicles.list);
+  const { vehicles, vehicleId, setVehicleId } = useVehicleField(
+    initial?.vehicleId,
+  );
 
   const [expenseType, setExpenseType] = useState<
     (typeof EXPENSE_TYPES)[number]
@@ -35,9 +38,6 @@ export function ExpenseForm({
     initial ? (initial.amountMinor / 100).toString() : "",
   );
   const [date, setDate] = useState(initial?.date ?? todayISO());
-  const [vehicleId, setVehicleId] = useState<string>(
-    initial?.vehicleId ?? "none",
-  );
   const [notes, setNotes] = useState(initial?.notes ?? "");
 
   return (

@@ -9,6 +9,7 @@ import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { parseMoneyToMinor, todayISO } from "@/lib/format";
 import { EntryForm, Field } from "../form-primitives";
+import { usePlatformSuggestions } from "./hooks";
 
 export function IncomeForm({
   onDone,
@@ -19,6 +20,7 @@ export function IncomeForm({
 }) {
   const add = useMutation(api.income.add);
   const update = useMutation(api.income.update);
+  const platforms = usePlatformSuggestions();
   const [platform, setPlatform] = useState(initial?.platform ?? "");
   const [amount, setAmount] = useState(
     initial ? (initial.amountMinor / 100).toString() : "",
@@ -42,7 +44,16 @@ export function IncomeForm({
       onDone={onDone}
     >
       <Field label="Platform">
-        <Input value={platform} onChange={(e) => setPlatform(e.target.value)} />
+        <Input
+          list="income-platform-suggestions"
+          value={platform}
+          onChange={(e) => setPlatform(e.target.value)}
+        />
+        <datalist id="income-platform-suggestions">
+          {platforms.map((p) => (
+            <option key={p} value={p} />
+          ))}
+        </datalist>
       </Field>
       <Field label="Amount">
         <Input
