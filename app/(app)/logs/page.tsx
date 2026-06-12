@@ -11,6 +11,7 @@ import { IncomeForm } from "./_components/forms/income-form";
 import { IncomePanel } from "./_components/income-panel";
 import { MileageActions } from "./_components/mileage-actions";
 import { MileagePanel } from "./_components/mileage-panel";
+import { OverviewPanel } from "./_components/overview-panel";
 import { RecurringSheet } from "./_components/recurring-sheet";
 import { ShiftActions } from "./_components/shift-actions";
 import { ShiftPanel } from "./_components/shift-panel";
@@ -19,7 +20,7 @@ export default function LogsPage() {
   const profile = useQuery(api.profiles.getMine);
   const currency = profile?.currency ?? "GBP";
   const odometerUnit = profile?.odometerUnit ?? "km";
-  const [tab, setTab] = useState("income");
+  const [tab, setTab] = useState("overview");
 
   return (
     <Tabs
@@ -37,6 +38,7 @@ export default function LogsPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="income">Income</TabsTrigger>
             <TabsTrigger value="expenses">Expenses</TabsTrigger>
             <TabsTrigger value="mileage">Mileage</TabsTrigger>
@@ -60,6 +62,9 @@ export default function LogsPage() {
         </div>
       </div>
 
+      <TabsContent value="overview">
+        <OverviewPanel currency={currency} odometerUnit={odometerUnit} />
+      </TabsContent>
       <TabsContent value="income">
         <IncomePanel currency={currency} active={tab === "income"} />
       </TabsContent>
