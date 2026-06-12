@@ -6,6 +6,7 @@ import { ExpenseCategoryWidget } from "./widgets/expense-category-widget";
 import { ExpenseOverviewWidget } from "./widgets/expense-overview-widget";
 import { GoalsWidget } from "./widgets/goals-widget";
 import { HoursShiftsWidget } from "./widgets/hours-shifts-widget";
+import { IncomePerMileTrendWidget } from "./widgets/income-per-mile-trend-widget";
 import { IncomePerMileWidget } from "./widgets/income-per-mile-widget";
 import { IncomeTrendWidget } from "./widgets/income-trend-widget";
 import { IncomeVsExpensesWidget } from "./widgets/income-vs-expenses-widget";
@@ -106,6 +107,15 @@ export const WIDGETS: WidgetMeta[] = [
     timeframeMode: "global",
     defaultHidden: true,
     component: IncomePerMileWidget,
+  },
+  {
+    id: "incomePerMileTrend",
+    label: "Income per mile trend",
+    description: "Income earned per business mile over the timeframe.",
+    timeframeMode: "global",
+    widthClass: "lg:col-span-2",
+    defaultHidden: true,
+    component: IncomePerMileTrendWidget,
   },
   {
     id: "runningCost",
