@@ -1,6 +1,7 @@
 "use client";
 
 import { TaxCard } from "@/components/dashboard/tax-card";
+import { categoryDistribution } from "@/lib/expenses-agg";
 import { distanceOf, toMiles } from "@/lib/odometer";
 import type { WidgetProps } from "../widget-types";
 
@@ -18,15 +19,19 @@ const sumInYear = <T extends { date: string }>(
 export function TaxWidget({ data }: WidgetProps) {
   const year = new Date().getFullYear();
   const incomeMinor = sumInYear(data.income, year, (r) => r.amountMinor);
-  const expenseMinor = sumInYear(data.expenses, year, (r) => r.amountMinor);
+  const byCategory = categoryDistribution(
+    data.expenses.filter((r) => r.date.startsWith(`${year}-`)),
+  );
   const distance = sumInYear(data.odometers, year, distanceOf);
 
   return (
     <TaxCard
       jurisdiction={data.jurisdiction}
       currency={data.currency}
-      yearNetMinor={incomeMinor - expenseMinor}
-      yearMiles={toMiles(distance, data.odometerUnit)}
+      year={year}
+      incomeMinor={incomeMinor}
+      byCategory={byCategory}
+      miles={toMiles(distance, data.odometerUnit)}
     />
   );
 }

@@ -25,8 +25,8 @@ import {
 import { api } from "@/convex/_generated/api";
 import { formatDuration, formatMoney, titleCase } from "@/lib/format";
 import {
+  computeTaxableProfit,
   estimateTax,
-  mileageAllowanceMinor,
   type TaxJurisdiction,
 } from "@/lib/tax";
 
@@ -111,14 +111,19 @@ function ReportBody({
   odometerUnit: string;
   summary: Summary;
 }) {
-  const profit = Math.max(0, summary.yearNetMinor);
-  const tax = estimateTax(jurisdiction, profit);
   const yearMiles =
     odometerUnit === "mi"
       ? summary.yearDistance
       : summary.yearDistance / KM_PER_MILE;
-  const mileage = mileageAllowanceMinor(jurisdiction, yearMiles);
+  const breakdown = computeTaxableProfit({
+    jurisdiction,
+    incomeMinor: summary.yearIncomeMinor,
+    byCategory: summary.byCategory,
+    miles: yearMiles,
+  });
+  const tax = estimateTax(jurisdiction, breakdown.taxableProfitMinor, year);
   const hours = summary.yearMinutes / 60;
+  const milesLabel = `${Math.round(yearMiles).toLocaleString()} mi`;
 
   return (
     <div className="space-y-6">
@@ -136,12 +141,12 @@ function ReportBody({
           value={formatMoney(summary.yearIncomeMinor, currency)}
         />
         <Stat
-          label="Total expenses"
-          value={formatMoney(summary.yearExpenseMinor, currency)}
+          label="Allowable expenses"
+          value={formatMoney(breakdown.allowableExpenseMinor, currency)}
         />
         <Stat
-          label="Net profit"
-          value={formatMoney(summary.yearNetMinor, currency)}
+          label="Taxable profit"
+          value={formatMoney(breakdown.taxableProfitMinor, currency)}
         />
       </div>
 
@@ -149,7 +154,8 @@ function ReportBody({
         <CardHeader>
           <CardTitle>Estimated tax ({tax.taxYear})</CardTitle>
           <CardDescription>
-            On {formatMoney(profit, currency)} taxable profit
+            On {formatMoney(breakdown.taxableProfitMinor, currency)} taxable
+            profit
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -176,10 +182,20 @@ function ReportBody({
                 label="Effective tax rate"
                 value={`${(tax.effectiveRate * 100).toFixed(1)}%`}
               />
-              {mileage > 0 && (
+              {breakdown.nonDeductibleMinor > 0 && (
                 <ReportRow
-                  label={`Mileage allowance (${Math.round(yearMiles).toLocaleString()} mi)`}
-                  value={formatMoney(mileage, currency)}
+                  label="Non-deductible — excluded (incl. fines)"
+                  value={formatMoney(breakdown.nonDeductibleMinor, currency)}
+                />
+              )}
+              {breakdown.mileageAllowanceMinor > 0 && (
+                <ReportRow
+                  label={
+                    breakdown.vehicleMethod === "mileage"
+                      ? `Mileage allowance (${milesLabel}) · applied in place of actual vehicle costs (${formatMoney(breakdown.vehicleActualMinor, currency)})`
+                      : `Mileage allowance (${milesLabel}) · not applied — actual vehicle costs (${formatMoney(breakdown.vehicleActualMinor, currency)}) more beneficial`
+                  }
+                  value={formatMoney(breakdown.mileageAllowanceMinor, currency)}
                 />
               )}
               {hours > 0 && (

@@ -7,6 +7,11 @@
  * in major units for readability and converted internally.
  */
 
+import {
+  NON_DEDUCTIBLE_EXPENSE_TYPES,
+  VEHICLE_COST_EXPENSE_TYPES,
+} from "@/convex/lib/constants";
+
 export type TaxJurisdiction = "UK" | "US";
 
 export interface TaxEstimate {
@@ -103,14 +108,31 @@ function estimateUS(profit: number) {
   return { incomeTax, secondary: seTax, secondaryLabel: "Self-employment tax" };
 }
 
+// Label the relevant tax year for a calendar-year report. UK tax years run
+// 6 Apr–5 Apr, so a calendar year maps to the tax year that began the previous
+// April (e.g. 2026 → "2025/26"). US tax years are the calendar year itself.
+export function taxYearLabel(
+  jurisdiction: TaxJurisdiction,
+  calendarYear: number,
+): string {
+  if (jurisdiction === "US") return String(calendarYear);
+  return `${calendarYear - 1}/${String(calendarYear).slice(2)}`;
+}
+
 export function estimateTax(
   jurisdiction: TaxJurisdiction,
   taxableProfitMinor: number,
+  calendarYear?: number,
 ): TaxEstimate {
   const profit = Math.max(0, taxableProfitMinor) / 100;
   const { incomeTax, secondary, secondaryLabel } =
     jurisdiction === "US" ? estimateUS(profit) : estimateUK(profit);
-  const taxYear = jurisdiction === "US" ? US.taxYear : UK.taxYear;
+  const taxYear =
+    calendarYear !== undefined
+      ? taxYearLabel(jurisdiction, calendarYear)
+      : jurisdiction === "US"
+        ? US.taxYear
+        : UK.taxYear;
 
   const incomeTaxMinor = toMinor(incomeTax);
   const secondaryTaxMinor = toMinor(secondary);
@@ -153,7 +175,66 @@ export function mileageAllowanceMinor(
   return Math.round(pence);
 }
 
-export const TAX_YEAR_LABEL: Record<TaxJurisdiction, string> = {
-  UK: UK.taxYear,
-  US: US.taxYear,
-};
+export interface TaxableProfitBreakdown {
+  /** all expenses for the period, including non-deductible ones */
+  grossExpenseMinor: number;
+  /** HMRC-disallowed expenses (e.g. fines), never claimed */
+  nonDeductibleMinor: number;
+  /** sum of actual vehicle running costs */
+  vehicleActualMinor: number;
+  /** simplified mileage allowance for the period's business miles */
+  mileageAllowanceMinor: number;
+  /** the more beneficial vehicle method, auto-selected */
+  vehicleMethod: "actual" | "mileage";
+  /** the vehicle figure actually applied (actual costs or mileage allowance) */
+  vehicleDeductionMinor: number;
+  /** deductible expenses actually used to reduce profit */
+  allowableExpenseMinor: number;
+  /** income minus allowable expenses, floored at zero */
+  taxableProfitMinor: number;
+}
+
+const NON_DEDUCTIBLE = new Set<string>(NON_DEDUCTIBLE_EXPENSE_TYPES);
+const VEHICLE_COST = new Set<string>(VEHICLE_COST_EXPENSE_TYPES);
+
+// Turn period income + category totals + business miles into a full taxable-profit
+// breakdown. Excludes non-deductible categories (fines) and auto-selects whichever
+// vehicle method — actual running costs vs the mileage allowance — yields the bigger
+// deduction. All money is integer minor units.
+export function computeTaxableProfit(input: {
+  jurisdiction: TaxJurisdiction;
+  incomeMinor: number;
+  byCategory: { expenseType: string; amountMinor: number }[];
+  miles: number;
+}): TaxableProfitBreakdown {
+  const { jurisdiction, incomeMinor, byCategory, miles } = input;
+
+  let grossExpenseMinor = 0;
+  let nonDeductibleMinor = 0;
+  let vehicleActualMinor = 0;
+  for (const { expenseType, amountMinor } of byCategory) {
+    grossExpenseMinor += amountMinor;
+    if (NON_DEDUCTIBLE.has(expenseType)) nonDeductibleMinor += amountMinor;
+    else if (VEHICLE_COST.has(expenseType)) vehicleActualMinor += amountMinor;
+  }
+  // Deductible expenses that are neither vehicle running costs nor disallowed
+  // (e.g. phone, parking, tolls) — always claimable regardless of vehicle method.
+  const otherDeductibleMinor =
+    grossExpenseMinor - nonDeductibleMinor - vehicleActualMinor;
+
+  const mileage = mileageAllowanceMinor(jurisdiction, miles);
+  const useActual = vehicleActualMinor >= mileage;
+  const vehicleDeductionMinor = useActual ? vehicleActualMinor : mileage;
+  const allowableExpenseMinor = otherDeductibleMinor + vehicleDeductionMinor;
+
+  return {
+    grossExpenseMinor,
+    nonDeductibleMinor,
+    vehicleActualMinor,
+    mileageAllowanceMinor: mileage,
+    vehicleMethod: useActual ? "actual" : "mileage",
+    vehicleDeductionMinor,
+    allowableExpenseMinor,
+    taxableProfitMinor: Math.max(0, incomeMinor - allowableExpenseMinor),
+  };
+}

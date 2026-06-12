@@ -23,6 +23,25 @@ export const EXPENSE_TYPES = [
   "depreciation",
 ] as const;
 
+// HMRC-disallowed expenses (e.g. fines/penalties for breaking the law) — excluded
+// from allowable expenses and from taxable profit.
+export const NON_DEDUCTIBLE_EXPENSE_TYPES = ["fines"] as const;
+
+// Vehicle running costs that the simplified mileage allowance replaces when the
+// mileage method is chosen. Parking/tolls/congestion are claimable on top of
+// mileage, so they are deliberately excluded; cleaning is kept separate too.
+export const VEHICLE_COST_EXPENSE_TYPES = [
+  "fuel_charging",
+  "insurance",
+  "tyres",
+  "mot",
+  "finance",
+  "road_tax",
+  "maintenance",
+  "repairs",
+  "depreciation",
+] as const;
+
 export const VEHICLE_TYPES = ["EV", "PETROL", "DIESEL", "HYBRID"] as const;
 export const UNIT_RATE_UNITS = [
   "kwh",

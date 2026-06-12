@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { estimateTax, mileageAllowanceMinor } from "./tax";
+import {
+  computeTaxableProfit,
+  estimateTax,
+  mileageAllowanceMinor,
+  taxYearLabel,
+} from "./tax";
 
 describe("estimateTax — UK", () => {
   it("taxes basic-rate profit with income tax + Class 4 NIC", () => {
@@ -58,5 +63,87 @@ describe("mileageAllowanceMinor", () => {
 
   it("returns zero for no miles", () => {
     expect(mileageAllowanceMinor("UK", 0)).toBe(0);
+  });
+});
+
+describe("computeTaxableProfit", () => {
+  // The dataset behind the audited 2026 PDF report.
+  const pdfCategories = [
+    { expenseType: "insurance", amountMinor: 202_130 },
+    { expenseType: "fuel_charging", amountMinor: 116_219 },
+    { expenseType: "finance", amountMinor: 98_972 },
+    { expenseType: "phone", amountMinor: 41_422 },
+    { expenseType: "tyres", amountMinor: 40_600 },
+    { expenseType: "fines", amountMinor: 16_000 },
+    { expenseType: "mot", amountMinor: 5_485 },
+    { expenseType: "platform_fees", amountMinor: 3_994 },
+    { expenseType: "cleaning", amountMinor: 2_000 },
+  ];
+
+  it("excludes fines and uses actual vehicle costs when they beat mileage", () => {
+    const bd = computeTaxableProfit({
+      jurisdiction: "UK",
+      incomeMinor: 740_468,
+      byCategory: pdfCategories,
+      miles: 5_635,
+    });
+    expect(bd.grossExpenseMinor).toBe(526_822);
+    expect(bd.nonDeductibleMinor).toBe(16_000);
+    expect(bd.vehicleActualMinor).toBe(463_406);
+    expect(bd.mileageAllowanceMinor).toBe(253_575); // 5,635 mi @ 45p
+    expect(bd.vehicleMethod).toBe("actual");
+    expect(bd.vehicleDeductionMinor).toBe(463_406);
+    expect(bd.allowableExpenseMinor).toBe(510_822);
+    expect(bd.taxableProfitMinor).toBe(229_646);
+  });
+
+  it("swaps to the mileage allowance when it beats actual vehicle costs", () => {
+    const bd = computeTaxableProfit({
+      jurisdiction: "UK",
+      incomeMinor: 5_000_000,
+      byCategory: [
+        { expenseType: "fuel_charging", amountMinor: 50_000 },
+        { expenseType: "phone", amountMinor: 10_000 },
+      ],
+      miles: 12_000, // 10,000@45p + 2,000@25p = £5,000 = 500,000 minor
+    });
+    expect(bd.vehicleActualMinor).toBe(50_000);
+    expect(bd.mileageAllowanceMinor).toBe(500_000);
+    expect(bd.vehicleMethod).toBe("mileage");
+    expect(bd.vehicleDeductionMinor).toBe(500_000);
+    // other deductible (phone 10,000) + mileage 500,000
+    expect(bd.allowableExpenseMinor).toBe(510_000);
+    expect(bd.taxableProfitMinor).toBe(4_490_000);
+  });
+
+  it("never returns a negative taxable profit", () => {
+    const bd = computeTaxableProfit({
+      jurisdiction: "UK",
+      incomeMinor: 10_000,
+      byCategory: [{ expenseType: "insurance", amountMinor: 50_000 }],
+      miles: 0,
+    });
+    expect(bd.taxableProfitMinor).toBe(0);
+  });
+});
+
+describe("taxYearLabel", () => {
+  it("maps a UK calendar year to the Apr–Apr tax year", () => {
+    expect(taxYearLabel("UK", 2026)).toBe("2025/26");
+    expect(taxYearLabel("UK", 2025)).toBe("2024/25");
+  });
+
+  it("uses the calendar year itself for the US", () => {
+    expect(taxYearLabel("US", 2026)).toBe("2026");
+  });
+});
+
+describe("estimateTax — derived tax-year label", () => {
+  it("derives the label when a calendar year is supplied", () => {
+    expect(estimateTax("UK", 3_000_000, 2026).taxYear).toBe("2025/26");
+  });
+
+  it("falls back to the fixed label when no year is supplied", () => {
+    expect(estimateTax("UK", 3_000_000).taxYear).toBe("2024/25");
   });
 });
