@@ -4,39 +4,45 @@ import { authedQuery } from "./lib/functions";
 const sum = <T>(rows: T[], pick: (row: T) => number) =>
   rows.reduce((acc, row) => acc + pick(row), 0);
 
-// Reactive dashboard aggregation. Computes all-time totals plus year-scoped
-// breakdowns (by month / platform / category) and business distance. The client
+// Reactive reports aggregation for one calendar year: year totals plus
+// breakdowns (by month / platform / category) and business distance. Queries are
+// bounded to the year via the by_user_date index rather than scanning all
+// history (the all-time totals this used to return were unused). The client
 // passes the calendar year so the query stays deterministic.
 export const summary = authedQuery({
   args: { year: z.number().int() },
   handler: async (ctx, { year }) => {
     const yr = String(year);
-    const inYear = (date: string) => date.startsWith(`${yr}-`);
+    const start = `${yr}-01-01`;
+    const end = `${yr}-12-31`;
 
-    const [incomes, expenses, odometers, shifts] = await Promise.all([
+    const [yearIncomes, yearExpenses, odometers, shifts] = await Promise.all([
       ctx.db
         .query("income")
-        .withIndex("by_user_date", (q) => q.eq("userId", ctx.userId))
+        .withIndex("by_user_date", (q) =>
+          q.eq("userId", ctx.userId).gte("date", start).lte("date", end),
+        )
         .collect(),
       ctx.db
         .query("expenses")
-        .withIndex("by_user_date", (q) => q.eq("userId", ctx.userId))
+        .withIndex("by_user_date", (q) =>
+          q.eq("userId", ctx.userId).gte("date", start).lte("date", end),
+        )
         .collect(),
       ctx.db
         .query("odometers")
-        .withIndex("by_user_date", (q) => q.eq("userId", ctx.userId))
+        .withIndex("by_user_date", (q) =>
+          q.eq("userId", ctx.userId).gte("date", start).lte("date", end),
+        )
         .collect(),
       ctx.db
         .query("shifts")
-        .withIndex("by_user_date", (q) => q.eq("userId", ctx.userId))
+        .withIndex("by_user_date", (q) =>
+          q.eq("userId", ctx.userId).gte("date", start).lte("date", end),
+        )
         .collect(),
     ]);
 
-    const totalIncomeMinor = sum(incomes, (i) => i.amountMinor);
-    const totalExpenseMinor = sum(expenses, (e) => e.amountMinor);
-
-    const yearIncomes = incomes.filter((i) => inYear(i.date));
-    const yearExpenses = expenses.filter((e) => inYear(e.date));
     const yearIncomeMinor = sum(yearIncomes, (i) => i.amountMinor);
     const yearExpenseMinor = sum(yearExpenses, (e) => e.amountMinor);
 
@@ -77,21 +83,14 @@ export const summary = authedQuery({
       .map(([expenseType, amountMinor]) => ({ expenseType, amountMinor }))
       .sort((a, b) => b.amountMinor - a.amountMinor);
 
-    const yearDistance = sum(
-      odometers.filter((o) => inYear(o.date)),
-      (o) => Math.max(0, (o.endReading ?? o.startReading) - o.startReading),
+    const yearDistance = sum(odometers, (o) =>
+      Math.max(0, (o.endReading ?? o.startReading) - o.startReading),
     );
 
-    const yearMinutes = sum(
-      shifts.filter((s) => inYear(s.date)),
-      (s) => s.durationMin ?? 0,
-    );
+    const yearMinutes = sum(shifts, (s) => s.durationMin ?? 0);
 
     return {
       year,
-      totalIncomeMinor,
-      totalExpenseMinor,
-      netMinor: totalIncomeMinor - totalExpenseMinor,
       yearIncomeMinor,
       yearExpenseMinor,
       yearNetMinor: yearIncomeMinor - yearExpenseMinor,
