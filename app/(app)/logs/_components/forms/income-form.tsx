@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { parseMoneyToMinor, todayISO } from "@/lib/format";
+import { incomeSchema } from "@/lib/schemas/income";
 import { EntryForm, Field } from "../form-primitives";
 import { usePlatformSuggestions } from "./hooks";
 
@@ -32,13 +33,18 @@ export function IncomeForm({
       submitLabel={initial ? "Save changes" : "Add income"}
       onSubmit={async () => {
         const amountMinor = parseMoneyToMinor(amount);
-        if (!platform.trim() || amountMinor === null) {
-          toast.error("Enter a platform and amount.");
+        if (amountMinor === null) {
+          toast.error("Enter a valid amount.");
           return false;
         }
-        const fields = { platform: platform.trim(), amountMinor, date };
-        if (initial) await update({ id: initial._id, ...fields });
-        else await add(fields);
+        // Validate against the same schema the backend uses (platform/range/date).
+        const parsed = incomeSchema.safeParse({ platform, amountMinor, date });
+        if (!parsed.success) {
+          toast.error(parsed.error.issues[0]?.message ?? "Check your entries.");
+          return false;
+        }
+        if (initial) await update({ id: initial._id, ...parsed.data });
+        else await add(parsed.data);
         return true;
       }}
       onDone={onDone}

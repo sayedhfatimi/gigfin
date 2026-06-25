@@ -1,11 +1,7 @@
 import { zid } from "convex-helpers/server/zod";
-import { z } from "zod";
+import { incomeFields } from "../lib/schemas/income";
 import { authedMutation, authedQuery } from "./lib/functions";
 import { requireOwner } from "./lib/owner";
-
-const platform = z.string().trim().min(1).max(80);
-const amountMinor = z.number().int().nonnegative();
-const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD");
 
 export const list = authedQuery({
   args: {},
@@ -18,7 +14,7 @@ export const list = authedQuery({
 });
 
 export const add = authedMutation({
-  args: { platform, amountMinor, date },
+  args: incomeFields,
   handler: async (ctx, args) =>
     ctx.db.insert("income", {
       userId: ctx.userId,
@@ -30,7 +26,7 @@ export const add = authedMutation({
 });
 
 export const update = authedMutation({
-  args: { id: zid("income"), platform, amountMinor, date },
+  args: { id: zid("income"), ...incomeFields },
   handler: async (ctx, args) => {
     requireOwner(ctx.userId, await ctx.db.get(args.id));
     await ctx.db.patch(args.id, {
