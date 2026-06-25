@@ -105,7 +105,7 @@ first boot — there is **no second "generate key / redeploy" step**.
 | `CONVEX_PUBLIC_URL` | ✓ | Where the **browser** reaches the Convex backend (3210). Local default works. |
 | `SITE_URL` | ✓ | Public URL of the app. Local default works. |
 | `RESEND_API_KEY` | — | Enables email (password reset/verification). Omit to disable. |
-| `GIGFIN_DISABLE_SIGNUP` | — | Set to `true` to lock registration to existing users |
+| `GIGFIN_DISABLE_SIGNUP` | — | Set to `true` to lock registration to existing users (enforced at the auth layer — the sign-up endpoint is closed, not just hidden) |
 | `ANALYTICS_SCRIPT_URL` / `ANALYTICS_SITE_ID` | — | Privacy-friendly analytics. Omit to disable. |
 | `POSTGRES_URL` | — | External Postgres for the backend instead of the bundled SQLite volume |
 
