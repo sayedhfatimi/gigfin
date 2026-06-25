@@ -1,8 +1,16 @@
 import { z } from "zod";
+import {
+  categoryDistribution,
+  monthlyExpenseMinor,
+  sumExpenseMinor,
+} from "../lib/expenses-agg";
+import {
+  monthlyIncomeMinor,
+  platformDistribution,
+  sumIncomeMinor,
+} from "../lib/income";
+import { totalDistance } from "../lib/odometer";
 import { authedQuery } from "./lib/functions";
-
-const sum = <T>(rows: T[], pick: (row: T) => number) =>
-  rows.reduce((acc, row) => acc + pick(row), 0);
 
 // Reactive reports aggregation for one calendar year: year totals plus
 // breakdowns (by month / platform / category) and business distance. Queries are
@@ -43,51 +51,26 @@ export const summary = authedQuery({
         .collect(),
     ]);
 
-    const yearIncomeMinor = sum(yearIncomes, (i) => i.amountMinor);
-    const yearExpenseMinor = sum(yearExpenses, (e) => e.amountMinor);
+    // Aggregations reuse the shared pure functions in lib/ so the reports page
+    // and the dashboard widgets compute these figures from one implementation.
+    const yearIncomeMinor = sumIncomeMinor(yearIncomes);
+    const yearExpenseMinor = sumExpenseMinor(yearExpenses);
 
-    const byMonth = Array.from({ length: 12 }, (_, m) => {
-      const prefix = `${yr}-${String(m + 1).padStart(2, "0")}`;
-      return {
-        month: m + 1,
-        incomeMinor: sum(
-          yearIncomes.filter((i) => i.date.startsWith(prefix)),
-          (i) => i.amountMinor,
-        ),
-        expenseMinor: sum(
-          yearExpenses.filter((e) => e.date.startsWith(prefix)),
-          (e) => e.amountMinor,
-        ),
-      };
-    });
+    const incomeByMonth = monthlyIncomeMinor(yearIncomes, year);
+    const expenseByMonth = monthlyExpenseMinor(yearExpenses, year);
+    const byMonth = Array.from({ length: 12 }, (_, m) => ({
+      month: m + 1,
+      incomeMinor: incomeByMonth[m],
+      expenseMinor: expenseByMonth[m],
+    }));
 
-    const platformMap = new Map<string, number>();
-    for (const i of yearIncomes) {
-      platformMap.set(
-        i.platform,
-        (platformMap.get(i.platform) ?? 0) + i.amountMinor,
-      );
-    }
-    const byPlatform = [...platformMap.entries()]
-      .map(([platform, amountMinor]) => ({ platform, amountMinor }))
-      .sort((a, b) => b.amountMinor - a.amountMinor);
-
-    const categoryMap = new Map<string, number>();
-    for (const e of yearExpenses) {
-      categoryMap.set(
-        e.expenseType,
-        (categoryMap.get(e.expenseType) ?? 0) + e.amountMinor,
-      );
-    }
-    const byCategory = [...categoryMap.entries()]
-      .map(([expenseType, amountMinor]) => ({ expenseType, amountMinor }))
-      .sort((a, b) => b.amountMinor - a.amountMinor);
-
-    const yearDistance = sum(odometers, (o) =>
-      Math.max(0, (o.endReading ?? o.startReading) - o.startReading),
+    const byPlatform = platformDistribution(yearIncomes);
+    const byCategory = categoryDistribution(yearExpenses);
+    const yearDistance = totalDistance(odometers);
+    const yearMinutes = shifts.reduce(
+      (acc, s) => acc + (s.durationMin ?? 0),
+      0,
     );
-
-    const yearMinutes = sum(shifts, (s) => s.durationMin ?? 0);
 
     return {
       year,

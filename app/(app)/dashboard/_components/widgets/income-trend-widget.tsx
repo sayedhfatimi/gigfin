@@ -7,6 +7,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { incomePerDayMinor } from "@/lib/daily";
 import { timeframeLabel } from "@/lib/dates";
 import { formatDate } from "@/lib/format";
 import { WidgetCard } from "../widget-card";
@@ -18,11 +19,7 @@ const config = {
 
 // Daily income over the active timeframe. Global.
 export function IncomeTrendWidget({ data }: WidgetProps) {
-  const byDate = new Map<string, number>();
-  for (const r of data.scoped.income) {
-    byDate.set(r.date, (byDate.get(r.date) ?? 0) + r.amountMinor);
-  }
-  const chartData = [...byDate.entries()]
+  const chartData = [...incomePerDayMinor(data.scoped.income).entries()]
     .sort((a, b) => (a[0] < b[0] ? -1 : 1))
     .map(([date, minor]) => ({ label: formatDate(date), income: minor / 100 }));
 
