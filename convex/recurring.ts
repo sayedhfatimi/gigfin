@@ -8,6 +8,7 @@ import {
 } from "./lib/constants";
 import { authedMutationV, authedQueryV } from "./lib/functions";
 import { requireOwner } from "./lib/owner";
+import { advance } from "./lib/recurring";
 
 const fields = {
   expenseType: expenseTypeValidator,
@@ -17,18 +18,6 @@ const fields = {
   vehicleId: v.optional(v.id("vehicles")),
   notes: v.optional(v.string()),
 };
-
-// Advance an ISO date by one cadence period (UTC).
-function advance(dateStr: string, cadence: string): string {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d));
-  if (cadence === "weekly") dt.setUTCDate(dt.getUTCDate() + 7);
-  else if (cadence === "biweekly") dt.setUTCDate(dt.getUTCDate() + 14);
-  else if (cadence === "monthly") dt.setUTCMonth(dt.getUTCMonth() + 1);
-  else if (cadence === "quarterly") dt.setUTCMonth(dt.getUTCMonth() + 3);
-  else if (cadence === "yearly") dt.setUTCFullYear(dt.getUTCFullYear() + 1);
-  return dt.toISOString().slice(0, 10);
-}
 
 export const list = authedQueryV({
   args: {},

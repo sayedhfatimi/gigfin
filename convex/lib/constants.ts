@@ -68,6 +68,7 @@ export type ExpenseType = (typeof EXPENSE_TYPES)[number];
 export type VehicleType = (typeof VEHICLE_TYPES)[number];
 export type UnitRateUnit = (typeof UNIT_RATE_UNITS)[number];
 export type TaxJurisdiction = (typeof TAX_JURISDICTIONS)[number];
+export type RecurringCadence = (typeof RECURRING_CADENCES)[number];
 
 // Build a Convex union-of-literals validator from a readonly string tuple,
 // preserving the literal-union type (so document fields are typed as the union,
