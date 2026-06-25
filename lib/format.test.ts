@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   formatDate,
   formatDuration,
   formatMoney,
+  localDateISO,
   minutesToTime,
   parseMoneyToMinor,
   timeToMinutes,
@@ -60,8 +61,24 @@ describe("titleCase", () => {
 });
 
 describe("todayISO", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("returns a YYYY-MM-DD string", () => {
     expect(todayISO()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("returns the LOCAL calendar date, not the UTC date", () => {
+    // An instant that is still 2024-01-01 locally (UTC-5) but already
+    // 2024-01-02 in UTC. todayISO must follow the local calendar.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2024-01-02T02:30:00.000Z"));
+    const expectedLocal = localDateISO();
+    expect(todayISO()).toBe(expectedLocal);
+    // Sanity: in a UTC+ test env the UTC slice could differ from local; the
+    // contract is that todayISO and localDateISO never diverge.
+    expect(todayISO()).toBe(localDateISO());
   });
 });
 

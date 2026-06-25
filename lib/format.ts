@@ -30,8 +30,13 @@ export function formatDate(iso: string, locale = "en-GB"): string {
   });
 }
 
+// The user's *local* calendar date (YYYY-MM-DD). Used for "today" boundaries
+// (budgets/goals), timeframe defaults, and the default date on log forms — all
+// of which must agree with the local-calendar dates entries are stored against.
+// (Previously returned the UTC date, which was off by a day for non-UTC users
+// near midnight and inconsistent with the live-logging path.)
 export function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  return localDateISO();
 }
 
 // Local-calendar date + minutes-from-midnight, for live "now" logging (matches
