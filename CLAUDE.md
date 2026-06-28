@@ -44,7 +44,26 @@ All four (lint, typecheck, test, build) must be green before a release.
 - Every query/mutation is **ownership-gated**: use `getAuthedUserId(ctx)` and `requireOwner(ctx, doc)`.
   Never trust an implicit `userId` filter alone.
 - User-facing failures: `throw new ConvexError({ code, message })`. Programmer errors: `throw new Error(...)`.
-- `convex/_generated` is committed and Biome-ignored.
+- `convex/_generated` is committed and Biome-ignored. **Never hand-edit it.**
+
+### Regenerating Convex types
+
+Codegen needs a running backend (there is no always-on dev deployment — it fails
+offline). After any change to `convex/schema.ts` or a Convex function signature:
+
+1. Start only the self-hosted Convex backend from the compose stack:
+   `docker compose up -d convex`
+   Wait until healthy: `docker compose ps` shows `convex` healthy, or
+   `curl -f http://127.0.0.1:3210/version` succeeds.
+2. Push functions + regenerate `convex/_generated`:
+   `bunx convex dev --once`
+   This reads `CONVEX_SELF_HOSTED_URL` (http://127.0.0.1:3210) and
+   `CONVEX_SELF_HOSTED_ADMIN_KEY` from `.env.local`.
+3. Commit the regenerated `convex/_generated/*` alongside the change.
+
+If `bunx convex dev --once` cannot reach the backend or auth fails (admin key vs
+the volume's `INSTANCE_SECRET` mismatch), fix the backend — do NOT hand-edit the
+generated files.
 
 ## Validation
 
