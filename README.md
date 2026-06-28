@@ -23,15 +23,16 @@ a private network with no internet access.
 - **Customisable dashboard** — 21 drag-and-drop widgets (income/expense trends,
   platform & category breakdowns, effective £/hour, per-mile metrics, run-rate,
   cadence heatmap…) under a global timeframe filter; layout saved per user.
-- **Recurring expenses** — scheduled by the backend (no external cron); due
-  entries also catch up the moment you open the app.
-- **Charging vendors** — save EV/fuel unit rates and price fuel/charging expenses
-  from quantity automatically.
+- **Recurring income & expenses** — scheduled by the backend (no external cron);
+  due entries also catch up the moment you open the app.
+- **Charging vendors** — save EV/fuel unit rates; tag a fuel/charging expense
+  with the vendor (shown on the entry) and just enter the amount.
 - **Goals & budgets** — weekly/monthly targets and spending limits with progress.
 - **Tax estimator + year-end reports** — UK Self-Assessment / US Schedule C,
   mileage allowance, printable/PDF summaries. Computed locally; an estimate, not advice.
 - **Receipts** — image attachments in self-hosted file storage (no S3).
-- **CSV import/export** and one-click in-app migration from GigFin v1.
+- **CSV import/export** for income, expenses, mileage and shifts, plus
+  one-click in-app migration from GigFin v1.
 - **Auth** — email/password + TOTP two-factor (with backup codes) + session
   management (Better Auth).
 - **PWA**, light/dark themes, mobile-friendly.
@@ -40,7 +41,8 @@ a private network with no internet access.
 
 New to the app? The **[User guide](docs/USER-GUIDE.md)** is a step-by-step
 walkthrough of every feature — the dashboard and widgets, logging (including live
-shift/trip tracking), recurring expenses, taxes, import/export, settings and more.
+shift/trip tracking), recurring income & expenses, taxes, import/export, settings
+and more.
 
 ## Deployment
 

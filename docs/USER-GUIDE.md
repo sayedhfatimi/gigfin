@@ -10,7 +10,7 @@ technical background needed. For installing/hosting GigFin, see the
 2. [Getting started](#2-getting-started)
 3. [The dashboard](#3-the-dashboard)
 4. [Logging your work](#4-logging-your-work)
-5. [Recurring expenses](#5-recurring-expenses)
+5. [Recurring income & expenses](#5-recurring-income--expenses)
 6. [Vehicles & charging vendors](#6-vehicles--charging-vendors)
 7. [Goals & budgets](#7-goals--budgets)
 8. [Taxes & year-end reports](#8-taxes--year-end-reports)
@@ -180,10 +180,11 @@ delete. On a phone, rows become cards you can **swipe left** to delete.
 3. **Add expense.**
 
 **Fuel/charging with a saved vendor.** If the category is *Fuel charging* and
-you've saved charging vendors (see [below](#6-vehicles--charging-vendors)), two
-extra fields appear: pick a **vendor** and enter the **quantity** (e.g. kWh or
-litres). GigFin works out the amount from the vendor's saved rate — you can still
-adjust it. Leave the vendor on *Custom amount* to just type the price.
+you've saved charging vendors (see [below](#6-vehicles--charging-vendors)), a
+**Charging vendor** field appears: pick the vendor you used and enter the total
+**amount** you paid. The vendor is tagged on the entry (its name shows under the
+expense in your logs), and its unit rate is recorded with the entry. Leave it on
+*No vendor* to just log a plain amount.
 
 **Receipts.** Each expense row has a paperclip — click it to attach a photo of
 the receipt (stored privately on your own backend). Receipts show as numbered
@@ -234,21 +235,22 @@ running-cost, and mileage-allowance figures.
 
 ---
 
-## 5. Recurring expenses
+## 5. Recurring income & expenses
 
-For costs that repeat — insurance, finance, subscriptions — set them up once and
-GigFin logs them for you.
+For amounts that repeat — insurance, finance and subscriptions on the expense
+side, or retainers, guaranteed minimums and stipends on the income side — set
+them up once and GigFin logs them for you.
 
-You'll find them on the **Logs → Expenses** tab: click **Recurring** to open the
-manager.
+You'll find the manager behind the **Recurring** button on both the **Logs →
+Expenses** tab and the **Logs → Income** tab.
 
-1. In the panel, fill in the **Add recurring expense** form:
-   - **Category**, **Amount**
+1. Fill in the **Add recurring expense** / **Add recurring income** form:
+   - **Category** (expenses) or **Platform** (income), and **Amount**
    - **Cadence** — Weekly, Every 2 weeks, Monthly, Quarterly, or Yearly
    - **Next due** — the date the first entry should be dated
 2. Click **Add**. It appears in the list above.
 
-**How the automatic logging works.** GigFin's backend creates the real expense
+**How the automatic logging works.** GigFin's backend creates the real
 entries on schedule — each one dated to its due date — then moves the schedule on
 to the next date. It catches up if any were missed (e.g. the app was offline),
 and it runs both on a daily timer **and** the moment you open the app, so due
@@ -283,7 +285,7 @@ deleted).
 ### Charging vendors
 
 Save the places you charge or fuel and their unit rate, so logging a fuel/charging
-expense is just "vendor + quantity".
+expense is just "vendor + amount".
 
 1. **Settings → Charging vendors → Add charging vendor.**
 2. Enter a **label** (e.g. "Home", "Ionity"), the **rate**, and the **unit**
@@ -349,18 +351,26 @@ In **Settings → Data**.
 
 - **Export income** → a CSV with columns `date, platform, amount`.
 - **Export expenses** → a CSV with columns `date, type, amount, notes`.
+- **Export mileage** → a CSV with columns `date, start, end, notes`.
+- **Export shifts** → a CSV with columns `date, start_min, end_min, platform, notes`
+  (start/end are minutes from local midnight).
 
-Files download as `gigfin-income.csv` / `gigfin-expenses.csv` — good for backups
-or your accountant.
+Files download as `gigfin-income.csv`, `gigfin-expenses.csv`, `gigfin-mileage.csv`
+and `gigfin-shifts.csv` — good for backups or your accountant.
 
 ### Import
 
 - **Import income** — a CSV with `date, platform, amount`.
 - **Import expenses** — a CSV with `date, type, amount, notes` (the `type` must be
   one of GigFin's expense categories).
+- **Import mileage** — a CSV with `date, start, end, notes` (end is optional; rows
+  whose end is below the start are skipped).
+- **Import shifts** — a CSV with `date, start_min, end_min, platform, notes`
+  (end/platform/notes optional; duration is computed when an end is given).
 
-Dates must be `YYYY-MM-DD`. Imports **add** to your data — they don't replace it or
-check for duplicates, so importing the same file twice creates duplicates.
+Each type re-imports the matching export file. Dates must be `YYYY-MM-DD`. Imports
+**add** to your data — they don't replace it or check for duplicates, so importing
+the same file twice creates duplicates.
 
 ---
 
@@ -424,7 +434,8 @@ You can change your password any time in **Settings → Security**.
 > **Forgot your password?** Self-service password reset requires email to be
 > configured on your GigFin instance. If your host hasn't set up email, there is
 > currently **no self-service reset** — you'll need your host to help recover the
-> account. (An offline recovery-code option is planned but not yet available.)
+> account. Enabling two-factor authentication gives you backup codes (saved at
+> setup) so a lost authenticator device doesn't lock you out.
 
 ---
 
@@ -451,7 +462,7 @@ Receipts (photos) are stored on the same backend — there's no third-party clou
   gone — re-add it if you made a mistake.
 - **One live shift / one open mileage reading at a time.** Close the current one
   before starting another.
-- **Recurring expenses are dated by their due date**, not the moment they're
+- **Recurring entries are dated by their due date**, not the moment they're
   created — so your records stay accurate even if the app was closed when one came
   due.
 - **The tax figures are estimates**, meant to help you plan and to hand to an
