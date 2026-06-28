@@ -63,7 +63,7 @@ export const remove = authedMutationV({
 
 // Insert an expense for every due period of each template (catching up missed
 // periods, capped to avoid runaway), then advance each schedule.
-async function materializeRows(
+export async function materializeRows(
   ctx: GenericMutationCtx<DataModel>,
   rows: Doc<"recurringExpenses">[],
   today: string,

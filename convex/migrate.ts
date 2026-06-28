@@ -44,7 +44,11 @@ type ImportData = {
 };
 
 // Shared import: insert vehicles first, remap old vehicle ids on dependent rows.
-async function applyImport(ctx: MutationCtx, userId: string, data: ImportData) {
+export async function applyImport(
+  ctx: MutationCtx,
+  userId: string,
+  data: ImportData,
+) {
   const now = Date.now();
   const vmap = new Map<string, Id<"vehicles">>();
 
