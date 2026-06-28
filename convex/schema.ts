@@ -179,13 +179,4 @@ export default defineSchema({
     timeframe: v.optional(v.string()),
     updatedAt: v.number(),
   }).index("by_user", ["userId"]),
-
-  // Custom offline account recovery: hashed one-time codes that authorize a
-  // password reset without email.
-  recoveryCodes: defineTable({
-    userId: v.string(),
-    codeHash: v.string(),
-    used: v.boolean(),
-    createdAt: v.number(),
-  }).index("by_user", ["userId"]),
 });

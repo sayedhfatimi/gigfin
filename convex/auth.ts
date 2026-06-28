@@ -24,7 +24,8 @@ export const createAuth = (ctx: GenericCtx<DataModel>) =>
     database: authComponent.adapter(ctx),
     // Air-gap friendly: email/password works with no email provider.
     // Verification + password-reset-by-email are layered on only when Resend
-    // is configured (see lib/features.ts). Offline recovery is a custom flow.
+    // is configured (see lib/features.ts). Account recovery without email is
+    // covered by the two-factor plugin's backup codes (issued at enrolment).
     emailAndPassword: {
       enabled: true,
       disableSignUp,
