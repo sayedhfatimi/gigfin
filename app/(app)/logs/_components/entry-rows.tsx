@@ -86,13 +86,22 @@ export function ExpenseEntryRow({
   currency: string;
 }) {
   const remove = useMutation(api.expenses.remove);
+  const vendors = useQuery(api.chargingVendors.list);
+  // Prefer the linked vendor's current label; fall back to free-text notes
+  // (legacy/migrated rows carry the vendor name there).
+  const subtitle = useMemo(() => {
+    const vendorLabel = row.vendorId
+      ? (vendors ?? []).find((v) => v._id === row.vendorId)?.label
+      : undefined;
+    return vendorLabel ?? row.notes;
+  }, [vendors, row.vendorId, row.notes]);
   const del = () => remove({ id: row._id });
   return (
     <EntryShell onDelete={del}>
       <div>
         <p className="font-medium">{titleCase(row.expenseType)}</p>
-        {row.notes ? (
-          <p className="text-muted-foreground text-xs">{row.notes}</p>
+        {subtitle ? (
+          <p className="text-muted-foreground text-xs">{subtitle}</p>
         ) : null}
       </div>
       <div className="flex items-center gap-1">

@@ -15,11 +15,22 @@ async function assertOwnedVehicle(
   requireOwner(userId, await ctx.db.get(vehicleId));
 }
 
+// Guard: an optional charging-vendor reference must belong to the same user.
+async function assertOwnedVendor(
+  ctx: QueryCtx,
+  userId: string,
+  vendorId: Id<"chargingVendors"> | undefined,
+) {
+  if (!vendorId) return;
+  requireOwner(userId, await ctx.db.get(vendorId));
+}
+
 const fields = {
   expenseType: expenseTypeValidator,
   amountMinor: v.number(),
   date: v.string(),
   vehicleId: v.optional(v.id("vehicles")),
+  vendorId: v.optional(v.id("chargingVendors")),
   notes: v.optional(v.string()),
   unitRateMinor: v.optional(v.number()),
   unitRateUnit: v.optional(unitRateUnitValidator),
@@ -39,6 +50,7 @@ export const add = authedMutationV({
   args: fields,
   handler: async (ctx, args) => {
     await assertOwnedVehicle(ctx, ctx.userId, args.vehicleId);
+    await assertOwnedVendor(ctx, ctx.userId, args.vendorId);
     const now = Date.now();
     return ctx.db.insert("expenses", {
       userId: ctx.userId,
@@ -54,6 +66,7 @@ export const update = authedMutationV({
   handler: async (ctx, args) => {
     requireOwner(ctx.userId, await ctx.db.get(args.id));
     await assertOwnedVehicle(ctx, ctx.userId, args.vehicleId);
+    await assertOwnedVendor(ctx, ctx.userId, args.vendorId);
     const { id, ...rest } = args;
     await ctx.db.patch(id, { ...rest, updatedAt: Date.now() });
   },

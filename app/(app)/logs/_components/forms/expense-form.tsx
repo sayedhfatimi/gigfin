@@ -45,24 +45,15 @@ export function ExpenseForm({
   const [amount, setAmount] = useState(
     initial ? (initial.amountMinor / 100).toString() : "",
   );
-  // Optional fuel/charging convenience: pick a saved vendor + quantity and the
-  // amount is computed from the vendor's unit rate.
-  const [vendorId, setVendorId] = useState("none");
-  const [quantity, setQuantity] = useState("");
+  // Optional fuel/charging: tag the expense with a saved vendor. The user enters
+  // the total amount paid; the vendor's unit rate is snapshotted for the record
+  // (quantity is derivable as amount ÷ rate).
+  const [vendorId, setVendorId] = useState<string>(initial?.vendorId ?? "none");
   const [date, setDate] = useState(initial?.date ?? todayISO());
   const [notes, setNotes] = useState(initial?.notes ?? "");
 
   const isFuel = expenseType === "fuel_charging";
   const selectedVendor = vendors?.find((v) => v._id === vendorId);
-
-  // Recompute the amount from the vendor rate × quantity (still editable after).
-  function priceFrom(vid: string, qty: string) {
-    const vendor = vendors?.find((v) => v._id === vid);
-    const q = Number.parseFloat(qty);
-    if (vendor && Number.isFinite(q)) {
-      setAmount(((q * vendor.unitRateMinor) / 100).toFixed(2));
-    }
-  }
 
   return (
     <EntryForm
@@ -80,9 +71,12 @@ export function ExpenseForm({
           date,
           vehicleId:
             vehicleId !== "none" ? (vehicleId as Id<"vehicles">) : undefined,
+          // Tag the chosen vendor (display + snapshot below); otherwise carry
+          // through any existing reference so editing never silently clears it.
+          vendorId: useVendor ? selectedVendor._id : initial?.vendorId,
           notes: notes.trim() || undefined,
-          // Set the unit rate from the chosen vendor; otherwise carry through
-          // any existing value so editing never silently clears it.
+          // Snapshot the unit rate from the chosen vendor; otherwise carry
+          // through any existing value so editing never silently clears it.
           unitRateMinor: useVendor
             ? selectedVendor.unitRateMinor
             : initial?.unitRateMinor,
@@ -110,12 +104,9 @@ export function ExpenseForm({
           <Field label="Charging vendor">
             <SelectField
               value={vendorId}
-              onValueChange={(v) => {
-                setVendorId(v);
-                priceFrom(v, quantity);
-              }}
+              onValueChange={setVendorId}
               options={[
-                { value: "none", label: "Custom amount" },
+                { value: "none", label: "No vendor" },
                 ...(vendors ?? []).map((v) => ({
                   value: v._id,
                   label: `${v.label} · per ${UNIT_LABELS[v.unitRateUnit]}`,
@@ -123,21 +114,6 @@ export function ExpenseForm({
               ]}
             />
           </Field>
-          {selectedVendor && (
-            <Field
-              label={`Quantity (${UNIT_LABELS[selectedVendor.unitRateUnit]})`}
-            >
-              <Input
-                inputMode="decimal"
-                placeholder="e.g. 42"
-                value={quantity}
-                onChange={(e) => {
-                  setQuantity(e.target.value);
-                  priceFrom(vendorId, e.target.value);
-                }}
-              />
-            </Field>
-          )}
         </>
       )}
       <Field label="Amount">

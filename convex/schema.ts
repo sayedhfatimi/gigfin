@@ -49,6 +49,10 @@ export default defineSchema({
     amountMinor: v.number(),
     date: v.string(),
     vehicleId: v.optional(v.id("vehicles")),
+    // Charging/fuel vendor this expense was logged against (display + the
+    // unit-rate snapshot below). Optional; absent for non-fuel expenses and for
+    // legacy/migrated rows (which carry the vendor name in `notes`).
+    vendorId: v.optional(v.id("chargingVendors")),
     notes: v.optional(v.string()),
     unitRateMinor: v.optional(v.number()),
     unitRateUnit: v.optional(unitRateUnitValidator),
