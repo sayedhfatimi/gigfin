@@ -61,9 +61,16 @@ offline). After any change to `convex/schema.ts` or a Convex function signature:
    `CONVEX_SELF_HOSTED_ADMIN_KEY` from `.env.local`.
 3. Commit the regenerated `convex/_generated/*` alongside the change.
 
-If `bunx convex dev --once` cannot reach the backend or auth fails (admin key vs
-the volume's `INSTANCE_SECRET` mismatch), fix the backend — do NOT hand-edit the
-generated files.
+If `bunx convex dev --once` fails with `BadAdminKey` (the committed
+`CONVEX_SELF_HOSTED_ADMIN_KEY` doesn't match a locally-booted instance whose
+`INSTANCE_SECRET` was never set), mint a matching key from the running container
+and use it just for the codegen run — do NOT hand-edit the generated files:
+
+```
+KEY=$(docker compose exec -T convex ./generate_admin_key.sh | tail -1)
+CONVEX_SELF_HOSTED_URL=http://127.0.0.1:3210 \
+  CONVEX_SELF_HOSTED_ADMIN_KEY="$KEY" bunx convex dev --once
+```
 
 ## Validation
 
