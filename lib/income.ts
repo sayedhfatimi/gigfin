@@ -1,6 +1,8 @@
 // Pure income aggregations in integer minor units over ISO-dated rows.
 // Reimplemented from gigfin-old/lib/income.ts (which worked in float pounds).
 
+import { distribution, monthlyTotals } from "./aggregate";
+
 export type IncomeRow = { platform: string; amountMinor: number; date: string };
 
 export function sumIncomeMinor(rows: readonly IncomeRow[]): number {
@@ -17,21 +19,11 @@ export type PlatformSlice = {
 export function platformDistribution(
   rows: readonly IncomeRow[],
 ): PlatformSlice[] {
-  const byPlatform = new Map<string, number>();
-  for (const r of rows) {
-    byPlatform.set(
-      r.platform,
-      (byPlatform.get(r.platform) ?? 0) + r.amountMinor,
-    );
-  }
-  const total = sumIncomeMinor(rows);
-  return [...byPlatform.entries()]
-    .map(([platform, amountMinor]) => ({
-      platform,
-      amountMinor,
-      pct: total ? amountMinor / total : 0,
-    }))
-    .sort((a, b) => b.amountMinor - a.amountMinor);
+  return distribution(
+    rows,
+    (r) => r.platform,
+    (r) => r.amountMinor,
+  ).map(({ key, amountMinor, pct }) => ({ platform: key, amountMinor, pct }));
 }
 
 // Largest single-platform share (0..1) — the "platform concentration" risk metric.
@@ -44,12 +36,10 @@ export function monthlyIncomeMinor(
   rows: readonly IncomeRow[],
   year: number,
 ): number[] {
-  const buckets = new Array<number>(12).fill(0);
-  const prefix = `${year}-`;
-  for (const r of rows) {
-    if (!r.date.startsWith(prefix)) continue;
-    const month = Number(r.date.slice(5, 7)) - 1;
-    if (month >= 0 && month < 12) buckets[month] += r.amountMinor;
-  }
-  return buckets;
+  return monthlyTotals(
+    rows,
+    year,
+    (r) => r.amountMinor,
+    (r) => r.date,
+  );
 }
