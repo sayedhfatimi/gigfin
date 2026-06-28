@@ -27,4 +27,9 @@ jobs:
         run: bun run test
 
       - name: Build
+        # Placeholders satisfy auth/Convex module init during `next build`; the
+        # real URLs are injected at runtime. Mirrors the Dockerfile build stage.
+        env:
+          NEXT_PUBLIC_CONVEX_URL: http://127.0.0.1:3210
+          NEXT_PUBLIC_CONVEX_SITE_URL: http://127.0.0.1:3211
         run: bun run build
