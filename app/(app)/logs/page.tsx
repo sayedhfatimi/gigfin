@@ -12,6 +12,7 @@ import { IncomePanel } from "./_components/income-panel";
 import { MileageActions } from "./_components/mileage-actions";
 import { MileagePanel } from "./_components/mileage-panel";
 import { OverviewPanel } from "./_components/overview-panel";
+import { RecurringIncomeSheet } from "./_components/recurring-income-sheet";
 import { RecurringSheet } from "./_components/recurring-sheet";
 import { ShiftActions } from "./_components/shift-actions";
 import { ShiftPanel } from "./_components/shift-panel";
@@ -45,9 +46,12 @@ export default function LogsPage() {
             <TabsTrigger value="shifts">Shifts</TabsTrigger>
           </TabsList>
           {tab === "income" && (
-            <AddDialog title="Add income">
-              {(close) => <IncomeForm onDone={close} />}
-            </AddDialog>
+            <>
+              <RecurringIncomeSheet currency={currency} />
+              <AddDialog title="Add income">
+                {(close) => <IncomeForm onDone={close} />}
+              </AddDialog>
+            </>
           )}
           {tab === "expenses" && (
             <>

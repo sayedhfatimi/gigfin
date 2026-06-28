@@ -20,6 +20,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const ensureProfile = useMutation(api.profiles.ensure);
   const materializeRecurring = useMutation(api.recurring.materializeMine);
+  const materializeRecurringIncome = useMutation(
+    api.recurringIncome.materializeMine,
+  );
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) router.replace("/");
@@ -28,10 +31,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isAuthenticated) {
       ensureProfile({}).catch(() => {});
-      // Catch up any due recurring expenses now instead of waiting for the cron.
+      // Catch up any due recurring expenses/income now instead of waiting for
+      // the cron.
       materializeRecurring({}).catch(() => {});
+      materializeRecurringIncome({}).catch(() => {});
     }
-  }, [isAuthenticated, ensureProfile, materializeRecurring]);
+  }, [
+    isAuthenticated,
+    ensureProfile,
+    materializeRecurring,
+    materializeRecurringIncome,
+  ]);
 
   if (isLoading || !isAuthenticated) {
     return (

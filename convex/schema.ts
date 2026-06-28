@@ -145,6 +145,20 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_active_due", ["active", "nextDueDate"]),
 
+  recurringIncome: defineTable({
+    userId: v.string(),
+    platform: v.string(),
+    amountMinor: v.number(),
+    cadence: recurringCadenceValidator,
+    nextDueDate: v.string(),
+    notes: v.optional(v.string()),
+    active: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_active_due", ["active", "nextDueDate"]),
+
   receipts: defineTable({
     userId: v.string(),
     expenseId: v.optional(v.id("expenses")),

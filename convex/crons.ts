@@ -10,4 +10,10 @@ crons.daily(
   internal.recurring.materializeDue,
 );
 
+crons.daily(
+  "materialize recurring income",
+  { hourUTC: 1, minuteUTC: 5 },
+  internal.recurringIncome.materializeDue,
+);
+
 export default crons;
